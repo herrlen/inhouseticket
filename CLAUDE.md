@@ -19,12 +19,14 @@ Schlankes, sehr schnelles, kostenloses Ticketing-System für Firmen-Teams. Liste
 
 ## Befehle
 ```bash
-pnpm dev            # Dev-Server
+pnpm dev            # Dev-Server auf http://localhost:3100 (UI-Vorschau: /dev/ui)
 pnpm build          # Production-Build
 pnpm lint           # ESLint
 pnpm typecheck      # tsc --noEmit
-pnpm test           # Vitest
+pnpm test           # Vitest (Unit, ohne DB)
+pnpm test:db        # Vitest gegen Postgres (Constraints, Trigger)
 pnpm test:e2e       # Playwright
+pnpm db:up          # Postgres 16 (Port 5442) + Mailpit (8025) per docker compose
 pnpm db:generate    # Drizzle Migration erzeugen
 pnpm db:migrate     # Migration ausführen
 pnpm db:studio      # Drizzle Studio

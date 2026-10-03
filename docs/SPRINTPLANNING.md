@@ -10,13 +10,13 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 
 ## Sprint 0 – Fundament
 **Ziel:** Repo läuft lokal, CI grün, Schema steht.
-- [ ] Next.js + TS strict + Tailwind + pnpm
-- [ ] docker-compose (Postgres 16), `.env.example`
-- [ ] Drizzle + komplettes Schema + erste Migration
-- [ ] `limits.ts`, `freemail.ts` + Tests
-- [ ] Design-Tokens (Light/Dark) als CSS-Variablen, Fonts
-- [ ] UI-Primitives: Button, Input, Badge, Avatar, Dropdown, Tooltip, Toast
-- [ ] GitHub Actions (lint, typecheck, test), Dockerfile
+- [x] Next.js + TS strict + Tailwind + pnpm
+- [x] docker-compose (Postgres 16), `.env.example`
+- [x] Drizzle + komplettes Schema + erste Migration
+- [x] `limits.ts`, `freemail.ts` + Tests
+- [x] Design-Tokens (Light/Dark) als CSS-Variablen, Fonts
+- [x] UI-Primitives: Button, Input, Badge, Avatar, Dropdown, Tooltip, Toast
+- [x] GitHub Actions (lint, typecheck, test), Dockerfile
 
 ## Sprint 1 – Auth & Workspace
 **Ziel:** Mit Firmen-Mail registrieren, Workspace entsteht.
