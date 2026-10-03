@@ -23,7 +23,8 @@ export const auth = betterAuth({
     updateAge: 60 * 60 * 24,
     cookieCache: { enabled: true, maxAge: 5 * 60 },
   },
-  rateLimit: { enabled: true, window: 60, max: 100 },
+  // Per-IP limits in production only; local and E2E runs share one IP.
+  rateLimit: { enabled: env.NODE_ENV === "production", window: 60, max: 100 },
   hooks: {
     // Friendly, early rejection before a mail is sent (CLAUDE.md rule 3).
     before: createAuthMiddleware(async (ctx) => {
