@@ -37,7 +37,10 @@ test("owner manages members: invite, role change, removal", async ({ browser }) 
   await owner.reload();
   await expect(owner.getByText("2 von 100 Plätzen belegt.")).toBeVisible();
   await owner.getByRole("combobox", { name: "Rolle von Mia" }).selectOption("admin");
-  await owner.getByRole("button", { name: "Speichern" }).click();
+  await Promise.all([
+    owner.waitForResponse((r) => r.request().method() === "POST" && r.url().endsWith("/settings/members")),
+    owner.getByRole("button", { name: "Speichern" }).click(),
+  ]);
   await mia.goto(path);
   await expect(mia.getByRole("link", { name: "Mitglieder" })).toBeVisible();
 

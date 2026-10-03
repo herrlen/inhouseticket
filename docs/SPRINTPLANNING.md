@@ -20,13 +20,13 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 
 ## Sprint 1 – Auth & Workspace
 **Ziel:** Mit Firmen-Mail registrieren, Workspace entsteht.
-- [ ] P1 Magic-Link-Login (Better Auth), E-Mail-Versand per SMTP über mittwald (entschieden 2026-10-03; lokal Mailpit)
-- [ ] P1 Freemail-Blockade mit freundlicher Fehlermeldung
-- [ ] P1 Workspace-Anlage über Domain, Owner-Rolle
-- [ ] P1 Einladungen per E-Mail, Auto-Join-Option (Default aus)
-- [ ] P1 User-Limit 100 (DB-Trigger + UI-Hinweis ab 90)
-- [ ] P2 Rollen Owner/Admin/Member, `requireMember()`-Helper
-- [ ] P2 Onboarding-Flow (Workspace-Name, Farbe, erstes Projekt)
+- [x] P1 Magic-Link-Login (Better Auth), E-Mail-Versand per SMTP über mittwald (entschieden 2026-10-03; lokal Mailpit)
+- [x] P1 Freemail-Blockade mit freundlicher Fehlermeldung
+- [x] P1 Workspace-Anlage über Domain, Owner-Rolle
+- [x] P1 Einladungen per E-Mail, Auto-Join-Option (Default aus)
+- [x] P1 User-Limit 100 (DB-Trigger + UI-Hinweis ab 90)
+- [x] P2 Rollen Owner/Admin/Member, `requireMember()`-Helper
+- [x] P2 Onboarding-Flow (Workspace-Name, Farbe, erstes Projekt)
 
 ## Sprint 2 – App-Shell & Explorer
 **Ziel:** Navigation steht, Projekte anlegbar.

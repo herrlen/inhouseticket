@@ -56,7 +56,7 @@ docs/
 ```
 
 ## Harte Regeln
-1. **Mandantentrennung:** Jede Query filtert nach `workspaceId`. Nie ohne. Zugriff immer über Helper `requireMember(workspaceId)`.
+1. **Mandantentrennung:** Jede Query filtert nach `workspaceId`. Nie ohne. Zugriff immer über `requireMember({ slug })` bzw. `requireMember({ workspaceId })` oder `requireRole(…, "admin")` aus `src/lib/authz.ts` – Nicht-Mitglieder bekommen 404. Server Actions prüfen selbst erneut (nie auf die Seite verlassen).
 2. **Limits nur aus `src/lib/limits.ts`:**
    - `MAX_USERS_PER_WORKSPACE = 100`
    - `MAX_TITLE = 500`, `MAX_DESCRIPTION = 5000`
