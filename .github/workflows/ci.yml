@@ -51,7 +51,24 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: inhouseticket
+          POSTGRES_PASSWORD: inhouseticket
+          POSTGRES_DB: inhouseticket
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U inhouseticket"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      mailpit:
+        image: axllent/mailpit:latest
+        ports: ["1025:1025", "8025:8025"]
+        env:
+          MP_SMTP_AUTH_ACCEPT_ANY: "1"
+          MP_SMTP_AUTH_ALLOW_INSECURE: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -61,6 +78,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
+      - name: Migrations
+        run: node ./node_modules/drizzle-kit/bin.cjs migrate
       - run: pnpm test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
