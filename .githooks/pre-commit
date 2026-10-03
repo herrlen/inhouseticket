@@ -1,0 +1,6 @@
+#!/bin/sh
+# Fast gate before every commit (docs/entwicklerregeln.md §8). Skip once with --no-verify.
+set -e
+pnpm -s lint
+pnpm -s typecheck
+pnpm -s test
