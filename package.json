@@ -15,7 +15,8 @@
     "db:generate": "node --env-file=.env ./node_modules/drizzle-kit/bin.cjs generate",
     "db:migrate": "node --env-file=.env ./node_modules/drizzle-kit/bin.cjs migrate",
     "db:studio": "node --env-file=.env ./node_modules/drizzle-kit/bin.cjs studio",
-    "test:db": "VITEST_DB=1 node --env-file=.env ./node_modules/vitest/vitest.mjs run"
+    "test:db": "VITEST_DB=1 node --env-file=.env ./node_modules/vitest/vitest.mjs run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "better-auth": "^1.7.7",
@@ -28,6 +29,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

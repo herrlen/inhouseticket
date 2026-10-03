@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { PALETTE } from "@/lib/palette";
 
 const css = readFileSync(new URL("./globals.css", import.meta.url), "utf8");
 
@@ -58,6 +59,15 @@ describe.each([
     expect(contrast(resolve(vars, "focus"), resolve(vars, "bg"))).toBeGreaterThanOrEqual(3);
     expect(contrast(resolve(vars, "focus"), resolve(vars, "surface"))).toBeGreaterThanOrEqual(3);
   });
+});
+
+it.each(Object.keys(light).filter((k) => k.endsWith("-on")))("--%s is readable on its palette fill", (token) => {
+  const fill = resolve(light, token.replace(/-on$/, ""));
+  expect(contrast(resolve(light, token), fill)).toBeGreaterThanOrEqual(4.5);
+});
+
+it.each(Object.entries(PALETTE))("palette.ts %s matches --p-%s in globals.css", (name, hex) => {
+  expect(resolve(light, `p-${name}`).toUpperCase()).toBe(hex);
 });
 
 it("OS dark mode and data-theme=dark define the same values", () => {

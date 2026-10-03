@@ -47,6 +47,20 @@
   --p-slate: #64748b;
   --p-slate-ink: #63738a;
 
+  /* Text on a solid palette fill (avatars, badges) – same in both themes */
+  --p-coral-on: #000000;
+  --p-orange-on: #000000;
+  --p-sun-on: #000000;
+  --p-lime-on: #000000;
+  --p-mint-on: #000000;
+  --p-turquoise-on: #000000;
+  --p-blue-on: #000000;
+  --p-indigo-on: #ffffff;
+  --p-violet-on: #000000;
+  --p-pink-on: #000000;
+  --p-berry-on: #ffffff;
+  --p-slate-on: #ffffff;
+
   /* Priorities */
   --prio-urgent: #ef4444;
   --prio-urgent-ink: #d03b3b;
@@ -177,6 +191,19 @@
   --color-p-slate: var(--p-slate);
   --color-p-slate-ink: var(--p-slate-ink);
 
+  --color-p-coral-on: var(--p-coral-on);
+  --color-p-orange-on: var(--p-orange-on);
+  --color-p-sun-on: var(--p-sun-on);
+  --color-p-lime-on: var(--p-lime-on);
+  --color-p-mint-on: var(--p-mint-on);
+  --color-p-turquoise-on: var(--p-turquoise-on);
+  --color-p-blue-on: var(--p-blue-on);
+  --color-p-indigo-on: var(--p-indigo-on);
+  --color-p-violet-on: var(--p-violet-on);
+  --color-p-pink-on: var(--p-pink-on);
+  --color-p-berry-on: var(--p-berry-on);
+  --color-p-slate-on: var(--p-slate-on);
+
   --color-prio-urgent: var(--prio-urgent);
   --color-prio-urgent-ink: var(--prio-urgent-ink);
   --color-prio-high: var(--prio-high);
@@ -209,11 +236,9 @@
 }
 
 @layer base {
-  html {
-    font-size: 14px;
-  }
-
+  /* Root stays 16px so Tailwind's rem scale is untouched; UI text is 14px (KONZEPT §5.3). */
   body {
+    font-size: 0.875rem;
     background-color: var(--bg);
     color: var(--text);
     font-family: var(--font-sans);
