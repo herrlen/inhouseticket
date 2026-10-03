@@ -15,6 +15,13 @@
       "when": 1791055279184,
       "tag": "0001_limits_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791056374775,
+      "tag": "0002_workspace_slug",
+      "breakpoints": true
     }
   ]
 }

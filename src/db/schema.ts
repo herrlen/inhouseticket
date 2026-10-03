@@ -121,10 +121,12 @@ export const workspace = pgTable("workspace", {
   name: varchar({ length: 100 }).notNull(),
   /** Verified company e-mail domain, lowercase. One workspace per domain. */
   domain: varchar({ length: 253 }).notNull().unique(),
+  /** URL segment, e.g. "firma" for /firma/… */
+  slug: varchar({ length: 63 }).notNull().unique(),
   color: varchar({ length: 7 }).notNull().default("#5B5BF7"),
   autoJoin: boolean().notNull().default(false),
   createdAt: createdAt(),
-});
+}, (t) => [check("workspace_slug_format", sql`${t.slug} ~ '^[a-z0-9]([a-z0-9-]*[a-z0-9])?$'`)]);
 
 export const membership = pgTable(
   "membership",
