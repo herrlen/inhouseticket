@@ -26,7 +26,7 @@ Ein kostenloses, schlankes Ticketing-System für interne Teams – so schnell wi
 - Registrierung **nur mit Firmen-E-Mail** (Freemail-Blockliste: gmail, googlemail, gmx, web.de, t-online, outlook, hotmail, live, yahoo, icloud, me, proton, aol, mail.de, freenet …).
 - Login per **Magic Link** (kein Passwort → weniger Support, mehr Sicherheit).
 - **Workspace = E-Mail-Domain.** Erster User einer Domain erstellt den Workspace und ist Owner.
-- Weitere User mit derselben Domain: Beitritt per Einladung **oder** optional Auto-Join (Owner-Einstellung).
+- Weitere User mit derselben Domain: Beitritt per Einladung **oder** optional Auto-Join (Owner-Einstellung, **standardmäßig aus**).
 - Externe Domains nur per Einladung (z. B. Freelancer mit Firmen-Domain).
 - **Limit: 100 aktive User** pro Workspace. Ab 90 Hinweis an Owner, ab 100 keine neuen Einladungen.
 - Rollen: **Owner**, **Admin**, **Member**. (Kein Gast-Konzept im MVP.)
@@ -285,5 +285,5 @@ api_token        id, user_id, workspace_id, name, token_hash, last_used_at, crea
 
 ## 10. Offene Fragen
 - Finanzierung langfristig (kostenlos): später optionaler Pro-Plan (SSO, > 100 User, Intake-Formulare)?
-- Auto-Join per Domain standardmäßig an oder aus?
+- ~~Auto-Join per Domain standardmäßig an oder aus?~~ **Entschieden 2026-10-03: aus.** Der Owner schaltet es bei Bedarf ein (`workspace.auto_join` default `false`).
 - Namensschema Ticket-Keys bei Projekt-Umbenennung (Key bleibt fix – empfohlen).
