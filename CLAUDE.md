@@ -3,10 +3,12 @@
 Kontextdatei für Claude Code. Liegt im Repo-Root und wird bei jeder Session automatisch gelesen.
 
 ## Was ist das?
-Schlankes, sehr schnelles, kostenloses Ticketing-System für Firmen-Teams. Liste + Kanban, Explorer-Sidebar (einklappbar), Auslastungs-Dashboard, MCP-Server für Claude. Details: `docs/KONZEPT.md`. Reihenfolge: `docs/SPRINTPLANNING.md`.
+Schlankes, sehr schnelles, kostenloses Ticketing-System für Firmen-Teams. Liste + Kanban, Explorer-Sidebar (einklappbar), Auslastungs-Dashboard, MCP-Server für Claude. Details: `docs/KONZEPT.md`. Reihenfolge: `docs/SPRINTPLANNING.md`. Arbeitsweise: `docs/entwicklerregeln.md`.
+
+@AGENTS.md
 
 ## Stack
-- Next.js (App Router), TypeScript strict, Tailwind CSS
+- Next.js 16 (App Router, `output: standalone`), TypeScript strict, Tailwind CSS 4 (Tokens per `@theme` in `globals.css`, keine `tailwind.config`)
 - PostgreSQL + Drizzle ORM (`src/db/schema.ts`, Migrations in `drizzle/`)
 - Better Auth (Magic Link, nur Firmen-Domains)
 - TanStack Query (Client-Cache, Optimistic Updates), dnd-kit (Kanban)
@@ -48,6 +50,7 @@ src/
 docs/
   KONZEPT.md
   SPRINTPLANNING.md
+  entwicklerregeln.md
 ```
 
 ## Harte Regeln

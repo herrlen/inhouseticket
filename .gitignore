@@ -10,3 +10,6 @@ test-results/
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
+*.pem
+.pnpm-debug.log*
+/drizzle/meta/_journal.json.bak
