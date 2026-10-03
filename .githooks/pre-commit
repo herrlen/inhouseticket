@@ -4,3 +4,9 @@ set -e
 pnpm -s lint
 pnpm -s typecheck
 pnpm -s test
+# Database tests only when the local Postgres (pnpm db:up) is reachable.
+if nc -z localhost 5442 2>/dev/null; then
+  pnpm -s test:db
+else
+  echo "pre-commit: Postgres not running – skipped test:db (CI runs it)."
+fi

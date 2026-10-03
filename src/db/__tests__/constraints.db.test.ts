@@ -38,7 +38,7 @@ async function seed(tx: Tx) {
     INSERT INTO "user" (id, name, email) VALUES (${`u${n}`}, 'Test', ${`t${n}@firma${n}.de`})
     RETURNING id`;
   const [ws] = await tx`
-    INSERT INTO workspace (name, domain) VALUES ('Firma', ${`firma${n}.de`}) RETURNING id`;
+    INSERT INTO workspace (name, domain, slug) VALUES ('Firma', ${`firma${n}.de`}, ${`firma-${n}`}) RETURNING id`;
   const [pr] = await tx`
     INSERT INTO project (workspace_id, name, key, color, sort)
     VALUES (${ws!.id}, 'Marketing', 'MKT', '#FF6B5B', 'a0') RETURNING id`;
