@@ -1,1 +1,237 @@
 @import "tailwindcss";
+
+/*
+ * Design tokens – docs/KONZEPT.md §5. Single source of truth for colors.
+ * Theme: <html data-theme="light|dark">; without the attribute the OS setting wins.
+ *
+ * Every color has a base value (dots, bars, borders, fills) and an `-ink` value for text and
+ * icons that reaches WCAG AA (≥ 4.5:1) on --bg and --surface in the active theme.
+ * Never put text in a base color – see src/app/tokens.test.ts.
+ */
+
+:root {
+  color-scheme: light;
+
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --border: #e7e5e4;
+  --text: #1c1917;
+  --muted: #78716c;
+  --accent: #5b5bf7;
+  --accent-contrast: #ffffff;
+  --focus: #5b5bf7;
+
+  /* Project palette (12) */
+  --p-coral: #ff6b5b;
+  --p-coral-ink: #bd4f43;
+  --p-orange: #ff9f1c;
+  --p-orange-ink: #a16412;
+  --p-sun: #f5c400;
+  --p-sun-ink: #896e00;
+  --p-lime: #8ac926;
+  --p-lime-ink: #567d18;
+  --p-mint: #2ec4b6;
+  --p-mint-ink: #1e7f76;
+  --p-turquoise: #00b4d8;
+  --p-turquoise-ink: #007c95;
+  --p-blue: #3a86ff;
+  --p-blue-ink: #306fd4;
+  --p-indigo: #5b5bf7;
+  --p-indigo-ink: #5b5bf7;
+  --p-violet: #9b5de5;
+  --p-violet-ink: #8d55d0;
+  --p-pink: #f15bb5;
+  --p-pink-ink: #ba468b;
+  --p-berry: #c9184a;
+  --p-berry-ink: #c9184a;
+  --p-slate: #64748b;
+  --p-slate-ink: #63738a;
+
+  /* Priorities */
+  --prio-urgent: #ef4444;
+  --prio-urgent-ink: #d03b3b;
+  --prio-high: #f97316;
+  --prio-high-ink: #b85510;
+  --prio-medium: #eab308;
+  --prio-medium-ink: #8f6d05;
+  --prio-low: #3b82f6;
+  --prio-low-ink: #326ed1;
+  --prio-none: var(--muted);
+  --prio-none-ink: var(--muted);
+
+  /* Default statuses */
+  --status-open: #78716c;
+  --status-open-ink: #77706b;
+  --status-active: #3b82f6;
+  --status-active-ink: #326ed1;
+  --status-review: #9b5de5;
+  --status-review-ink: #8d55d0;
+  --status-done: #22c55e;
+  --status-done-ink: #16823e;
+
+  --shadow-float: 0 8px 24px rgb(0 0 0 / 0.08), 0 2px 6px rgb(0 0 0 / 0.06);
+}
+
+/* Dark values – duplicated for the OS preference and the explicit attribute. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0e0e11;
+    --surface: #17171c;
+    --border: #26262e;
+    --text: #f4f4f5;
+    --muted: #a1a1aa;
+    --accent: #7c7cff;
+    --accent-contrast: #0e0e11;
+    --focus: #7c7cff;
+    --p-indigo-ink: #7272f8;
+    --p-violet-ink: #a065e6;
+    --p-berry-ink: #d75479;
+    --p-slate-ink: #758398;
+    --p-coral-ink: var(--p-coral);
+    --p-orange-ink: var(--p-orange);
+    --p-sun-ink: var(--p-sun);
+    --p-lime-ink: var(--p-lime);
+    --p-mint-ink: var(--p-mint);
+    --p-turquoise-ink: var(--p-turquoise);
+    --p-blue-ink: var(--p-blue);
+    --p-pink-ink: var(--p-pink);
+    --prio-urgent-ink: var(--prio-urgent);
+    --prio-high-ink: var(--prio-high);
+    --prio-medium-ink: var(--prio-medium);
+    --prio-low-ink: var(--prio-low);
+    --status-open-ink: #87817c;
+    --status-active-ink: var(--status-active);
+    --status-review-ink: #a065e6;
+    --status-done-ink: var(--status-done);
+    --shadow-float: 0 8px 24px rgb(0 0 0 / 0.5), 0 2px 6px rgb(0 0 0 / 0.4);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e0e11;
+  --surface: #17171c;
+  --border: #26262e;
+  --text: #f4f4f5;
+  --muted: #a1a1aa;
+  --accent: #7c7cff;
+  --accent-contrast: #0e0e11;
+  --focus: #7c7cff;
+  --p-indigo-ink: #7272f8;
+  --p-violet-ink: #a065e6;
+  --p-berry-ink: #d75479;
+  --p-slate-ink: #758398;
+  --p-coral-ink: var(--p-coral);
+  --p-orange-ink: var(--p-orange);
+  --p-sun-ink: var(--p-sun);
+  --p-lime-ink: var(--p-lime);
+  --p-mint-ink: var(--p-mint);
+  --p-turquoise-ink: var(--p-turquoise);
+  --p-blue-ink: var(--p-blue);
+  --p-pink-ink: var(--p-pink);
+  --prio-urgent-ink: var(--prio-urgent);
+  --prio-high-ink: var(--prio-high);
+  --prio-medium-ink: var(--prio-medium);
+  --prio-low-ink: var(--prio-low);
+  --status-open-ink: #87817c;
+  --status-active-ink: var(--status-active);
+  --status-review-ink: #a065e6;
+  --status-done-ink: var(--status-done);
+  --shadow-float: 0 8px 24px rgb(0 0 0 / 0.5), 0 2px 6px rgb(0 0 0 / 0.4);
+}
+
+/* Map tokens into Tailwind: bg-surface, text-muted, border-border, text-prio-high-ink … */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-focus: var(--focus);
+
+  --color-p-coral: var(--p-coral);
+  --color-p-coral-ink: var(--p-coral-ink);
+  --color-p-orange: var(--p-orange);
+  --color-p-orange-ink: var(--p-orange-ink);
+  --color-p-sun: var(--p-sun);
+  --color-p-sun-ink: var(--p-sun-ink);
+  --color-p-lime: var(--p-lime);
+  --color-p-lime-ink: var(--p-lime-ink);
+  --color-p-mint: var(--p-mint);
+  --color-p-mint-ink: var(--p-mint-ink);
+  --color-p-turquoise: var(--p-turquoise);
+  --color-p-turquoise-ink: var(--p-turquoise-ink);
+  --color-p-blue: var(--p-blue);
+  --color-p-blue-ink: var(--p-blue-ink);
+  --color-p-indigo: var(--p-indigo);
+  --color-p-indigo-ink: var(--p-indigo-ink);
+  --color-p-violet: var(--p-violet);
+  --color-p-violet-ink: var(--p-violet-ink);
+  --color-p-pink: var(--p-pink);
+  --color-p-pink-ink: var(--p-pink-ink);
+  --color-p-berry: var(--p-berry);
+  --color-p-berry-ink: var(--p-berry-ink);
+  --color-p-slate: var(--p-slate);
+  --color-p-slate-ink: var(--p-slate-ink);
+
+  --color-prio-urgent: var(--prio-urgent);
+  --color-prio-urgent-ink: var(--prio-urgent-ink);
+  --color-prio-high: var(--prio-high);
+  --color-prio-high-ink: var(--prio-high-ink);
+  --color-prio-medium: var(--prio-medium);
+  --color-prio-medium-ink: var(--prio-medium-ink);
+  --color-prio-low: var(--prio-low);
+  --color-prio-low-ink: var(--prio-low-ink);
+  --color-prio-none: var(--prio-none);
+  --color-prio-none-ink: var(--prio-none-ink);
+
+  --color-status-open: var(--status-open);
+  --color-status-open-ink: var(--status-open-ink);
+  --color-status-active: var(--status-active);
+  --color-status-active-ink: var(--status-active-ink);
+  --color-status-review: var(--status-review);
+  --color-status-review-ink: var(--status-review-ink);
+  --color-status-done: var(--status-done);
+  --color-status-done-ink: var(--status-done-ink);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  --radius-card: 10px;
+  --radius-badge: 6px;
+  --shadow-float: var(--shadow-float);
+
+  --ease-out-quick: cubic-bezier(0.2, 0, 0, 1);
+  --duration-micro: 150ms;
+}
+
+@layer base {
+  html {
+    font-size: 14px;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation: none !important;
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
