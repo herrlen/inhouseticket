@@ -55,3 +55,8 @@ muss der vHost neu verbunden werden (`mw domain virtualhost update f3f931a6-… 
   `robots.txt` Disallow, `noindex`, Zertifikat Let's Encrypt bis 31.12.2026, fremde Domain → `BETA_CLOSED`,
   Gmail → `FREEMAIL_NOT_ALLOWED`.
 - Offen: `SMTP_PASSWORD` (ohne das scheitert der Versand von Anmeldelinks), Anmeldetest mit `@studioluy.de`.
+
+### 2026-10-04 — `0f6bb00`, Beta-Liste erweitert
+
+- `BETA_ALLOWED_DOMAINS=studioluy.de,ursalz.com`; Impressum ohne EU-OS-Hinweis (Plattform seit 20.07.2025 eingestellt).
+- Live nach 20 s. `SMTP_PASSWORD` weiterhin offen → `scripts/set-smtp-password.sh` (Len).
