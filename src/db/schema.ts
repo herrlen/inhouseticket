@@ -129,6 +129,8 @@ export const workspace = pgTable("workspace", {
   slug: varchar({ length: 63 }).notNull().unique(),
   color: varchar({ length: 7 }).notNull().default("#5B5BF7"),
   autoJoin: boolean().notNull().default(false),
+  /** Weighted open-ticket score from which a person counts as overloaded (dashboard). */
+  workloadThreshold: smallint().notNull().default(12),
   createdAt: createdAt(),
 }, (t) => [check("workspace_slug_format", sql`${t.slug} ~ '^[a-z0-9]([a-z0-9-]*[a-z0-9])?$'`)]);
 
@@ -441,7 +443,10 @@ export const notification = pgTable(
       .notNull()
       .references(() => workspace.id, { onDelete: "cascade" }),
     ticketId: uuid().references(() => ticket.id, { onDelete: "cascade" }),
+    /** Who caused it (null for system events like "due tomorrow"). */
+    actorId: text().references(() => user.id, { onDelete: "set null" }),
     type: varchar({ length: 50 }).notNull(),
+    payload: jsonb().notNull().default({}),
     readAt: timestamp({ withTimezone: true }),
     createdAt: createdAt(),
   },
@@ -483,6 +488,10 @@ export const userPref = pgTable(
     favorites: jsonb().$type<string[]>().notNull().default([]),
     theme: theme().notNull().default("system"),
     confetti: boolean().notNull().default(true),
+    /** Daily e-mail digest (KONZEPT §2.8), on by default, can be switched off. */
+    emailDigest: boolean().notNull().default(true),
+    /** Berlin date of the last digest sent – makes the daily job idempotent. */
+    lastDigestOn: varchar({ length: 10 }),
   },
   (t) => [primaryKey({ columns: [t.userId, t.workspaceId] })],
 );

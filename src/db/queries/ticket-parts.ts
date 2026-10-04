@@ -220,7 +220,7 @@ export async function createComment(actor: Actor, ticketId: string, body: string
     // Mentions → in-app notifications (inbox UI arrives in Sprint 7).
     const mentioned = await mentionable(tx, actor.workspaceId, mentionedUserIds(body), actor.userId);
     if (mentioned.length > 0) {
-      await tx.insert(notification).values(mentioned.map((userId) => ({ userId, workspaceId: actor.workspaceId, ticketId, type: "mention" })));
+      await tx.insert(notification).values(mentioned.map((userId) => ({ userId, workspaceId: actor.workspaceId, ticketId, actorId: actor.userId, type: "mention" })));
     }
     await touch(tx, ticketId);
     return (await listComments(actor.workspaceId, ticketId, tx)).find((c) => c.id === row!.id)!;

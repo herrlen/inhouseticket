@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { activity, label, membership, project, status, ticket, ticketLabel, user } from "@/db/schema";
+import { activity, label, membership, notification, project, status, ticket, ticketLabel, user } from "@/db/schema";
 import type { Tx } from "@/db/queries/workspaces";
 import { nextTicketNumber } from "@/db/queries/projects";
 import { keyBetween } from "@/lib/fractional";
@@ -138,6 +138,18 @@ async function userName(tx: Tx, userId: string | null) {
   return u?.name ?? null;
 }
 
+/** In-app notifications for other people (never for the actor). Inbox: Sprint 7. */
+async function notify(tx: Tx, actor: Actor, ticketId: string, userIds: Array<string | null | undefined>, type: string, payload: Record<string, unknown> = {}) {
+  const targets = [...new Set(userIds.filter((u): u is string => Boolean(u) && u !== actor.userId))];
+  if (targets.length === 0) return;
+  const active = await tx
+    .select({ id: membership.userId })
+    .from(membership)
+    .where(and(eq(membership.workspaceId, actor.workspaceId), eq(membership.status, "active"), inArray(membership.userId, targets)));
+  if (active.length === 0) return;
+  await tx.insert(notification).values(active.map((m) => ({ userId: m.id, workspaceId: actor.workspaceId, ticketId, actorId: actor.userId, type, payload })));
+}
+
 async function log(tx: Tx, actor: Actor, ticketId: string, type: string, payload: Record<string, unknown> = {}) {
   await tx.insert(activity).values({ workspaceId: actor.workspaceId, ticketId, actorId: actor.userId, type, payload, via: actor.via ?? "web" });
 }
@@ -199,6 +211,7 @@ export async function createTicket(
       })
       .returning({ id: ticket.id });
     await log(tx, actor, created!.id, "created", { number });
+    await notify(tx, actor, created!.id, [input.assigneeId], "assigned");
     return (await loadTicket(tx, actor.workspaceId, created!.id))!;
   });
 }
@@ -235,6 +248,8 @@ export async function updateTicket(actor: Actor, ticketId: string, patch: Ticket
       if (next.category === "done" && prev?.category !== "done") set.completedAt = new Date();
       if (next.category !== "done") set.completedAt = null;
       await log(tx, actor, ticketId, "status", { from: prev?.name ?? null, to: next.name });
+      // "Statuswechsel bei eigenen Tickets": assignee and creator hear about it.
+      await notify(tx, actor, ticketId, [patch.assigneeId !== undefined ? patch.assigneeId : current.assigneeId, current.createdBy], "status", { to: next.name });
     }
     if (patch.priority !== undefined && patch.priority !== current.priority) {
       set.priority = patch.priority;
@@ -244,6 +259,7 @@ export async function updateTicket(actor: Actor, ticketId: string, patch: Ticket
       const toName = await assertAssignee(tx, actor.workspaceId, patch.assigneeId);
       set.assigneeId = patch.assigneeId;
       await log(tx, actor, ticketId, "assignee", { from: await userName(tx, current.assigneeId), to: toName });
+      await notify(tx, actor, ticketId, [patch.assigneeId], "assigned");
     }
     if (patch.dueDate !== undefined && patch.dueDate !== timestampToDueDate(current.dueAt)) {
       set.dueAt = dueDateToTimestamp(patch.dueDate);

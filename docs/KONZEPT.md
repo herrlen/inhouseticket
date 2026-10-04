@@ -72,7 +72,7 @@ Ticket-Detail öffnet als **Slide-Over rechts** (kein Seitenwechsel → schnell,
 
 ### 2.6 Dashboard (Jira-Stil, schlank)
 **Workspace-Dashboard**
-- **Auslastung pro User:** offene Tickets, gewichtet nach Priorität (Dringend 4, Hoch 3, Mittel 2, Niedrig 1), als horizontale Balken; Ampel bei Überlast (Schwelle einstellbar).
+- **Auslastung pro User:** offene Tickets, gewichtet nach Priorität (Dringend 4, Hoch 3, Mittel 2, Niedrig 1; „Keine“ zählt wie Niedrig, festgelegt 2026-10-04), als horizontale Balken; Ampel bei Überlast (Schwelle einstellbar, Standard 12).
 - **Überfällige Tickets** pro User und Projekt.
 - **Projekt-Gesundheit:** offen / in Arbeit / erledigt, Anteil überfällig.
 - **Durchsatz:** erledigte Tickets pro Woche (letzte 8 Wochen).
@@ -263,7 +263,7 @@ api_token        id, user_id, workspace_id, name, token_hash, last_used_at, crea
 - **Realtime:** Server-Sent Events pro Projekt (Board aktualisiert sich live), Fallback Polling.
 - **Sortierung:** Fractional Indexing → Drag & Drop ohne Massen-Updates.
 - **Storage (geändert 2026-10-04, ADR 002):** Bild-Anhänge (≤ 100 KB) direkt in Postgres (`bytea`), ausgeliefert nach Mitgliedschaftsprüfung, Cache-Header lang. Höchstens 20 Anhänge pro Ticket.
-- **Budget (angepasst 2026-10-04):** JS initial ≤ 200 KB gzip pro Seite, davon eigener Code ≤ 50 KB über der Framework-Grundlast (Next.js + React ≈ 173 KB); LCP < 1,5 s, Interaktion < 100 ms. Die ursprünglichen 150 KB liegen unter der Grundlast von Next.js. Stand: Projektseite 186 KB.
+- **Budget (angepasst 2026-10-04):** JS initial ≤ 200 KB gzip pro Seite, davon eigener Code ≤ 50 KB über der Framework-Grundlast (Next.js + React ≈ 173 KB); LCP < 1,5 s, Interaktion < 100 ms. Die ursprünglichen 150 KB liegen unter der Grundlast von Next.js. Ausnahme (Len, 2026-10-04): ein Direktlink mit geöffnetem Ticket (`?t=…`) darf knapp darüber liegen (~203 KB); Drag & Drop der Seitenleiste wird in Sprint 9 nachgeladen.
 - **Hosting:** Docker-Container, EU (z. B. Mittwald), Postgres managed, tägliche Backups.
 - **URLs (entschieden 2026-10-04):** Pfade statt Subdomains – `inhouseticket.com/{workspace}/p/{KEY}`. Der Workspace-Slug wird aus der E-Mail-Domain abgeleitet (`firma.de` → `firma`, bei Kollision `firma-2`). Ein vHost für `inhouseticket.com`, normales Let's-Encrypt-Zertifikat. Subdomains (`firma.inhouseticket.com`) bräuchten Wildcard-DNS und -Zertifikat; als mögliche Pro-Option im Backlog, nachrüstbar ohne Datenmigration.
 - **Server (korrigiert 2026-10-04):** Kein eigener vServer nötig. Lens mittwald Space-Server `s-r0ud3w` betreibt bereits Container-Stacks inkl. Postgres-Container (luibui). inhouseticket wird dort ein neues Projekt (Stack: App + Postgres, vHost `inhouseticket.com` → App). RAM nach dem Livegang messen; hochstufen nur bei Engpass. Nie auf denselben Server wie die luibui-Sandbox.

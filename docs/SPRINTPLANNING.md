@@ -114,6 +114,7 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [ ] P1 Landingpage (Claim, Screenshots, „Kostenlos bis 100 User“, MCP-Highlight)
 - [ ] P2 Datenexport CSV/JSON, Workspace löschen
 - [ ] P2 Mobile-Feinschliff, Dark Mode, Accessibility-Audit
+- [ ] P2 Drag & Drop der Seitenleiste (dnd-kit) erst bei Bedarf laden (~10 KB, Budget-Ausnahme Ticket-Direktlink auflösen)
 - [ ] P2 Cookieless Analytics
 - [ ] P3 Launch: Product Hunt, LinkedIn, t3n/Gründerszene-Pitch
 
