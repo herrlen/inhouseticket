@@ -47,6 +47,7 @@ export const de = {
     linkError: "Dieser Anmeldelink ist abgelaufen oder wurde schon benutzt. Fordere einfach einen neuen an.",
     tooMany: "Zu viele Versuche. Bitte warte eine Minute und versuch es dann noch einmal.",
     failed: "Das hat nicht geklappt. Bitte versuch es noch einmal.",
+    mailFailed: "Die E-Mail konnte gerade nicht verschickt werden. Bitte versuch es in ein paar Minuten noch einmal.",
   },
   start: {
     title: (name: string) => `Hallo ${name}`,

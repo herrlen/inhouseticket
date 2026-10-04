@@ -35,7 +35,9 @@ export function LoginForm({ next }: { next: string }) {
               ? de.auth.betaClosed
               : error.status === 429
                 ? de.login.tooMany
-                : de.login.failed,
+                : (error.status ?? 0) >= 500
+                  ? de.login.mailFailed
+                  : de.login.failed,
       });
       return;
     }
