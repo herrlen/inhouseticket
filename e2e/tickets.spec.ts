@@ -69,7 +69,7 @@ test("rapid successive edits are all saved (no queueing, no loss)", async ({ pag
   await page.getByRole("button", { name: /^Status von MKT-1/ }).click();
   await page.getByRole("menuitem", { name: "Review" }).click();
   await page.getByRole("button", { name: /^Priorität von MKT-2/ }).click();
-  await Promise.all([ticketSaved(page), page.getByRole("menuitem", { name: "Niedrig" }).click()]);
+  await Promise.all([ticketSaved(page), page.getByRole("menuitem", { name: "Mittel" }).click()]); // MKT-2 starts as "Niedrig"
   await expect(page.getByText("Speichert …")).toHaveCount(0);
 
   await page.reload();
@@ -77,7 +77,7 @@ test("rapid successive edits are all saved (no queueing, no loss)", async ({ pag
   await expect(page.getByRole("button", { name: "Zuständig für MKT-1: Lea" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Fälligkeit von MKT-1" })).toHaveValue("2031-03-01");
   await expect(page.getByRole("button", { name: "Status von MKT-1: Review" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Priorität von MKT-2: Niedrig" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Priorität von MKT-2: Mittel" })).toBeVisible();
 });
 
 test("ticket write endpoints reject foreign origins (CSRF)", async ({ page }) => {
