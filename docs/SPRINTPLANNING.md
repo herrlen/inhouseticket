@@ -48,6 +48,15 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [ ] P2 Mehrfachauswahl + Bulk-Aktionen
 - [ ] P2 Aktivitätslog
 
+## Sprint 3b – Geschlossene Beta live (entschieden 2026-10-04)
+**Ziel:** inhouseticket.com läuft, nur für freigegebene Firmen-Domains.
+- [ ] P1 Deploy-Pipeline: GitHub Actions baut Image (GHCR), mittwald-Stack auf dem Space-Server (App + Postgres), Migrationen
+- [ ] P1 vHost `inhouseticket.com` (+ `www` → 301), Let's Encrypt
+- [ ] P1 SMTP über `no-reply@inhouseticket.com` (Passwort trägt Len in mittwald ein), Reply-To `hello@`
+- [ ] P1 Beta-Freigabeliste für Domains (Registrierung nur für gelistete Domains), `noindex`
+- [ ] P1 Schlanke Seiten Impressum + Datenschutz (Inhalte von Len freigegeben)
+- [ ] P2 Automatisches Deploy nach grüner CI auf `main`, Health-Check von außen
+
 ## Sprint 4 – Kanban
 **Ziel:** Board mit flüssigem Drag & Drop.
 - [ ] P1 Board mit Spalten = Status (dnd-kit)
