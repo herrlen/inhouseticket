@@ -97,13 +97,13 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 
 ## Sprint 8 – API & MCP-Server
 **Ziel:** Claude kann mit inhouseticket arbeiten.
-- [ ] P1 Persönliche API-Tokens (erstellen, widerrufen, gehasht)
-- [ ] P1 MCP-Endpunkt `/mcp` (Streamable HTTP)
-- [ ] P1 Tools: `list_projects`, `search_tickets`, `get_ticket`, `create_ticket`, `update_ticket`
-- [ ] P2 Tools: `add_comment`, `toggle_subtask`, `get_workload`, `list_members`
-- [ ] P2 Rate-Limits, Aktivitätslog „via Claude“
-- [ ] P2 Doku-Seite „Mit Claude verbinden“ (inkl. Config-Snippet)
-- [ ] P3 OAuth 2.1 vorbereiten (Connector in claude.ai)
+- [x] P1 Persönliche API-Tokens (erstellen, widerrufen, gehasht; einmalig angezeigt, max. 10 aktive pro Person)
+- [x] P1 MCP-Endpunkt `/mcp` (Streamable HTTP, zustandslos, JSON; Bearer-Token)
+- [x] P1 Tools: `list_projects`, `search_tickets`, `get_ticket`, `create_ticket`, `update_ticket` (Präfix `inhouseticket_`)
+- [x] P2 Tools: `add_comment`, `toggle_subtask`, `get_workload`, `list_members`
+- [x] P2 Rate-Limits (120 Anfragen/min pro Token, im Speicher – reicht für einen Container), Aktivitätslog „via Claude“
+- [x] P2 Seite „Mit Claude verbinden“ (Token, Config-Snippets für Claude Code und Claude Desktop, Beispiele)
+- [ ] P3 OAuth 2.1 vorbereiten (Connector in claude.ai) → Backlog; ohne OAuth funktionieren Claude Code und Claude Desktop (über `mcp-remote`)
 
 ## Sprint 9 – Polish, Recht, Launch
 **Ziel:** Live auf inhouseticket.com.

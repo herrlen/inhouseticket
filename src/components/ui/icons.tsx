@@ -49,4 +49,5 @@ export const CheckSquare = (p: IconProps) => <Svg {...p}><rect x="2.5" y="2.5" w
 export const CommentIcon = (p: IconProps) => <Svg {...p}><path d="M3 3.5h10a1 1 0 011 1v6a1 1 0 01-1 1H7l-3 2.5v-2.5H3a1 1 0 01-1-1v-6a1 1 0 011-1z" /></Svg>;
 export const Paperclip = (p: IconProps) => <Svg {...p}><path d="M10.5 5l-4.6 4.6a1.2 1.2 0 001.7 1.7L12.5 6.4a2.5 2.5 0 00-3.5-3.5L4 7.9a3.7 3.7 0 005.3 5.3l3.2-3.2" /></Svg>;
 export const InboxIcon = (p: IconProps) => <Svg {...p}><path d="M2.5 9.5l1.6-5.2A1 1 0 015 3.5h6a1 1 0 01.9.8l1.6 5.2v3a1 1 0 01-1 1h-9a1 1 0 01-1-1z" /><path d="M2.5 9.5h3l1 1.5h3l1-1.5h3" /></Svg>;
+export const Sparkle = (p: IconProps) => <Svg {...p}><path d="M8 2v3M8 11v3M2 8h3M11 8h3M4.2 4.2l1.6 1.6M10.2 10.2l1.6 1.6M4.2 11.8l1.6-1.6M10.2 5.8l1.6-1.6" /></Svg>;
 export const Chart = (p: IconProps) => <Svg {...p}><path d="M2.5 13.5h11M4.5 11V8M8 11V4.5M11.5 11V7" /></Svg>;

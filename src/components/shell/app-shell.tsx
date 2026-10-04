@@ -10,7 +10,7 @@ import { Explorer, type ExplorerData } from "@/components/explorer/explorer";
 import { Avatar } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
 import { Dropdown } from "@/components/ui/dropdown";
-import { Chart, CheckSquare, Home, InboxIcon, Menu, Sidebar as SidebarIcon, Users } from "@/components/ui/icons";
+import { Chart, CheckSquare, Home, InboxIcon, Menu, Sidebar as SidebarIcon, Sparkle, Users } from "@/components/ui/icons";
 import { ToastProvider } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
@@ -166,12 +166,14 @@ function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: 
   const me = `${home}/me`;
   const inbox = `${home}/inbox`;
   const dashboard = `${home}/dashboard`;
+  const claude = `${home}/settings/claude`;
   const nav: Array<{ href: string; label: string; icon: ReactNode; active: boolean; badge?: number; aria?: string }> = [
     { href: me, label: de.me.title, icon: <CheckSquare />, active: pathname === me },
     { href: inbox, label: de.inbox.title, icon: <InboxIcon />, active: pathname === inbox, badge: unread, aria: de.inbox.navLabel(unread) },
     { href: dashboard, label: de.dashboard.title, icon: <Chart />, active: pathname === dashboard },
     { href: home, label: de.shell.overview, icon: <Home />, active: pathname === home },
     ...(shell.canAdmin ? [{ href: members, label: de.members.title, icon: <Users />, active: pathname.startsWith(members) }] : []),
+    { href: claude, label: de.claude.navLabel, icon: <Sparkle />, active: pathname === claude },
   ];
 
   return (
@@ -335,6 +337,7 @@ function Topbar({
         triggerClassName="flex size-8 items-center justify-center rounded-full hover:ring-2 hover:ring-border"
         items={[
           ...(shell.canAdmin ? [{ label: de.members.title, onSelect: () => router.push(`/${shell.slug}/settings/members`) }] : []),
+          { label: de.claude.title, onSelect: () => router.push(`/${shell.slug}/settings/claude`) },
           { label: de.shell.switchWorkspace, onSelect: () => router.push("/start") },
           { label: confetti ? de.shell.confettiOff : de.shell.confettiOn, onSelect: onToggleConfetti },
           { label: de.command.shortcuts, onSelect: onShowHelp },
