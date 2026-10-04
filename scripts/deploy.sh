@@ -75,7 +75,7 @@ BETA="${BETA_ALLOWED_DOMAINS:-$(env_of app BETA_ALLOWED_DOMAINS)}"
 } >"$ENVFILE"
 
 schritt "Ausrollen ($TAG)"
-mw stack deploy -s "$STACK" -c infra/mittwald-stack.yml --env-file "$ENVFILE" -q "${FORCE[@]}" >/dev/null
+mw stack deploy -s "$STACK" -c infra/mittwald-stack.yml --env-file "$ENVFILE" -q ${FORCE[@]+"${FORCE[@]}"} >/dev/null
 rm -f "$ENVFILE"
 
 schritt "Prüfen"
