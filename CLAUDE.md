@@ -30,6 +30,7 @@ pnpm db:up          # Postgres 16 (Port 5442) + Mailpit (8025) per docker compos
 pnpm db:generate    # Drizzle Migration erzeugen
 pnpm db:migrate     # Migration ausführen
 pnpm db:studio      # Drizzle Studio
+scripts/deploy.sh   # Ausrollen auf mittwald (Details: docs/betrieb.md)
 ```
 
 ## Ordnerstruktur
