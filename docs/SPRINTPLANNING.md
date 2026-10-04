@@ -30,12 +30,12 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 
 ## Sprint 2 – App-Shell & Explorer
 **Ziel:** Navigation steht, Projekte anlegbar.
-- [ ] P1 Layout: Sidebar, Topbar, Content, Slide-Over-Container
-- [ ] P1 Explorer: Ordner → Projekte, auf/zuklappen, komplett einklappbar (`Cmd+B`)
-- [ ] P1 Projekt CRUD: Name, Key, Farbe (12er-Palette), Icon, Archivieren
-- [ ] P2 Ordner CRUD, Drag & Drop Sortierung
-- [ ] P2 Favoriten, User-Prefs persistieren
-- [ ] P2 Standard-Status je Projekt anlegen, Status editierbar
+- [x] P1 Layout: Sidebar, Topbar, Content, Slide-Over-Container
+- [x] P1 Explorer: Ordner → Projekte, auf/zuklappen, komplett einklappbar (`Cmd+B`)
+- [x] P1 Projekt CRUD: Name, Key, Farbe (12er-Palette), Icon, Archivieren
+- [x] P2 Ordner CRUD, Drag & Drop Sortierung
+- [x] P2 Favoriten, User-Prefs persistieren
+- [x] P2 Standard-Status je Projekt anlegen, Status editierbar
 
 ## Sprint 3 – Tickets & Listenansicht
 **Ziel:** Tickets anlegen, bearbeiten, in Liste sehen.

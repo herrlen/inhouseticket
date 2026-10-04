@@ -129,10 +129,12 @@ export async function listStatuses(workspaceId: string, projectId: string) {
       category: status.category,
       sort: status.sort,
       wipLimit: status.wipLimit,
-      ticketCount: sql<number>`(select count(*) from ${ticket} where ${ticket.statusId} = ${status.id})`.mapWith(Number),
+      ticketCount: count(ticket.id),
     })
     .from(status)
+    .leftJoin(ticket, eq(ticket.statusId, status.id))
     .where(and(eq(status.workspaceId, workspaceId), eq(status.projectId, projectId)))
+    .groupBy(status.id)
     .orderBy(asc(status.sort));
 }
 

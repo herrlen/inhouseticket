@@ -83,7 +83,8 @@ export async function setProjectArchivedAction(formData: FormData) {
   const archived = formData.get("archived") === "true";
   await updateProject(ctx.workspace.id, projectId, { archivedAt: archived ? new Date() : null });
   refresh(ctx.workspace.slug);
-  if (archived) redirect(`/${ctx.workspace.slug}`);
+  // Only the settings page form asks for a redirect; the sidebar shows an undo toast instead.
+  if (archived && formData.get("redirect") === "true") redirect(`/${ctx.workspace.slug}`);
 }
 
 const moveProjectInput = z.object({ workspaceId: id, projectId: id, folderId: id.nullable(), sort: sortKey });

@@ -35,14 +35,13 @@ export async function getExplorer(workspaceId: string, userId: string) {
         folderId: project.folderId,
         sort: project.sort,
         // Open = not in a "done" status.
-        openCount: sql<number>`(
-          select count(*) from ${ticket}
-          inner join ${status} on ${status.id} = ${ticket.statusId}
-          where ${ticket.projectId} = ${project.id} and ${ticket.workspaceId} = ${workspaceId} and ${status.category} <> 'done'
-        )`.mapWith(Number),
+        openCount: sql<number>`count(${ticket.id}) filter (where ${status.category} <> 'done')`.mapWith(Number),
       })
       .from(project)
+      .leftJoin(ticket, and(eq(ticket.projectId, project.id), eq(ticket.workspaceId, workspaceId)))
+      .leftJoin(status, eq(status.id, ticket.statusId))
       .where(and(eq(project.workspaceId, workspaceId), isNull(project.archivedAt)))
+      .groupBy(project.id)
       .orderBy(asc(project.sort)),
     getPrefs(workspaceId, userId),
   ]);

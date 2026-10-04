@@ -36,14 +36,16 @@ export async function inviteAction(_: ActionState, formData: FormData): Promise<
   return result.invited.length ? { success: notes.join(" ") } : { error: notes.join(" ") };
 }
 
-export async function changeRoleAction(formData: FormData) {
+export async function changeRoleAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const { workspaceId } = workspaceRef.parse({ workspaceId: formData.get("workspaceId") });
   const ctx = await requireRole({ workspaceId }, "owner");
-  const input = roleChangeSchema.parse({ membershipId: formData.get("membershipId"), role: formData.get("role") });
-  const target = await findMemberInWorkspace(workspaceId, input.membershipId);
-  if (!target || !canChangeRole({ role: ctx.membership.role, userId: ctx.user.id }, target)) return;
-  await setMemberRole(workspaceId, input.membershipId, input.role);
+  const input = roleChangeSchema.safeParse({ membershipId: formData.get("membershipId"), role: formData.get("role") });
+  if (!input.success) return { error: de.common.invalidInput };
+  const target = await findMemberInWorkspace(workspaceId, input.data.membershipId);
+  if (!target || !canChangeRole({ role: ctx.membership.role, userId: ctx.user.id }, target)) return { error: de.members.noPermission };
+  await setMemberRole(workspaceId, input.data.membershipId, input.data.role);
   revalidatePath(path(ctx.workspace.slug));
+  return { success: de.members.roleChanged };
 }
 
 export async function removeMemberAction(formData: FormData) {

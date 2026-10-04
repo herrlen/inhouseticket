@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { waitForHydration } from "./helpers/hydration";
 
 test("home page renders", async ({ page }) => {
   await page.goto("/");
@@ -9,6 +10,8 @@ test("home page renders", async ({ page }) => {
 test.describe("UI primitives preview", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/dev/ui");
+    // Handlers exist only after hydration; under load that can take a moment.
+    await waitForHydration(page.getByRole("button", { name: "Priorität ▾" }));
   });
 
   test("dropdown works with the keyboard only", async ({ page }) => {

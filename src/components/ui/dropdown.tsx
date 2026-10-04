@@ -19,10 +19,12 @@ export type DropdownProps = {
   items: DropdownItem[];
   align?: "start" | "end";
   className?: string;
+  /** Replaces the default bordered trigger style (e.g. for icon-only triggers). */
+  triggerClassName?: string;
 };
 
 /** Menu button (WAI-ARIA APG): Enter/Space/↓ open, ↑/↓/Home/End move, Esc closes, typeahead. */
-export function Dropdown({ trigger, triggerLabel, items, align = "start", className }: DropdownProps) {
+export function Dropdown({ trigger, triggerLabel, items, align = "start", className, triggerClassName }: DropdownProps) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -120,7 +122,10 @@ export function Dropdown({ trigger, triggerLabel, items, align = "start", classN
         aria-label={triggerLabel}
         onClick={() => (open ? close() : openAt(enabled[0]))}
         onKeyDown={onTriggerKeyDown}
-        className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-badge)] border border-border bg-surface px-2.5 text-sm hover:bg-bg"
+        className={
+          triggerClassName ??
+          "inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-badge)] border border-border bg-surface px-2.5 text-sm hover:bg-bg"
+        }
       >
         {trigger}
       </button>
@@ -138,7 +143,7 @@ export function Dropdown({ trigger, triggerLabel, items, align = "start", classN
         >
           {items.map((item, i) => (
             <button
-              key={item.label}
+              key={`${i}-${item.label}`}
               ref={(el) => {
                 itemRefs.current[i] = el;
               }}

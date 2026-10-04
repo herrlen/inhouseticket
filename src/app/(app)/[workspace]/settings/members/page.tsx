@@ -8,8 +8,9 @@ import { requireRole } from "@/lib/authz";
 import { de } from "@/lib/i18n/de";
 import { MAX_USERS_PER_WORKSPACE, USER_WARNING_THRESHOLD } from "@/lib/limits";
 import { canChangeRole, canRemove } from "@/lib/member-permissions";
-import { changeRoleAction, removeMemberAction, revokeInvitationAction, setAutoJoinAction } from "./actions";
+import { removeMemberAction, revokeInvitationAction, setAutoJoinAction } from "./actions";
 import { InviteForm } from "./invite-form";
+import { RoleForm } from "./role-form";
 
 export const metadata: Metadata = { title: "Mitglieder" };
 
@@ -27,7 +28,7 @@ export default async function MembersPage({ params }: Props) {
   const used = seats.active + seats.pending;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="mx-auto flex max-w-4xl flex-col gap-8 p-4 md:p-6">
       <header>
         <h1 className="text-xl font-semibold">{de.members.title}</h1>
         <p className="text-muted">{de.members.seats(seats.active, seats.pending, MAX_USERS_PER_WORKSPACE)}</p>
@@ -64,25 +65,7 @@ export default async function MembersPage({ params }: Props) {
                   <p className="truncate text-[13px] text-muted">{m.email}</p>
                 </div>
                 {canChangeRole(actor, target) ? (
-                  <form action={changeRoleAction} className="flex items-center gap-2">
-                    <input type="hidden" name="workspaceId" value={wsId} />
-                    <input type="hidden" name="membershipId" value={m.membershipId} />
-                    <label className="sr-only" htmlFor={`role-${m.membershipId}`}>
-                      {de.members.roleOf(m.name)}
-                    </label>
-                    <select
-                      id={`role-${m.membershipId}`}
-                      name="role"
-                      defaultValue={m.role}
-                      className="h-8 rounded-[var(--radius-badge)] border border-border bg-surface px-2 text-sm"
-                    >
-                      <option value="member">{de.roles.member}</option>
-                      <option value="admin">{de.roles.admin}</option>
-                    </select>
-                    <Button type="submit" size="sm">
-                      {de.members.save}
-                    </Button>
-                  </form>
+                  <RoleForm workspaceId={wsId} membershipId={m.membershipId} name={m.name} role={m.role === "admin" ? "admin" : "member"} />
                 ) : (
                   <Badge>{de.roles[m.role]}</Badge>
                 )}

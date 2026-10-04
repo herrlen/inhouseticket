@@ -2,18 +2,12 @@
 
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
 import { de } from "@/lib/i18n/de";
-import { PALETTE, PALETTE_COLORS } from "@/lib/palette";
 import { PROJECT_TEMPLATES, TEMPLATE_IDS } from "@/lib/project-templates";
 import { createWorkspaceAction, type OnboardingState } from "./actions";
-
-const swatches: Record<string, string> = {
-  coral: "bg-p-coral", orange: "bg-p-orange", sun: "bg-p-sun", lime: "bg-p-lime", mint: "bg-p-mint",
-  turquoise: "bg-p-turquoise", blue: "bg-p-blue", indigo: "bg-p-indigo", violet: "bg-p-violet",
-  pink: "bg-p-pink", berry: "bg-p-berry", slate: "bg-p-slate",
-};
 
 export function OnboardingForm({ suggestedName }: { suggestedName: string }) {
   const [state, action, pending] = useActionState<OnboardingState, FormData>(createWorkspaceAction, {});
@@ -23,26 +17,7 @@ export function OnboardingForm({ suggestedName }: { suggestedName: string }) {
     <form action={action} className="flex flex-col gap-6">
       <Input name="name" label={de.onboarding.name} defaultValue={suggestedName} maxLength={100} required error={e.name} />
 
-      <fieldset>
-        <legend className="mb-2 text-[13px] font-medium">{de.onboarding.color}</legend>
-        <div className="flex flex-wrap gap-2">
-          {PALETTE_COLORS.map((c) => (
-            <label key={c} className="relative">
-              <input type="radio" name="color" value={PALETTE[c]} defaultChecked={c === "indigo"} className="peer sr-only" />
-              <span className="sr-only">{de.palette[c]}</span>
-              <span
-                aria-hidden
-                className={cn(
-                  "block size-7 cursor-pointer rounded-full ring-offset-2 ring-offset-surface",
-                  "peer-checked:ring-2 peer-checked:ring-text peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4 peer-focus-visible:outline-focus",
-                  swatches[c],
-                )}
-              />
-            </label>
-          ))}
-        </div>
-        {e.color ? <p className="mt-1 text-xs text-prio-urgent-ink">{e.color}</p> : null}
-      </fieldset>
+      <ColorPicker name="color" legend={de.onboarding.color} error={e.color} />
 
       <fieldset>
         <legend className="mb-2 text-[13px] font-medium">{de.onboarding.template}</legend>

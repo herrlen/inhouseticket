@@ -12,9 +12,11 @@ export type InputProps = Omit<ComponentProps<"input">, "id"> & {
   error?: string;
   /** Shows a live counter "n/max" when maxLength is set (KONZEPT §5.5). */
   showCounter?: boolean;
+  /** Extra classes for the <input> itself (className styles the wrapper). */
+  inputClassName?: string;
 };
 
-export function Input({ label, hideLabel, hint, error, showCounter, maxLength, className, onChange, ...props }: InputProps) {
+export function Input({ label, hideLabel, hint, error, showCounter, maxLength, className, inputClassName, onChange, ...props }: InputProps) {
   const id = useId();
   const initial = String(props.value ?? props.defaultValue ?? "");
   const [count, setCount] = useState(initial.length);
@@ -40,6 +42,7 @@ export function Input({ label, hideLabel, hint, error, showCounter, maxLength, c
         className={cn(
           "h-9 rounded-[var(--radius-badge)] border bg-surface px-3 text-sm text-text placeholder:text-muted",
           error ? "border-prio-urgent-ink" : "border-border",
+          inputClassName,
         )}
         {...props}
       />
