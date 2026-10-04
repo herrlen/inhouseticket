@@ -16,6 +16,7 @@ env:
   SMTP_HOST: localhost
   SMTP_PORT: "1025"
   MAIL_FROM: "inhouseticket <no-reply@inhouseticket.com>"
+  MAIL_REPLY_TO: hello@inhouseticket.com
 
 jobs:
   check:
