@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { createWorkspace, uniqueDomain } from "./helpers/auth";
 import { waitForHydration } from "./helpers/hydration";
+import { ticketSaved } from "./helpers/saved";
 
 async function openProject(page: Page, label: string) {
   const path = await createWorkspace(page, `lea.becker@${uniqueDomain(label)}`, `${label} GmbH`);
@@ -78,7 +79,7 @@ test("my tasks across projects, grouped by due date", async ({ page }) => {
   for (const [key, date] of [["MKT-1", berlinDate(-2)], ["MKT-2", berlinDate(0)]] as const) {
     await page.getByRole("button", { name: new RegExp(`^Zuständig für ${key}`) }).click();
     await page.getByRole("menuitem", { name: /Lea Becker \(du\)/ }).click();
-    await page.getByRole("textbox", { name: `Fälligkeit von ${key}` }).fill(date);
+    await Promise.all([ticketSaved(page), page.getByRole("textbox", { name: `Fälligkeit von ${key}` }).fill(date)]);
   }
   await expect(page.getByText("Speichert …")).toHaveCount(0);
   await page.getByRole("link", { name: "Meine Aufgaben" }).click();

@@ -87,13 +87,13 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 
 ## Sprint 7 – Dashboard & Benachrichtigungen
 **Ziel:** Überblick über Auslastung.
-- [ ] P1 Auslastung pro User (gewichtet nach Priorität), Überlast-Ampel
-- [ ] P1 Überfällige Tickets pro User/Projekt
-- [ ] P1 Projekt-Gesundheit
-- [ ] P2 Durchsatz (8 Wochen), Fälligkeits-Heatmap 14 Tage
-- [ ] P2 Kacheln klickbar → gefilterte Liste
-- [ ] P2 In-App-Inbox + täglicher E-Mail-Digest
-- [ ] P3 Realtime via SSE auf Board/Liste
+- [x] P1 Auslastung pro User (gewichtet nach Priorität), Überlast-Ampel
+- [x] P1 Überfällige Tickets pro User/Projekt
+- [x] P1 Projekt-Gesundheit
+- [x] P2 Durchsatz (8 Wochen), Fälligkeits-Heatmap 14 Tage
+- [x] P2 Kacheln klickbar → gefilterte Liste
+- [x] P2 In-App-Inbox + täglicher E-Mail-Digest
+- [x] P3 Realtime: vorerst Polling alle 30 s bei sichtbarem Tab (SSE zurückgestellt, Backlog)
 
 ## Sprint 8 – API & MCP-Server
 **Ziel:** Claude kann mit inhouseticket arbeiten.
@@ -131,6 +131,7 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - SSO (Google Workspace / Microsoft Entra) als möglicher Pro-Plan
 - Subdomain pro Workspace (`firma.inhouseticket.com`) als mögliche Pro-Option – braucht Wildcard-DNS/-Zertifikat
 - Englische UI
+- Realtime per Server-Sent Events statt 30-s-Polling
 
 ## Risiken
 | Risiko | Gegenmaßnahme |

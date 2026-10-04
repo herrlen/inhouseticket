@@ -2,29 +2,34 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { dueBucket, formatDue, todayInBerlin, type DueBucket } from "@/components/tickets/list-model";
 import { PriorityIcon } from "@/components/tickets/pickers";
-import { listMyTasks, type MyTask } from "@/db/queries/tickets";
+import { listAssignableMembers, listMyTasks, type MyTask } from "@/db/queries/tickets";
 import { requireMember } from "@/lib/authz";
 import { cn } from "@/lib/cn";
 import { de } from "@/lib/i18n/de";
 
 export const metadata: Metadata = { title: "Meine Aufgaben" };
 
-type Props = { params: Promise<{ workspace: string }> };
+type Props = { params: Promise<{ workspace: string }>; searchParams: Promise<{ user?: string; project?: string }> };
 
 const ORDER: DueBucket[] = ["overdue", "today", "week", "later", "none"];
 const PRIORITY_KEYS = ["none", "low", "medium", "high", "urgent"] as const;
 
-export default async function MyTasksPage({ params }: Props) {
+export default async function MyTasksPage({ params, searchParams }: Props) {
   const { workspace: slug } = await params;
+  const { user: userParam, project: projectKey } = await searchParams;
   const ctx = await requireMember({ slug });
-  const tasks = await listMyTasks(ctx.workspace.id, ctx.user.id);
+  // ?user= shows someone else's open tickets (from the dashboard); only members of this workspace.
+  const members = userParam && userParam !== ctx.user.id ? await listAssignableMembers(ctx.workspace.id) : [];
+  const other = members.find((m) => m.id === userParam) ?? null;
+  const all = await listMyTasks(ctx.workspace.id, other?.id ?? ctx.user.id);
+  const tasks = projectKey ? all.filter((t) => t.projectKey === projectKey) : all;
   const today = todayInBerlin();
   const groups = ORDER.map((bucket) => ({ bucket, tasks: tasks.filter((t) => dueBucket(t.dueDate, today) === bucket) })).filter((g) => g.tasks.length > 0);
 
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-6">
-      <h1 className="mb-1 text-xl font-semibold">{de.me.title}</h1>
-      <p className="mb-6 text-muted">{tasks.length === 0 ? de.me.empty : de.me.count(tasks.length)}</p>
+      <h1 className="mb-1 text-xl font-semibold">{other ? de.me.titleOf(other.name) : de.me.title}</h1>
+      <p className="mb-6 text-muted">{tasks.length === 0 ? (other ? de.me.emptyOther : de.me.empty) : de.me.count(tasks.length)}</p>
       {groups.map((g) => (
         <section key={g.bucket} aria-labelledby={`me-${g.bucket}`} className="mb-6">
           <h2 id={`me-${g.bucket}`} className={cn("mb-2 text-[13px] font-semibold", g.bucket === "overdue" && "text-prio-urgent-ink")}>

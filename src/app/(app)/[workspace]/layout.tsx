@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/shell/app-shell";
 import { getExplorer } from "@/db/queries/explorer";
+import { unreadCount } from "@/db/queries/notifications";
 import { hasRole, requireMember } from "@/lib/authz";
 
 type Props = { children: React.ReactNode; params: Promise<{ workspace: string }> };
@@ -7,7 +8,7 @@ type Props = { children: React.ReactNode; params: Promise<{ workspace: string }>
 export default async function WorkspaceLayout({ children, params }: Props) {
   const { workspace: slug } = await params;
   const ctx = await requireMember({ slug });
-  const { folders, projects, prefs } = await getExplorer(ctx.workspace.id, ctx.user.id);
+  const [{ folders, projects, prefs }, unread] = await Promise.all([getExplorer(ctx.workspace.id, ctx.user.id), unreadCount(ctx.workspace.id, ctx.user.id)]);
 
   return (
     <AppShell
@@ -28,6 +29,7 @@ export default async function WorkspaceLayout({ children, params }: Props) {
       }}
       initialCollapsed={prefs.sidebarCollapsed}
       initialConfetti={prefs.confetti}
+      unread={unread}
     >
       {children}
     </AppShell>

@@ -10,7 +10,7 @@ import { Explorer, type ExplorerData } from "@/components/explorer/explorer";
 import { Avatar } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
 import { Dropdown } from "@/components/ui/dropdown";
-import { CheckSquare, Home, Menu, Sidebar as SidebarIcon, Users } from "@/components/ui/icons";
+import { Chart, CheckSquare, Home, InboxIcon, Menu, Sidebar as SidebarIcon, Users } from "@/components/ui/icons";
 import { ToastProvider } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
@@ -25,6 +25,7 @@ type Props = {
   explorer: ExplorerData;
   initialCollapsed: boolean;
   initialConfetti: boolean;
+  unread: number;
   children: ReactNode;
 };
 
@@ -42,7 +43,7 @@ function useShortcutLabel() {
   );
 }
 
-export function AppShell({ shell, user, explorer, initialCollapsed, initialConfetti, children }: Props) {
+export function AppShell({ shell, user, explorer, initialCollapsed, initialConfetti, unread, children }: Props) {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const [, startTransition] = useTransition();
   const [confetti, setConfettiState] = useState(initialConfetti);
@@ -122,7 +123,7 @@ export function AppShell({ shell, user, explorer, initialCollapsed, initialConfe
               collapsed ? "w-14" : "w-60",
             )}
           >
-            <SidebarContent collapsed={collapsed} explorer={explorer} onToggle={toggle} />
+            <SidebarContent collapsed={collapsed} explorer={explorer} unread={unread} onToggle={toggle} />
           </aside>
 
           <div className="flex min-w-0 flex-1 flex-col">
@@ -146,7 +147,7 @@ export function AppShell({ shell, user, explorer, initialCollapsed, initialConfe
         ) : null}
         {helpOpen ? <ShortcutHelp open onClose={() => setHelpOpen(false)} /> : null}
         <Dialog open={drawer} onClose={() => setDrawer(false)} title={de.shell.sidebar} hideTitle placement="left" className="md:hidden">
-          <SidebarContent collapsed={false} explorer={explorer} />
+          <SidebarContent collapsed={false} explorer={explorer} unread={unread} />
         </Dialog>
       </ToastProvider>
       </PrefsProvider>
@@ -155,7 +156,7 @@ export function AppShell({ shell, user, explorer, initialCollapsed, initialConfe
   );
 }
 
-function SidebarContent({ collapsed, explorer, onToggle }: { collapsed: boolean; explorer: ExplorerData; onToggle?: () => void }) {
+function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: boolean; explorer: ExplorerData; unread: number; onToggle?: () => void }) {
   const shell = useShell();
   const pathname = usePathname();
   const home = `/${shell.slug}`;
@@ -163,8 +164,12 @@ function SidebarContent({ collapsed, explorer, onToggle }: { collapsed: boolean;
   const shortcut = useShortcutLabel();
 
   const me = `${home}/me`;
-  const nav = [
+  const inbox = `${home}/inbox`;
+  const dashboard = `${home}/dashboard`;
+  const nav: Array<{ href: string; label: string; icon: ReactNode; active: boolean; badge?: number; aria?: string }> = [
     { href: me, label: de.me.title, icon: <CheckSquare />, active: pathname === me },
+    { href: inbox, label: de.inbox.title, icon: <InboxIcon />, active: pathname === inbox, badge: unread, aria: de.inbox.navLabel(unread) },
+    { href: dashboard, label: de.dashboard.title, icon: <Chart />, active: pathname === dashboard },
     { href: home, label: de.shell.overview, icon: <Home />, active: pathname === home },
     ...(shell.canAdmin ? [{ href: members, label: de.members.title, icon: <Users />, active: pathname.startsWith(members) }] : []),
   ];
@@ -182,22 +187,25 @@ function SidebarContent({ collapsed, explorer, onToggle }: { collapsed: boolean;
             <Tooltip key={item.href} content={item.label} side="bottom">
               <Link
                 href={item.href}
-                aria-label={item.label}
+                aria-label={item.aria ?? item.label}
                 aria-current={item.active ? "page" : undefined}
-                className={cn("flex size-10 items-center justify-center rounded-[var(--radius-badge)] text-muted hover:bg-bg hover:text-text", item.active && "bg-bg text-text")}
+                className={cn("relative flex size-10 items-center justify-center rounded-[var(--radius-badge)] text-muted hover:bg-bg hover:text-text", item.active && "bg-bg text-text")}
               >
                 {item.icon}
+                {item.badge ? <span aria-hidden className="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent" /> : null}
               </Link>
             </Tooltip>
           ) : (
             <Link
               key={item.href}
               href={item.href}
+              aria-label={item.aria}
               aria-current={item.active ? "page" : undefined}
               className={cn("flex h-8 items-center gap-2 rounded-[var(--radius-badge)] px-2 text-[13px] hover:bg-bg", item.active && "bg-bg font-medium")}
             >
               <span className="text-muted">{item.icon}</span>
               {item.label}
+              {item.badge ? <span aria-hidden className="ml-auto rounded-full bg-accent px-1.5 text-[11px] font-medium text-accent-contrast tabular-nums">{item.badge}</span> : null}
             </Link>
           ),
         )}
@@ -356,6 +364,10 @@ function useBreadcrumb(explorer: ExplorerData): Crumb[] {
     if (rest[2] === "settings") crumbs.push({ label: de.explorer.settings });
   } else if (rest[0] === "me") {
     crumbs.push({ label: de.me.title });
+  } else if (rest[0] === "inbox") {
+    crumbs.push({ label: de.inbox.title });
+  } else if (rest[0] === "dashboard") {
+    crumbs.push({ label: de.dashboard.title });
   } else if (rest[0] === "settings" && rest[1] === "members") {
     crumbs.push({ label: de.members.title });
   } else if (rest.length === 0) {

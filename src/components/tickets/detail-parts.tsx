@@ -11,6 +11,7 @@ import { Markdown } from "@/components/ui/markdown";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 import { shrinkImage } from "@/lib/compress-image";
+import { relativeTime } from "@/lib/relative-time";
 import { de } from "@/lib/i18n/de";
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_TICKET, MAX_COMMENT, MAX_DESCRIPTION, MAX_SUBTASKS, MAX_TITLE } from "@/lib/limits";
 import { useProjectInfo } from "./context";
@@ -288,16 +289,6 @@ export function Attachments({ workspaceId, ticketId, attachments, actions }: { w
 // ---------------------------------------------------------------------------
 // Comments with @mentions
 // ---------------------------------------------------------------------------
-
-const rtf = new Intl.RelativeTimeFormat("de-DE", { numeric: "auto" });
-export function relativeTime(iso: string): string {
-  const s = Math.round((new Date(iso).getTime() - Date.now()) / 1000);
-  const abs = Math.abs(s);
-  if (abs < 60) return rtf.format(s, "second");
-  if (abs < 3600) return rtf.format(Math.round(s / 60), "minute");
-  if (abs < 86400) return rtf.format(Math.round(s / 3600), "hour");
-  return rtf.format(Math.round(s / 86400), "day");
-}
 
 export function Comments({ comments, actions }: { comments: CommentRow[]; actions: Actions }) {
   const { currentUserId } = useProjectInfo();

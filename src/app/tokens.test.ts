@@ -70,6 +70,15 @@ it.each(Object.entries(PALETTE))("palette.ts %s matches --p-%s in globals.css", 
   expect(resolve(light, `p-${name}`).toUpperCase()).toBe(hex);
 });
 
+describe.each([
+  ["light", light],
+  ["dark", dark],
+] as const)("%s heatmap", (_, vars) => {
+  it.each([1, 2, 3, 4, 5])("text on heat step %i reaches 4.5:1", (step) => {
+    expect(contrast(resolve(vars, `heat-ink-${step}`), resolve(vars, `heat-${step}`))).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
 it("OS dark mode and data-theme=dark define the same values", () => {
   expect(darkMedia).toEqual(darkAttr);
 });

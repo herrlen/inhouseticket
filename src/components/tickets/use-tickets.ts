@@ -30,6 +30,9 @@ export function useTickets(workspaceId: string, projectId: string, initialData: 
     queryKey: ticketsKey(projectId),
     queryFn: () => getJson<TicketRow[]>(`/api/w/${workspaceId}/projects/${projectId}/tickets`),
     initialData,
+    // Light "realtime": refresh every 30 s while the tab is visible (SSE deferred, Sprint 7 P3).
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
   });
 }
 

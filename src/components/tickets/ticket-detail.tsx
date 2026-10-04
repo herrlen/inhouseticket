@@ -5,6 +5,7 @@ import { createLabelAction } from "@/app/(app)/[workspace]/ticket-actions";
 import type { ActivityRow, LabelRow, TicketRow } from "@/db/queries/tickets";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
+import { relativeTime } from "@/lib/relative-time";
 import { de } from "@/lib/i18n/de";
 import { MAX_TITLE } from "@/lib/limits";
 import { PALETTE } from "@/lib/palette";
@@ -268,17 +269,6 @@ function LabelEditor({ workspaceId, ticket, onChange, onCreated }: { workspaceId
   );
 }
 
-const rtf = new Intl.RelativeTimeFormat("de-DE", { numeric: "auto" });
-
-function relative(iso: string): string {
-  const s = Math.round((new Date(iso).getTime() - Date.now()) / 1000);
-  const abs = Math.abs(s);
-  if (abs < 60) return rtf.format(Math.round(s), "second");
-  if (abs < 3600) return rtf.format(Math.round(s / 60), "minute");
-  if (abs < 86400) return rtf.format(Math.round(s / 3600), "hour");
-  return rtf.format(Math.round(s / 86400), "day");
-}
-
 function describe(a: ActivityRow): string {
   const p = a.payload as Record<string, unknown>;
   const str = (v: unknown) => (v === null || v === undefined || v === "" ? "–" : String(v));
@@ -311,7 +301,7 @@ function Activity({ workspaceId, ticketId }: { workspaceId: string; ticketId: st
           <li key={a.id}>
             <span className="font-medium">{a.actorName ?? de.activity.someone}</span> {describe(a)}
             {a.via === "mcp" ? <span className="text-muted"> {de.activity.viaClaude}</span> : null}
-            <span className="text-muted"> · <time dateTime={a.createdAt}>{relative(a.createdAt)}</time></span>
+            <span className="text-muted"> · <time dateTime={a.createdAt}>{relativeTime(a.createdAt)}</time></span>
           </li>
         ))}
       </ol>

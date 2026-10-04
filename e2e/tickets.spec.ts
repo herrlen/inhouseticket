@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { createWorkspace, uniqueDomain } from "./helpers/auth";
 import { waitForHydration } from "./helpers/hydration";
+import { ticketSaved } from "./helpers/saved";
 
 const table = (page: Page) => page.getByRole("table", { name: /Tickets in/ });
 const row = (page: Page, key: string) => table(page).locator("tr", { has: page.getByText(key, { exact: true }) });
@@ -43,7 +44,7 @@ test("create with C, counter, inline edits persist", async ({ page }) => {
 
   // Status change moves the ticket to another group and updates the sidebar count.
   await page.getByRole("button", { name: /^Status von MKT-4/ }).click();
-  await page.getByRole("menuitem", { name: "Erledigt" }).click();
+  await Promise.all([ticketSaved(page), page.getByRole("menuitem", { name: "Erledigt" }).click()]);
   await expect(page.getByRole("button", { name: "Status von MKT-4: Erledigt" })).toBeVisible();
   // Everything saved before leaving (the page shows "Speichert …" while requests are in flight).
   await expect(page.getByText("Speichert …")).toHaveCount(0);
@@ -68,7 +69,7 @@ test("rapid successive edits are all saved (no queueing, no loss)", async ({ pag
   await page.getByRole("button", { name: /^Status von MKT-1/ }).click();
   await page.getByRole("menuitem", { name: "Review" }).click();
   await page.getByRole("button", { name: /^Priorität von MKT-2/ }).click();
-  await page.getByRole("menuitem", { name: "Niedrig" }).click();
+  await Promise.all([ticketSaved(page), page.getByRole("menuitem", { name: "Niedrig" }).click()]);
   await expect(page.getByText("Speichert …")).toHaveCount(0);
 
   await page.reload();

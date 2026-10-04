@@ -7,6 +7,7 @@ import { db } from "@/db/client";
 import { getPrefs, lastFolderSort, lastProjectSort, updatePrefs } from "@/db/queries/explorer";
 import { createFolder, deleteFolder, folderExists, moveFolder, renameFolder } from "@/db/queries/folders";
 import { createSavedView, deleteSavedView, type SavedViewRow } from "@/db/queries/views";
+import { markRead, setEmailDigest } from "@/db/queries/notifications";
 import {
   createProjectWithDefaults,
   createStatus,
@@ -18,6 +19,8 @@ import {
   updateStatus,
 } from "@/db/queries/projects";
 import { hasRole, requireMember, requireRole } from "@/lib/authz";
+import { workspace as workspaceTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { keyBetween } from "@/lib/fractional";
 import { de } from "@/lib/i18n/de";
 import { createProjectSchema, folderNameSchema, statusSchema, updateProjectSchema } from "@/lib/validation/project";
@@ -256,4 +259,38 @@ export async function deleteSavedViewAction(input: { workspaceId: string; viewId
   const ctx = await requireMember({ workspaceId: parsed.data.workspaceId });
   await deleteSavedView(ctx.workspace.id, ctx.user.id, parsed.data.viewId);
   return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard settings
+// ---------------------------------------------------------------------------
+
+export async function setWorkloadThresholdAction(formData: FormData) {
+  const ctx = await requireRole({ workspaceId: id.parse(formData.get("workspaceId")) }, "admin");
+  const threshold = z.coerce.number().int().min(1).max(999).safeParse(formData.get("threshold"));
+  if (threshold.success) {
+    await db.update(workspaceTable).set({ workloadThreshold: threshold.data }).where(eq(workspaceTable.id, ctx.workspace.id));
+  }
+  const back = String(formData.get("redirectTo") ?? "");
+  refresh(ctx.workspace.slug);
+  redirect(back.startsWith(`/${ctx.workspace.slug}/`) ? back : `/${ctx.workspace.slug}/dashboard`);
+}
+
+// ---------------------------------------------------------------------------
+// Inbox
+// ---------------------------------------------------------------------------
+
+export async function markNotificationsReadAction(input: { workspaceId: string; ids?: string[] }): Promise<Result> {
+  const parsed = z.object({ workspaceId: id, ids: z.array(id).max(200).optional() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: de.common.invalidInput };
+  const ctx = await requireMember({ workspaceId: parsed.data.workspaceId });
+  await markRead(ctx.workspace.id, ctx.user.id, parsed.data.ids);
+  refresh(ctx.workspace.slug);
+  return { ok: true };
+}
+
+export async function setEmailDigestAction(formData: FormData) {
+  const ctx = await requireMember({ workspaceId: id.parse(formData.get("workspaceId")) });
+  await setEmailDigest(ctx.workspace.id, ctx.user.id, formData.get("on") === "true");
+  refresh(ctx.workspace.slug);
 }

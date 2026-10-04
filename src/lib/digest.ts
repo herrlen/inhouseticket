@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { env } from "@/lib/env";
 import { sendMail } from "@/lib/mail";
+import { describeNotification } from "@/lib/notification-text";
 
 // Daily e-mail digest (KONZEPT §2.8): one mail per person and workspace with what happened in the
 // last 24 hours, plus "due tomorrow" reminders. No per-event mail flood. Idempotent per day:
@@ -17,25 +18,6 @@ function berlin(now: Date) {
 }
 
 const escape = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
-
-type Line = { type: string; actor: string | null; key: string | null; title: string | null; payload: Record<string, unknown> };
-
-export function describeNotification(l: Line): string {
-  const who = l.actor ?? "Jemand";
-  const what = l.key ? `${l.key} „${l.title ?? ""}“` : "ein Ticket";
-  switch (l.type) {
-    case "assigned":
-      return `${who} hat dir ${what} zugewiesen`;
-    case "mention":
-      return `${who} hat dich in ${what} erwähnt`;
-    case "status":
-      return `${who} hat ${what} auf „${String(l.payload.to ?? "")}“ gesetzt`;
-    case "due_tomorrow":
-      return `${what} ist morgen fällig`;
-    default:
-      return `Neues in ${what}`;
-  }
-}
 
 export async function runDailyDigest(now = new Date(), opts: { force?: boolean } = {}) {
   const { date: today, hour } = berlin(now);
@@ -60,7 +42,7 @@ export async function runDailyDigest(now = new Date(), opts: { force?: boolean }
     returning id`);
 
   // 2) Recipients with unread news from the last 24 h who did not get today's digest yet.
-  const candidates = await db.execute<{ user_id: string; workspace_id: string; email: string; name: string; ws_name: string; ws_slug: string }>(sql`
+  const candidates = await db.execute<Candidate>(sql`
     select distinct m.user_id, m.workspace_id, u.email, u.name, w.name as ws_name, w.slug as ws_slug
     from membership m
     join "user" u on u.id = m.user_id
@@ -77,42 +59,55 @@ export async function runDailyDigest(now = new Date(), opts: { force?: boolean }
 
   let sent = 0;
   for (const c of candidates) {
-    // Atomic claim: only one run (or instance) sends today's digest for this person.
-    const claimed = await db.execute(sql`
-      insert into user_pref (user_id, workspace_id, last_digest_on) values (${c.user_id}, ${c.workspace_id}, ${today})
-      on conflict (user_id, workspace_id) do update set last_digest_on = excluded.last_digest_on
-        where user_pref.last_digest_on is distinct from excluded.last_digest_on
-      returning user_id`);
-    if (claimed.length === 0) continue;
+    // One failing recipient (e.g. account deleted during the run) must not stop the others.
+    try {
+      sent += await sendDigestTo(c, today);
+    } catch (e) {
+      console.error("digest: recipient skipped", e instanceof Error ? e.message : e);
+    }
+  }
 
-    const lines = await db.execute<{ type: string; payload: Record<string, unknown>; actor: string | null; number: number | null; title: string | null; key: string | null }>(sql`
-      select n.type, n.payload, a.name as actor, t.number, t.title, p.key
-      from notification n
-      left join "user" a on a.id = n.actor_id
-      left join ticket t on t.id = n.ticket_id
-      left join project p on p.id = t.project_id
-      where n.user_id = ${c.user_id} and n.workspace_id = ${c.workspace_id} and n.read_at is null
-        and n.created_at > now() - interval '24 hours'
-      order by n.created_at desc
-      limit 20`);
-    const items = lines.map((l) => describeNotification({ type: l.type, actor: l.actor, key: l.key && l.number ? `${l.key}-${l.number}` : null, title: l.title, payload: l.payload ?? {} }));
-    const url = `${env.APP_URL}/${c.ws_slug}/inbox`;
-    const subject = `${items.length === 1 ? "1 Neuigkeit" : `${items.length} Neuigkeiten`} in ${c.ws_name}`;
-    const text = `Hallo ${c.name},\n\n${items.map((i) => `• ${i}`).join("\n")}\n\nZur Inbox: ${url}\n\nDen täglichen Digest kannst du in der Inbox abschalten.`;
-    const html = `<!doctype html><html lang="de"><body style="margin:0;padding:32px;background:#fafaf9;font-family:Inter,Arial,sans-serif;color:#1c1917">
+  return { sent, reminders: reminders.length };
+}
+
+type Candidate = { user_id: string; workspace_id: string; email: string; name: string; ws_name: string; ws_slug: string };
+
+async function sendDigestTo(c: Candidate, today: string): Promise<number> {
+  // Atomic claim: only one run (or instance) sends today's digest for this person.
+  const claimed = await db.execute(sql`
+    insert into user_pref (user_id, workspace_id, last_digest_on) values (${c.user_id}, ${c.workspace_id}, ${today})
+    on conflict (user_id, workspace_id) do update set last_digest_on = excluded.last_digest_on
+      where user_pref.last_digest_on is distinct from excluded.last_digest_on
+    returning user_id`);
+  if (claimed.length === 0) return 0;
+
+  const lines = await db.execute<{ type: string; payload: Record<string, unknown>; actor: string | null; number: number | null; title: string | null; key: string | null }>(sql`
+    select n.type, n.payload, a.name as actor, t.number, t.title, p.key
+    from notification n
+    left join "user" a on a.id = n.actor_id
+    left join ticket t on t.id = n.ticket_id
+    left join project p on p.id = t.project_id
+    where n.user_id = ${c.user_id} and n.workspace_id = ${c.workspace_id} and n.read_at is null
+      and n.created_at > now() - interval '24 hours'
+    order by n.created_at desc
+    limit 20`);
+  const items = lines.map((l) => describeNotification({ type: l.type, actor: l.actor, key: l.key && l.number ? `${l.key}-${l.number}` : null, title: l.title, payload: l.payload ?? {} }));
+  const url = `${env.APP_URL}/${c.ws_slug}/inbox`;
+  const subject = `${items.length === 1 ? "1 Neuigkeit" : `${items.length} Neuigkeiten`} in ${c.ws_name}`;
+  const text = `Hallo ${c.name},\n\n${items.map((i) => `• ${i}`).join("\n")}\n\nZur Inbox: ${url}\n\nDen täglichen Digest kannst du in der Inbox abschalten.`;
+  const html = `<!doctype html><html lang="de"><body style="margin:0;padding:32px;background:#fafaf9;font-family:Inter,Arial,sans-serif;color:#1c1917">
 <div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:10px;padding:32px">
 <h1 style="font-size:18px;margin:0 0 16px">${escape(subject)}</h1>
 <ul style="font-size:14px;line-height:1.6;margin:0 0 24px;padding-left:18px">${items.map((i) => `<li>${escape(i)}</li>`).join("")}</ul>
 <a href="${escape(url)}" style="display:inline-block;background:#5b5bf7;color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:10px 18px;border-radius:6px">Zur Inbox</a>
 <p style="font-size:12px;color:#78716c;margin:24px 0 0">Den täglichen Digest kannst du in der Inbox abschalten.</p>
 </div></body></html>`;
-    try {
-      await sendMail({ to: c.email, subject, text, html });
-      sent++;
-    } catch (e) {
-      // Logged without personal data; the claim stays – better one missed digest than duplicates.
-      console.error("digest: mail failed", e instanceof Error ? e.message : e);
-    }
+  try {
+    await sendMail({ to: c.email, subject, text, html });
+    return 1;
+  } catch (e) {
+    // Logged without personal data; the claim stays – better one missed digest than duplicates.
+    console.error("digest: mail failed", e instanceof Error ? e.message : e);
+    return 0;
   }
-  return { sent, reminders: reminders.length };
 }
