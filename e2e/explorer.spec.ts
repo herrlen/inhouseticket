@@ -165,6 +165,7 @@ test("legal pages are public and linked from the login page", async ({ page }) =
   await expect(page.getByRole("heading", { name: "Impressum" })).toBeVisible();
   await expect(page.getByText("Studio Luy UG (haftungsbeschränkt)")).toBeVisible();
   await expect(page.getByRole("link", { name: "hello@inhouseticket.com" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "EU-Streitschlichtung" })).toBeVisible();
   await page.goto("/datenschutz");
   await expect(page.getByRole("heading", { name: "Datenschutzerklärung" })).toBeVisible();
 });

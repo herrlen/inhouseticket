@@ -32,6 +32,12 @@ export default function ImpressumPage() {
       <h2>Umsatzsteuer-Identifikationsnummer</h2>
       <p>Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz: {OPERATOR.vatId}</p>
 
+      <h2>EU-Streitschlichtung</h2>
+      <p>
+        Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit:{" "}
+        <a className="text-accent underline" href="https://ec.europa.eu/consumers/odr/">https://ec.europa.eu/consumers/odr/</a>.
+      </p>
+
       <h2>Verbraucherstreitbeilegung / Universalschlichtungsstelle</h2>
       <p>Zur Teilnahme an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle sind wir nicht verpflichtet und nicht bereit.</p>
     </>
