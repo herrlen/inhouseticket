@@ -61,7 +61,7 @@ if [[ -z "$PG" || -z "$AUTH" ]]; then
 fi
 SMTP="${SMTP_PASSWORD:-$(env_of app SMTP_PASSWORD)}"
 BETA="${BETA_ALLOWED_DOMAINS:-$(env_of app BETA_ALLOWED_DOMAINS)}"
-[[ -n "$SMTP" ]] || echo "Hinweis: SMTP_PASSWORD fehlt – Anmeldelinks können nicht verschickt werden. In mStudio (Container app, Umgebung) eintragen."
+[[ -n "$SMTP" ]] || echo "Hinweis: SMTP_PASSWORD fehlt – Anmeldelinks können nicht verschickt werden. Setzen mit: scripts/set-smtp-password.sh"
 [[ -n "$BETA" ]] && echo "Beta-Domains: $BETA" || echo "Hinweis: BETA_ALLOWED_DOMAINS leer – Registrierung ist OFFEN."
 
 {
