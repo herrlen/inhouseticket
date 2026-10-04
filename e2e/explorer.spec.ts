@@ -165,7 +165,8 @@ test("legal pages are public and linked from the login page", async ({ page }) =
   await expect(page.getByRole("heading", { name: "Impressum" })).toBeVisible();
   await expect(page.getByText("Studio Luy UG (haftungsbeschränkt)")).toBeVisible();
   await expect(page.getByRole("link", { name: "hello@inhouseticket.com" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "EU-Streitschlichtung" })).toBeVisible();
+  // The EU OS platform was discontinued on 2025-07-20 – the notice must not come back.
+  await expect(page.getByText("ec.europa.eu/consumers/odr")).toHaveCount(0);
   await page.goto("/datenschutz");
   await expect(page.getByRole("heading", { name: "Datenschutzerklärung" })).toBeVisible();
 });
