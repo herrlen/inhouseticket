@@ -46,7 +46,7 @@ export async function runDailyDigest(now = new Date(), opts: { force?: boolean }
     select distinct m.user_id, m.workspace_id, u.email, u.name, w.name as ws_name, w.slug as ws_slug
     from membership m
     join "user" u on u.id = m.user_id
-    join workspace w on w.id = m.workspace_id
+    join workspace w on w.id = m.workspace_id and w.locked_at is null
     left join user_pref up on up.user_id = m.user_id and up.workspace_id = m.workspace_id
     where m.status = 'active'
       and coalesce(up.email_digest, true)

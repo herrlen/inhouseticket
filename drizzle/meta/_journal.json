@@ -43,6 +43,13 @@
       "when": 1791130187415,
       "tag": "0005_dashboard_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791139946665,
+      "tag": "0006_workspace_lock",
+      "breakpoints": true
     }
   ]
 }

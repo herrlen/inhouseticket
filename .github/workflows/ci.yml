@@ -17,6 +17,7 @@ env:
   SMTP_PORT: "1025"
   MAIL_FROM: "inhouseticket <no-reply@inhouseticket.com>"
   MAIL_REPLY_TO: hello@inhouseticket.com
+  SUPERADMIN_EMAILS: e2e-operator@gmail.com
 
 jobs:
   check:

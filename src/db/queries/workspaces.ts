@@ -14,7 +14,7 @@ export async function findMembershipBySlug(slug: string, userId: string) {
     .select({ workspace, membership })
     .from(membership)
     .innerJoin(workspace, eq(workspace.id, membership.workspaceId))
-    .where(and(eq(workspace.slug, slug), eq(membership.userId, userId), eq(membership.status, "active")))
+    .where(and(eq(workspace.slug, slug), eq(membership.userId, userId), eq(membership.status, "active"), isNull(workspace.lockedAt)))
     .limit(1);
   return row ?? null;
 }
@@ -24,7 +24,7 @@ export async function findMembershipById(workspaceId: string, userId: string) {
     .select({ workspace, membership })
     .from(membership)
     .innerJoin(workspace, eq(workspace.id, membership.workspaceId))
-    .where(and(eq(membership.workspaceId, workspaceId), eq(membership.userId, userId), eq(membership.status, "active")))
+    .where(and(eq(membership.workspaceId, workspaceId), eq(membership.userId, userId), eq(membership.status, "active"), isNull(workspace.lockedAt)))
     .limit(1);
   return row ?? null;
 }
@@ -34,7 +34,7 @@ export async function listWorkspacesForUser(userId: string) {
     .select({ id: workspace.id, name: workspace.name, slug: workspace.slug, color: workspace.color, role: membership.role })
     .from(membership)
     .innerJoin(workspace, eq(workspace.id, membership.workspaceId))
-    .where(and(eq(membership.userId, userId), eq(membership.status, "active")))
+    .where(and(eq(membership.userId, userId), eq(membership.status, "active"), isNull(workspace.lockedAt)))
     .orderBy(workspace.name);
 }
 

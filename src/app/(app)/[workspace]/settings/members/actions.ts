@@ -9,6 +9,7 @@ import { requireRole } from "@/lib/authz";
 import { de } from "@/lib/i18n/de";
 import { canChangeRole, canInviteAs, canRemove } from "@/lib/member-permissions";
 import { inviteSchema, roleChangeSchema } from "@/lib/validation/workspace";
+import { isPersonalWorkspaceDomain } from "@/lib/workspace-domain";
 
 export type ActionState = { error?: string; success?: string };
 
@@ -68,6 +69,8 @@ export async function revokeInvitationAction(formData: FormData) {
 export async function setAutoJoinAction(formData: FormData) {
   const { workspaceId } = workspaceRef.parse({ workspaceId: formData.get("workspaceId") });
   const ctx = await requireRole({ workspaceId }, "owner");
+  // A personal workspace has no company domain anyone could join through.
+  if (isPersonalWorkspaceDomain(ctx.workspace.domain)) return;
   await setAutoJoin(workspaceId, formData.get("autoJoin") === "on");
   revalidatePath(path(ctx.workspace.slug));
 }

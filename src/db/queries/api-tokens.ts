@@ -1,7 +1,7 @@
 import "server-only";
 import { and, count, desc, eq, isNull, lt, or } from "drizzle-orm";
 import { db } from "@/db/client";
-import { apiToken, membership } from "@/db/schema";
+import { apiToken, membership, workspace } from "@/db/schema";
 import { hashToken } from "@/lib/tokens";
 import { randomBytes } from "node:crypto";
 
@@ -59,6 +59,7 @@ export async function authenticateApiToken(raw: string): Promise<TokenActor | nu
     .select({ id: apiToken.id, userId: apiToken.userId, workspaceId: apiToken.workspaceId, lastUsedAt: apiToken.lastUsedAt })
     .from(apiToken)
     .innerJoin(membership, and(eq(membership.userId, apiToken.userId), eq(membership.workspaceId, apiToken.workspaceId), eq(membership.status, "active")))
+    .innerJoin(workspace, and(eq(workspace.id, apiToken.workspaceId), isNull(workspace.lockedAt)))
     .where(and(eq(apiToken.tokenHash, hashToken(raw)), isNull(apiToken.revokedAt)))
     .limit(1);
   if (!row) return null;

@@ -5,18 +5,18 @@ import { db } from "@/db/client";
 import { createInvitations, sendInvitationMails, type InvitationMail } from "@/db/queries/invitations";
 import { createProjectWithDefaults, createTickets } from "@/db/queries/projects";
 import { createWorkspace, findWorkspaceByDomain } from "@/db/queries/workspaces";
-import { getEmailDomain } from "@/lib/freemail";
 import { de } from "@/lib/i18n/de";
 import { PROJECT_TEMPLATES } from "@/lib/project-templates";
 import { requireUser } from "@/lib/session";
 import { slugFromDomain } from "@/lib/slug";
+import { isPersonalWorkspaceDomain, workspaceDomainOf } from "@/lib/workspace-domain";
 import { onboardingSchema } from "@/lib/validation/workspace";
 
 export type OnboardingState = { errors?: Partial<Record<"name" | "color" | "template" | "invites" | "form", string>> };
 
 export async function createWorkspaceAction(_: OnboardingState, formData: FormData): Promise<OnboardingState> {
   const user = await requireUser();
-  const domain = getEmailDomain(user.email);
+  const domain = workspaceDomainOf(user.email);
   if (!domain) return { errors: { form: de.auth.invalidEmail } };
 
   const parsed = onboardingSchema.safeParse(Object.fromEntries(formData));
@@ -37,7 +37,7 @@ export async function createWorkspaceAction(_: OnboardingState, formData: FormDa
   let mails: InvitationMail[] = [];
   try {
     ({ slug, mails } = await db.transaction(async (tx) => {
-      const ws = await createWorkspace(tx, { name: input.name, domain, color: input.color, slugBase: slugFromDomain(domain), ownerId: user.id });
+      const ws = await createWorkspace(tx, { name: input.name, domain, color: input.color, slugBase: isPersonalWorkspaceDomain(domain) ? input.name : slugFromDomain(domain), ownerId: user.id });
       const { project, openStatus } = await createProjectWithDefaults(tx, {
         workspaceId: ws.id,
         name: template.name,

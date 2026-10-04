@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from "react";
 
-export type ShellInfo = { workspaceId: string; slug: string; workspaceName: string; workspaceColor: string; canAdmin: boolean };
+export type ShellInfo = { workspaceId: string; slug: string; workspaceName: string; workspaceColor: string; canAdmin: boolean; isSuperadmin: boolean };
 
 const ShellContext = createContext<ShellInfo | null>(null);
 

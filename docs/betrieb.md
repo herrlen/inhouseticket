@@ -32,6 +32,7 @@ Nur in der Stack-Konfiguration bei mittwald, keine lokale Kopie: `POSTGRES_PASSW
 ```sh
 scripts/deploy.sh                                   # HEAD von main, CI muss grün sein
 BETA_ALLOWED_DOMAINS=studioluy.de,firma.de scripts/deploy.sh   # Beta-Liste ändern
+SUPERADMIN_EMAILS=a@x.de,b@y.de scripts/deploy.sh             # Betreiber-Zugang /admin ändern
 scripts/set-smtp-password.sh                        # SMTP-Passwort setzen (fragt verdeckt, nur Len)
 ```
 

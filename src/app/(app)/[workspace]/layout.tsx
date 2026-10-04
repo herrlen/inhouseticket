@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/shell/app-shell";
+import { isSuperadminEmail } from "@/lib/superadmin";
 import { getExplorer } from "@/db/queries/explorer";
 import { unreadCount } from "@/db/queries/notifications";
 import { hasRole, requireMember } from "@/lib/authz";
@@ -18,6 +19,7 @@ export default async function WorkspaceLayout({ children, params }: Props) {
         workspaceName: ctx.workspace.name,
         workspaceColor: ctx.workspace.color,
         canAdmin: hasRole(ctx, "admin"),
+        isSuperadmin: isSuperadminEmail(ctx.user.email),
       }}
       user={{ id: ctx.user.id, name: ctx.user.name, email: ctx.user.email, image: ctx.user.image }}
       explorer={{

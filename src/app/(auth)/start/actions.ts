@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db/client";
 import { addMember, findWorkspaceByDomain, LimitError } from "@/db/queries/workspaces";
 import { invitation, workspace } from "@/db/schema";
-import { getEmailDomain } from "@/lib/freemail";
+import { workspaceDomainOf } from "@/lib/workspace-domain";
 import { de } from "@/lib/i18n/de";
 import { requireUser } from "@/lib/session";
 
@@ -49,7 +49,7 @@ export async function acceptInvitation(_: JoinState, formData: FormData): Promis
 /** Joins the workspace of the user's own domain – only if the owner enabled auto-join. */
 export async function joinByDomain(): Promise<JoinState> {
   const user = await requireUser();
-  const domain = getEmailDomain(user.email);
+  const domain = workspaceDomainOf(user.email);
   const ws = domain ? await findWorkspaceByDomain(domain) : null;
   if (!ws?.autoJoin) return { error: de.start.autoJoinOff };
   try {

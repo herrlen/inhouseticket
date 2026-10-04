@@ -41,6 +41,7 @@ services:
       MAIL_FROM: "inhouseticket <no-reply@inhouseticket.com>"
       MAIL_REPLY_TO: hello@inhouseticket.com
       BETA_ALLOWED_DOMAINS: ${BETA_ALLOWED_DOMAINS}
+      SUPERADMIN_EMAILS: ${SUPERADMIN_EMAILS}
     ports:
       - "3000:3000/tcp"
     restartPolicy: unless-stopped

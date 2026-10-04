@@ -131,6 +131,8 @@ export const workspace = pgTable("workspace", {
   autoJoin: boolean().notNull().default(false),
   /** Weighted open-ticket score from which a person counts as overloaded (dashboard). */
   workloadThreshold: smallint().notNull().default(12),
+  /** Set by the platform operator (/admin): members, API tokens and digests are shut out. */
+  lockedAt: timestamp({ withTimezone: true }),
   createdAt: createdAt(),
 }, (t) => [check("workspace_slug_format", sql`${t.slug} ~ '^[a-z0-9]([a-z0-9-]*[a-z0-9])?$'`)]);
 

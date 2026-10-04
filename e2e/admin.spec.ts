@@ -1,0 +1,71 @@
+import { expect, test, type Page } from "@playwright/test";
+import { createWorkspace, signIn, uniqueDomain } from "./helpers/auth";
+
+// Platform operator (SUPERADMIN_EMAILS in .env / CI): freemail exception, personal workspace, /admin.
+const OPERATOR = "e2e-operator@gmail.com";
+
+async function signInOperator(page: Page) {
+  await signIn(page, OPERATOR);
+  await page.waitForURL(/\/(onboarding|[a-z0-9-]+)$/);
+  if (page.url().endsWith("/onboarding")) {
+    await expect(page.getByText(/Persönlicher Workspace/)).toBeVisible();
+    await page.getByRole("textbox", { name: "Name des Workspace" }).fill("Operator");
+    await page.getByRole("button", { name: "Workspace anlegen" }).click();
+    await expect(page.getByRole("heading", { name: "Willkommen bei Operator" })).toBeVisible();
+  }
+}
+
+test("operator signs in with freemail, others with the same provider stay out", async ({ page, browser }) => {
+  await signInOperator(page);
+  // Personal workspace: no auto-join by domain on the members page.
+  await page.goto(new URL(page.url()).pathname + "/settings/members");
+  await expect(page.getByRole("heading", { name: /Mitglieder/ }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: /automatisch beitreten/i })).toHaveCount(0);
+
+  const other = await browser.newPage();
+  await other.goto("/login");
+  await other.getByRole("textbox", { name: "Firmen-E-Mail" }).fill("someone-else@gmail.com");
+  await other.getByRole("button", { name: "Anmeldelink senden" }).click();
+  await expect(other.getByText(/Firmen-E-Mail/).last()).toBeVisible();
+  await expect(other.getByRole("heading", { name: "Schau in dein Postfach" })).toHaveCount(0);
+});
+
+test("/admin: metrics only, lock and delete a workspace; hidden from everyone else", async ({ page, browser }) => {
+  const customer = await browser.newPage();
+  const path = await createWorkspace(customer, `kai@${uniqueDomain("kunde")}`, "Kunde GmbH");
+  const slug = path.slice(1);
+  // Customers do not even learn that /admin exists.
+  expect((await customer.goto("/admin"))?.status()).toBe(404);
+
+  await signInOperator(page);
+  await page.goto("/admin");
+  await expect(page.getByRole("heading", { name: "Betreiber-Übersicht" })).toBeVisible();
+  await page.getByRole("searchbox", { name: "Workspaces durchsuchen" }).fill(slug);
+  await page.getByRole("button", { name: "Suchen" }).click();
+  await expect(page.getByText("1 Workspace", { exact: true })).toBeVisible();
+  const row = page.getByRole("row", { name: new RegExp(`/${slug}`) });
+  await expect(row).toContainText("Kunde GmbH");
+  await expect(row).toContainText(`kai@`);
+  await expect(row).toContainText("3 (3)"); // example tickets, counts only
+  await expect(page.getByText("Newsletter für nächsten Monat planen")).toHaveCount(0); // no ticket content
+
+  // Lock → the customer is shut out, unlock → back in.
+  await row.getByRole("button", { name: "Kunde GmbH sperren" }).click();
+  await expect(row.getByText("gesperrt")).toBeVisible();
+  expect((await customer.goto(path))?.status()).toBe(404);
+  await row.getByRole("button", { name: "Kunde GmbH entsperren" }).click();
+  await expect(row.getByText("gesperrt")).toHaveCount(0);
+  expect((await customer.goto(path))?.status()).toBe(200);
+
+  // Delete needs the exact slug.
+  await row.getByText("Löschen …").click();
+  await row.getByRole("textbox", { name: "Kürzel von Kunde GmbH zur Bestätigung" }).fill("falsch");
+  await row.getByRole("button", { name: "Kunde GmbH endgültig löschen" }).click();
+  await expect(page.getByText("Das Kürzel stimmt nicht – nichts gelöscht.")).toBeVisible();
+  const again = page.getByRole("row", { name: new RegExp(`/${slug}`) });
+  await again.getByText("Löschen …").click();
+  await again.getByRole("textbox", { name: "Kürzel von Kunde GmbH zur Bestätigung" }).fill(slug);
+  await again.getByRole("button", { name: "Kunde GmbH endgültig löschen" }).click();
+  await expect(page.getByText("Workspace gelöscht.")).toBeVisible();
+  await expect(page.getByRole("row", { name: new RegExp(`/${slug}`) })).toHaveCount(0);
+});

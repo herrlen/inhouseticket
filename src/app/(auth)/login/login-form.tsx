@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
-import { getEmailDomain, isCompanyEmail } from "@/lib/freemail";
+import { getEmailDomain } from "@/lib/freemail";
 import { de } from "@/lib/i18n/de";
 
 type State = { kind: "idle" } | { kind: "sending" } | { kind: "sent"; email: string } | { kind: "error"; message: string };
@@ -17,7 +17,7 @@ export function LoginForm({ next }: { next: string }) {
     e.preventDefault();
     const email = String(new FormData(e.currentTarget).get("email") ?? "").trim();
     if (!getEmailDomain(email)) return setState({ kind: "error", message: de.auth.invalidEmail });
-    if (!isCompanyEmail(email)) return setState({ kind: "error", message: de.auth.freemail });
+    // Freemail is refused by the server (same message); it alone knows the operator exception.
 
     setState({ kind: "sending" });
     const { error } = await authClient.signIn.magicLink({

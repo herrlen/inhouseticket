@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { findWorkspaceByDomain, listOpenInvitations, listWorkspacesForUser } from "@/db/queries/workspaces";
-import { getEmailDomain } from "@/lib/freemail";
+import { workspaceDomainOf } from "@/lib/workspace-domain";
 import { de } from "@/lib/i18n/de";
 import { requireUser } from "@/lib/session";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -17,7 +17,7 @@ export default async function StartPage() {
 
   if (workspaces.length === 1 && invitations.length === 0) redirect(`/${workspaces[0]!.slug}`);
 
-  const domain = getEmailDomain(user.email);
+  const domain = workspaceDomainOf(user.email);
   const own = domain ? await findWorkspaceByDomain(domain) : null;
   const isMemberOfOwn = own ? workspaces.some((w) => w.id === own.id) : false;
 

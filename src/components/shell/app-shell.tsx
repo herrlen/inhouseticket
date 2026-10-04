@@ -337,6 +337,7 @@ function Topbar({
         triggerClassName="flex size-8 items-center justify-center rounded-full hover:ring-2 hover:ring-border"
         items={[
           ...(shell.canAdmin ? [{ label: de.members.title, onSelect: () => router.push(`/${shell.slug}/settings/members`) }] : []),
+          ...(shell.isSuperadmin ? [{ label: de.admin.title, onSelect: () => router.push("/admin") }] : []),
           { label: de.claude.title, onSelect: () => router.push(`/${shell.slug}/settings/claude`) },
           { label: de.shell.switchWorkspace, onSelect: () => router.push("/start") },
           { label: confetti ? de.shell.confettiOff : de.shell.confettiOn, onSelect: onToggleConfetti },

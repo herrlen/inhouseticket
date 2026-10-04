@@ -8,6 +8,7 @@ import { requireRole } from "@/lib/authz";
 import { de } from "@/lib/i18n/de";
 import { MAX_USERS_PER_WORKSPACE, USER_WARNING_THRESHOLD } from "@/lib/limits";
 import { canChangeRole, canRemove } from "@/lib/member-permissions";
+import { isPersonalWorkspaceDomain } from "@/lib/workspace-domain";
 import { removeMemberAction, revokeInvitationAction, setAutoJoinAction } from "./actions";
 import { InviteForm } from "./invite-form";
 import { RoleForm } from "./role-form";
@@ -108,7 +109,7 @@ export default async function MembersPage({ params }: Props) {
         </section>
       ) : null}
 
-      {isOwner ? (
+      {isOwner && !isPersonalWorkspaceDomain(ctx.workspace.domain) ? (
         <section aria-labelledby="autojoin-heading" className="rounded-[var(--radius-card)] border border-border bg-surface p-4">
           <h2 id="autojoin-heading" className="mb-1 font-semibold">
             {de.members.autoJoinTitle}
