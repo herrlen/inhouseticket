@@ -266,7 +266,7 @@ api_token        id, user_id, workspace_id, name, token_hash, last_used_at, crea
 - **Budget:** JS initial < 150 KB gz, LCP < 1,5 s, Interaktion < 100 ms.
 - **Hosting:** Docker-Container, EU (z. B. Mittwald), Postgres managed, tägliche Backups.
 - **URLs (entschieden 2026-10-04):** Pfade statt Subdomains – `inhouseticket.com/{workspace}/p/{KEY}`. Der Workspace-Slug wird aus der E-Mail-Domain abgeleitet (`firma.de` → `firma`, bei Kollision `firma-2`). Ein vHost für `inhouseticket.com`, normales Let's-Encrypt-Zertifikat. Subdomains (`firma.inhouseticket.com`) bräuchten Wildcard-DNS und -Zertifikat; als mögliche Pro-Option im Backlog, nachrüstbar ohne Datenmigration.
-- **Server:** Bei mittwald läuft PostgreSQL nur als Container, Container-Hosting gibt es auf dem Managed vServer → vServer nötig (Entscheidung vor Sprint 9). Nicht mit der luibui-Sandbox teilen.
+- **Server (korrigiert 2026-10-04):** Kein eigener vServer nötig. Lens mittwald Space-Server `s-r0ud3w` betreibt bereits Container-Stacks inkl. Postgres-Container (luibui). inhouseticket wird dort ein neues Projekt (Stack: App + Postgres, vHost `inhouseticket.com` → App). RAM nach dem Livegang messen; hochstufen nur bei Engpass. Nie auf denselben Server wie die luibui-Sandbox.
 - **Sicherheit:** Rate-Limits (Login, API, MCP), CSRF über Server Actions, CSP-Header, Audit-Log.
 
 ---

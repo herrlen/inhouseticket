@@ -100,7 +100,7 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [ ] P1 Performance-Budget prüfen (JS < 150 KB gz, LCP < 1,5 s)
 - [ ] P1 Security-Review (Workspace-Scope, Rate-Limits, CSP)
 - [ ] P1 Impressum, Datenschutz, AGB, AVV
-- [ ] P1 Deployment EU (Container + managed Postgres + Backups), Domain, SSL – mittwald Managed vServer buchen, App- und Postgres-Container, vHost `inhouseticket.com` → App, SMTP-Zugang no-reply@ in die Server-.env
+- [ ] P1 Deployment EU (Container + managed Postgres + Backups), Domain, SSL – neues mittwald-Projekt auf dem bestehenden Space-Server, Stack mit App- und Postgres-Container, vHost `inhouseticket.com` → App, SMTP-Zugang no-reply@ in die Umgebung des App-Containers, RAM messen
 - [ ] P1 Landingpage (Claim, Screenshots, „Kostenlos bis 100 User“, MCP-Highlight)
 - [ ] P2 Datenexport CSV/JSON, Workspace löschen
 - [ ] P2 Mobile-Feinschliff, Dark Mode, Accessibility-Audit
