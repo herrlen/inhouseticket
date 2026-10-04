@@ -21,6 +21,8 @@ export const de = {
     freemail:
       "Bitte nutze deine Firmen-E-Mail-Adresse. Adressen von Gmail, GMX, Web.de, Outlook & Co. sind nicht möglich – inhouseticket ist für Teams einer Firma gedacht.",
     invalidEmail: "Das sieht nicht nach einer gültigen E-Mail-Adresse aus.",
+    betaClosed:
+      "inhouseticket ist gerade in einer geschlossenen Beta. Du möchtest mitmachen? Schreib uns an hello@inhouseticket.com.",
     mail: {
       subject: "Dein Anmeldelink für inhouseticket",
       heading: "Anmelden bei inhouseticket",

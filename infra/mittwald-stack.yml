@@ -1,0 +1,53 @@
+# inhouseticket stack on mittwald (project p-flw0r0 "Ticket", Space-Server host schmalge).
+#
+# Deploy only via scripts/deploy.sh: it reads the secrets from the running stack, writes them to a
+# mode-600 temp file for `mw stack deploy` and deletes it afterwards. Nothing is printed.
+#
+# ⚠ `mw stack deploy` replaces the whole stack definition. Never deploy a file that lacks a
+# running service unless you mean to delete it.
+#
+# mittwald accepts only image, command, entrypoint, environment, ports, volumes, restartPolicy and
+# deploy.resources.limits – no depends_on (the app's migrate step waits for Postgres instead).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    description: inhouseticket – PostgreSQL 16
+    environment:
+      POSTGRES_DB: inhouseticket
+      POSTGRES_USER: inhouseticket
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - inhouseticket-pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432/tcp"
+    restartPolicy: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  app:
+    image: ghcr.io/herrlen/inhouseticket:${IMAGE_TAG}
+    description: inhouseticket – Next.js
+    environment:
+      DATABASE_URL: postgres://inhouseticket:${POSTGRES_PASSWORD}@postgres:5432/inhouseticket
+      APP_URL: https://inhouseticket.com
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: "${SMTP_PORT}"
+      SMTP_USER: no-reply@inhouseticket.com
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      MAIL_FROM: "inhouseticket <no-reply@inhouseticket.com>"
+      MAIL_REPLY_TO: hello@inhouseticket.com
+      BETA_ALLOWED_DOMAINS: ${BETA_ALLOWED_DOMAINS}
+    ports:
+      - "3000:3000/tcp"
+    restartPolicy: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+volumes:
+  inhouseticket-pgdata: {}

@@ -28,7 +28,14 @@ export function LoginForm({ next }: { next: string }) {
     if (error) {
       setState({
         kind: "error",
-        message: error.code === "FREEMAIL_NOT_ALLOWED" ? de.auth.freemail : error.status === 429 ? de.login.tooMany : de.login.failed,
+        message:
+          error.code === "FREEMAIL_NOT_ALLOWED"
+            ? de.auth.freemail
+            : error.code === "BETA_CLOSED"
+              ? de.auth.betaClosed
+              : error.status === 429
+                ? de.login.tooMany
+                : de.login.failed,
       });
       return;
     }

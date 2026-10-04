@@ -7,6 +7,7 @@ import { magicLink } from "better-auth/plugins/magic-link";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 import { env } from "@/lib/env";
+import { mayEnterBeta } from "@/lib/beta";
 import { isCompanyEmail } from "@/lib/freemail";
 import { de } from "@/lib/i18n/de";
 import { buttonMail, sendMail } from "@/lib/mail";
@@ -32,6 +33,9 @@ export const auth = betterAuth({
       const email: unknown = ctx.body?.email;
       if (typeof email !== "string" || !isCompanyEmail(email)) {
         throw new APIError("BAD_REQUEST", { code: "FREEMAIL_NOT_ALLOWED", message: de.auth.freemail });
+      }
+      if (!(await mayEnterBeta(email))) {
+        throw new APIError("FORBIDDEN", { code: "BETA_CLOSED", message: de.auth.betaClosed });
       }
     }),
   },

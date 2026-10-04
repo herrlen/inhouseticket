@@ -14,6 +14,8 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: { default: "inhouseticket", template: "%s · inhouseticket" },
   description: "Tickets. Ohne Ballast.",
+  // Closed beta: no indexing until launch.
+  robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
