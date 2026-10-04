@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createProjectSchema, projectIconSchema, suggestProjectKey } from "./project";
+import { suggestProjectKey } from "@/lib/project-key";
+import { createProjectSchema, projectIconSchema } from "./project";
 
 describe("suggestProjectKey", () => {
   it.each([

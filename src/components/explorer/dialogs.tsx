@@ -9,7 +9,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { de } from "@/lib/i18n/de";
 import { MAX_PROJECT_KEY } from "@/lib/limits";
-import { suggestProjectKey } from "@/lib/validation/project";
+import { suggestProjectKey } from "@/lib/project-key";
 import type { FolderItem } from "./model";
 
 export function NewProjectDialog({ open, folderId, folders, onClose }: { open: boolean; folderId: string | null; folders: FolderItem[]; onClose: () => void }) {
