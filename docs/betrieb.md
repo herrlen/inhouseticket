@@ -24,7 +24,7 @@ TLS: Let's Encrypt über mittwald, automatisch.
 ## Geheimnisse
 
 Nur in der Stack-Konfiguration bei mittwald, keine lokale Kopie: `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`
-(beim ersten Deploy erzeugt), `SMTP_PASSWORD` (trägt Len in mStudio am Container `app` ein).
+(beim ersten Deploy erzeugt), `SMTP_PASSWORD` (setzt Len mit `scripts/set-smtp-password.sh`).
 `scripts/deploy.sh` liest sie aus dem laufenden Stack und gibt sie nie aus.
 
 ## Ausrollen
@@ -32,7 +32,10 @@ Nur in der Stack-Konfiguration bei mittwald, keine lokale Kopie: `POSTGRES_PASSW
 ```sh
 scripts/deploy.sh                                   # HEAD von main, CI muss grün sein
 BETA_ALLOWED_DOMAINS=studioluy.de,firma.de scripts/deploy.sh   # Beta-Liste ändern
+scripts/set-smtp-password.sh                        # SMTP-Passwort setzen (fragt verdeckt, nur Len)
 ```
+
+Beta-Domains (Stand 2026-10-04): `studioluy.de`, `ursalz.com`.
 
 Migrationen laufen beim Start des App-Containers. Prüfung: `https://inhouseticket.com/api/health` meldet
 `status`, `database` und `version` (= `sha-<commit>`).
