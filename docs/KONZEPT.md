@@ -262,7 +262,7 @@ api_token        id, user_id, workspace_id, name, token_hash, last_used_at, crea
 - **Stack:** Next.js App Router, TypeScript, Tailwind, Postgres + Drizzle, Better Auth, TanStack Query, dnd-kit, Zod.
 - **Realtime:** Server-Sent Events pro Projekt (Board aktualisiert sich live), Fallback Polling.
 - **Sortierung:** Fractional Indexing → Drag & Drop ohne Massen-Updates.
-- **Storage:** S3-kompatibel (EU), Bilder über signierte URLs, Cache-Header lang.
+- **Storage (geändert 2026-10-04, ADR 002):** Bild-Anhänge (≤ 100 KB) direkt in Postgres (`bytea`), ausgeliefert nach Mitgliedschaftsprüfung, Cache-Header lang. Höchstens 20 Anhänge pro Ticket.
 - **Budget (angepasst 2026-10-04):** JS initial ≤ 200 KB gzip pro Seite, davon eigener Code ≤ 50 KB über der Framework-Grundlast (Next.js + React ≈ 173 KB); LCP < 1,5 s, Interaktion < 100 ms. Die ursprünglichen 150 KB liegen unter der Grundlast von Next.js. Stand: Projektseite 186 KB.
 - **Hosting:** Docker-Container, EU (z. B. Mittwald), Postgres managed, tägliche Backups.
 - **URLs (entschieden 2026-10-04):** Pfade statt Subdomains – `inhouseticket.com/{workspace}/p/{KEY}`. Der Workspace-Slug wird aus der E-Mail-Domain abgeleitet (`firma.de` → `firma`, bei Kollision `firma-2`). Ein vHost für `inhouseticket.com`, normales Let's-Encrypt-Zertifikat. Subdomains (`firma.inhouseticket.com`) bräuchten Wildcard-DNS und -Zertifikat; als mögliche Pro-Option im Backlog, nachrüstbar ohne Datenmigration.

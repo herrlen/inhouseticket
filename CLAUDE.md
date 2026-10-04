@@ -13,7 +13,7 @@ Schlankes, sehr schnelles, kostenloses Ticketing-System für Firmen-Teams. Liste
 - Better Auth (Magic Link, nur Firmen-Domains)
 - TanStack Query (Client-Cache, Optimistic Updates), dnd-kit (Kanban)
 - Zod (Validierung Client + Server)
-- S3-kompatibler Storage für Anhänge
+- Anhänge (≤ 100 KB) in Postgres als `bytea` (ADR 002)
 - Vitest (Unit), Playwright (E2E)
 - Docker, EU-Hosting
 
@@ -62,7 +62,7 @@ docs/
    - `MAX_USERS_PER_WORKSPACE = 100`
    - `MAX_TITLE = 500`, `MAX_DESCRIPTION = 5000`
    - `MAX_SUBTASKS = 5` (nur eine Ebene)
-   - `MAX_ATTACHMENT_BYTES = 100 * 1024`
+   - `MAX_ATTACHMENT_BYTES = 100 * 1024`, `MAX_ATTACHMENTS_PER_TICKET = 20`
    - `ALLOWED_MIME = ['image/webp','image/jpeg','image/png']` → serverseitig per Magic-Bytes prüfen, nicht nur MIME-Header
 3. **Firmen-E-Mail:** Registrierung mit Freemail-Domain (gmail, gmx, web.de, t-online, outlook, hotmail, yahoo, icloud, proton …) wird abgelehnt. Liste in `src/lib/freemail.ts`, erweiterbar.
 4. **Speed:** JS ≤ 200 KB gzip pro Seite (eigener Code ≤ 50 KB über Next.js/React); Client-Komponenten importieren nie Zod/Validierung/DB (Test `client-imports.test.ts`). Optimistic Updates für Status, Priorität, Zuweisung, Drag & Drop. Keine Spinner bei Inline-Edits. Keine schweren Libraries (kein Moment.js, kein Lodash komplett, keine UI-Kits mit großem Runtime).

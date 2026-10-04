@@ -2,7 +2,7 @@
 // rolled back, so the database stays clean.
 import postgres from "postgres";
 import { afterAll, describe, expect, it } from "vitest";
-import { MAX_ATTACHMENT_BYTES, MAX_SUBTASKS, MAX_TITLE, MAX_USERS_PER_WORKSPACE } from "@/lib/limits";
+import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_TICKET, MAX_SUBTASKS, MAX_TITLE, MAX_USERS_PER_WORKSPACE } from "@/lib/limits";
 
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL is not set");
@@ -151,12 +151,13 @@ describe("field limits", () => {
   it("rejects oversized attachments and disallowed types", async () => {
     await inRollback(async (tx) => {
       const s = await seed(tx);
-      const insert = (sp: Tx, key: string, mime: string, bytes: number) => sp`
-        INSERT INTO attachment (workspace_id, ticket_id, key, mime, bytes, width, height, uploaded_by)
-        VALUES (${s.wsId}, ${s.ticketId}, ${key}, ${mime}, ${bytes}, 10, 10, ${s.userId})`;
+      const insert = (sp: Tx, key: string, mime: string, bytes: number, dataBytes = bytes) => sp`
+        INSERT INTO attachment (workspace_id, ticket_id, key, file_name, data, mime, bytes, width, height, uploaded_by)
+        VALUES (${s.wsId}, ${s.ticketId}, ${key}, 'bild.webp', decode(repeat('ab', ${dataBytes}::int), 'hex'), ${mime}, ${bytes}, 10, 10, ${s.userId})`;
       await insert(tx, "ok", "image/webp", MAX_ATTACHMENT_BYTES);
       await expectDbError(tx, (sp) => insert(sp, "big", "image/png", MAX_ATTACHMENT_BYTES + 1), /attachment_bytes_limit/);
       await expectDbError(tx, (sp) => insert(sp, "gif", "image/gif", 1000), /attachment_mime_allowed/);
+      await expectDbError(tx, (sp) => insert(sp, "lie", "image/png", 10, 5000), /attachment_data_matches_bytes/);
     });
   });
 
@@ -165,6 +166,25 @@ describe("field limits", () => {
       const s = await seed(tx);
       await expectDbError(tx, (sp) => sp`UPDATE ticket SET priority = 5 WHERE id = ${s.ticketId}`, /ticket_priority_range/);
       await expectDbError(tx, (sp) => sp`UPDATE project SET key = 'mkt' WHERE id = ${s.projectId}`, /project_key_format/);
+    });
+  });
+});
+
+describe("attachment limit", () => {
+  it(`allows ${MAX_ATTACHMENTS_PER_TICKET} attachments per ticket and rejects one more`, async () => {
+    await inRollback(async (tx) => {
+      const s = await seed(tx);
+      await tx`
+        INSERT INTO attachment (workspace_id, ticket_id, key, file_name, data, mime, bytes, width, height, uploaded_by)
+        SELECT ${s.wsId}, ${s.ticketId}, 'k' || g, 'a.png', '\\x00'::bytea, 'image/png', 1, 1, 1, ${s.userId}
+        FROM generate_series(1, ${MAX_ATTACHMENTS_PER_TICKET}) g`;
+      await expectDbError(
+        tx,
+        (sp) => sp`
+          INSERT INTO attachment (workspace_id, ticket_id, key, file_name, data, mime, bytes, width, height, uploaded_by)
+          VALUES (${s.wsId}, ${s.ticketId}, 'zu-viel', 'a.png', '\\x00'::bytea, 'image/png', 1, 1, 1, ${s.userId})`,
+        /max_attachments/,
+      );
     });
   });
 });

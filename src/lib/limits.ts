@@ -8,11 +8,14 @@ export const USER_WARNING_THRESHOLD = 90;
 export const MAX_TITLE = 500;
 export const MAX_DESCRIPTION = 5000;
 export const MAX_COMMENT = 5000;
+export const MAX_FILE_NAME = 255;
 
 /** Subtasks per ticket; only one level deep. */
 export const MAX_SUBTASKS = 5;
 
 export const MAX_ATTACHMENT_BYTES = 100 * 1024;
+/** Protects storage of the free service; not part of KONZEPT, set 2026-10-04. */
+export const MAX_ATTACHMENTS_PER_TICKET = 20;
 export const ALLOWED_MIME = ["image/webp", "image/jpeg", "image/png"] as const;
 export type AllowedMime = (typeof ALLOWED_MIME)[number];
 

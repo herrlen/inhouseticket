@@ -29,6 +29,13 @@
       "when": 1791092602593,
       "tag": "0003_sort_collation",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791119343899,
+      "tag": "0004_attachment_blob",
+      "breakpoints": true
     }
   ]
 }

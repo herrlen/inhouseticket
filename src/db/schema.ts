@@ -35,6 +35,10 @@ const tsvector = customType<{ data: string }>({
   dataType: () => "tsvector",
 });
 
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType: () => "bytea",
+});
+
 const createdAt = () => timestamp({ withTimezone: true }).notNull().defaultNow();
 const updatedAt = () =>
   timestamp({ withTimezone: true })
@@ -353,8 +357,11 @@ export const attachment = pgTable(
     id: uuid().primaryKey().defaultRandom(),
     workspaceId: uuid().notNull(),
     ticketId: uuid().notNull(),
-    /** Object storage key. */
+    /** Stable public id for URLs (attachments live in Postgres, see ADR 002). */
     key: text().notNull().unique(),
+    fileName: varchar({ length: 255 }).notNull(),
+    /** Image bytes (≤ MAX_ATTACHMENT_BYTES). Never selected in list queries. */
+    data: bytea().notNull(),
     mime: varchar({ length: 32 }).notNull(),
     bytes: integer().notNull(),
     width: integer().notNull(),
