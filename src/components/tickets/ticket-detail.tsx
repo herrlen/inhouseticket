@@ -12,7 +12,8 @@ import type { TicketPatch } from "@/lib/validation/ticket";
 import { useProjectInfo } from "./context";
 import { dueBucket, todayInBerlin } from "./list-model";
 import { AssigneePicker, DueDateInput, PriorityPicker, StatusPicker } from "./pickers";
-import { Attachments, Comments, DescriptionField, Subtasks, useTicketParts } from "./detail-parts";
+import { Attachments, Comments, DescriptionField, Subtasks } from "./detail-parts";
+import { usePartActions, useParts } from "./use-parts";
 import { useActivity } from "./use-tickets";
 
 type Props = {
@@ -57,28 +58,49 @@ export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Pr
     const t = v.trim();
     if (t && t.length <= MAX_TITLE) onPatch({ title: t });
   });
-  const { parts, actions } = useTicketParts(workspaceId, project.id, ticket.id);
+  const parts = useParts(workspaceId, ticket.id);
+  const actions = usePartActions(workspaceId, project.id, ticket.id);
   const [tab, setTab] = useState<"comments" | "activity">("comments");
 
-  // ↑/↓ switch tickets while the panel is open – wherever focus is, except in fields and menus.
-  const navigateRef = useRef(onNavigate);
+  // Keyboard while the panel is open (not in fields or menus): ↑/↓ switch tickets,
+  // 1–4 priority (Dringend … Niedrig), 0 none, A assign, D due date (KONZEPT §2.7).
+  const panel = useRef<HTMLDivElement>(null);
+  const latest = useRef({ onNavigate, onPatch });
   useEffect(() => {
-    navigateRef.current = onNavigate;
+    latest.current = { onNavigate, onPatch };
   });
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-      const el = e.target as HTMLElement | null;
-      if (el && (["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) || el.closest("[role=menu]"))) return;
-      e.preventDefault();
-      navigateRef.current(e.key === "ArrowDown" ? 1 : -1);
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target instanceof HTMLElement ? e.target : null;
+      if (el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) || el.closest("[role=menu],[role=listbox]"))) return;
+      const key = e.key.toLowerCase();
+      if (key === "arrowdown" || key === "arrowup") {
+        e.preventDefault();
+        latest.current.onNavigate(key === "arrowdown" ? 1 : -1);
+      } else if (["0", "1", "2", "3", "4"].includes(key)) {
+        e.preventDefault();
+        latest.current.onPatch({ priority: key === "0" ? 0 : 5 - Number(key) });
+      } else if (key === "a") {
+        e.preventDefault();
+        panel.current?.querySelector<HTMLButtonElement>('button[aria-label^="Zuständig für"]')?.click();
+      } else if (key === "d") {
+        e.preventDefault();
+        const input = panel.current?.querySelector<HTMLInputElement>('input[type="date"]');
+        input?.focus();
+        try {
+          input?.showPicker();
+        } catch {
+          // showPicker needs a user gesture in some browsers – focus is enough then.
+        }
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div ref={panel} className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <span className="font-mono text-xs text-muted">{key}</span>
         <label htmlFor="ticket-title" className="sr-only">{de.detail.title}</label>

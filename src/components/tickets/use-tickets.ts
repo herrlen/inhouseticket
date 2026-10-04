@@ -99,7 +99,7 @@ export function useCreateTicket(workspaceId: string, projectId: string) {
   const router = useRouter();
   return useMutation({
     mutationKey: ["tickets", projectId],
-    mutationFn: (input: { title: string; statusId?: string; priority?: number; assigneeId?: string | null }) =>
+    mutationFn: (input: { title: string; statusId?: string; priority?: number; assigneeId?: string | null; dueDate?: string | null }) =>
       send<TicketRow>("POST", `/api/w/${workspaceId}/projects/${projectId}/tickets`, input),
     onMutate: async (input) => {
       await qc.cancelQueries({ queryKey: ticketsKey(projectId) });
@@ -115,7 +115,7 @@ export function useCreateTicket(workspaceId: string, projectId: string) {
         statusId: input.statusId ?? "",
         priority: input.priority ?? 0,
         assigneeId: input.assigneeId ?? null,
-        dueDate: null,
+        dueDate: input.dueDate ?? null,
         sort: keyBetween(null, firstSort),
         createdAt: now,
         updatedAt: now,

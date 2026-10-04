@@ -100,3 +100,16 @@ describe("comments", () => {
     expect((await parts.listComments(a.actor.workspaceId, a.ticketId)).some((x) => x.id === c.id)).toBe(false);
   });
 });
+
+describe("searchTickets", () => {
+  it("finds by word prefix, German stem and exact key – only in the own workspace", async () => {
+    const { searchTickets, toPrefixQuery } = await import("@/db/queries/search");
+    const { createTicket } = await import("@/db/queries/tickets");
+    const t = await createTicket(a.actor, { projectId: a.projectId, title: "Herbstkampagne Banner gestalten" });
+    expect(toPrefixQuery("bann'; drop table--")).toBe("bann:* & drop:* & table:*");
+    expect((await searchTickets(a.actor.workspaceId, "herbstk")).map((h) => h.id)).toContain(t.id);
+    expect((await searchTickets(a.actor.workspaceId, "Banners")).map((h) => h.id)).toContain(t.id);
+    expect((await searchTickets(a.actor.workspaceId, `prj-${t.number}`)).map((h) => h.id)).toEqual([t.id]);
+    expect(await searchTickets(b.actor.workspaceId, "herbstk")).toEqual([]);
+  });
+});

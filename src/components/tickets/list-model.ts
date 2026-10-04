@@ -108,3 +108,10 @@ export function groupTickets<T extends ListTicket>(
       );
   }
 }
+
+const dueFmt = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
+
+/** "2026-10-09" → "09.10." (date-only, no timezone shift). Usable on server and client. */
+export function formatDue(date: string | null): string {
+  return date ? dueFmt.format(new Date(`${date}T00:00:00Z`)) : "";
+}

@@ -87,7 +87,6 @@ export function AssigneePicker({ value, onChange, ticketLabel, compact }: { valu
   );
 }
 
-const dateFmt = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
 
 /** Native date input (keyboard + screen reader friendly), styled to match. */
 export function DueDateInput({ value, onChange, ticketLabel, overdue }: { value: string | null; onChange: (d: string | null) => void; ticketLabel: string; overdue?: boolean }) {
@@ -112,6 +111,4 @@ export function DueDateInput({ value, onChange, ticketLabel, overdue }: { value:
   );
 }
 
-export function formatDue(date: string | null): string {
-  return date ? dateFmt.format(new Date(`${date}T00:00:00Z`)) : "";
-}
+export { formatDue } from "./list-model";

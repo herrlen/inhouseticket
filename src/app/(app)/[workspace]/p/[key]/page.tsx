@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { ProjectView } from "@/components/tickets/project-view";
 import { findProjectByKey, listStatuses } from "@/db/queries/projects";
 import { listAssignableMembers, listLabels, listTickets } from "@/db/queries/tickets";
+import { listSavedViews } from "@/db/queries/views";
 import { requireMember } from "@/lib/authz";
 import { de } from "@/lib/i18n/de";
 
@@ -26,11 +27,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProjectPage({ params }: Props) {
   const { ctx, project } = await load(params);
   const wsId = ctx.workspace.id;
-  const [tickets, statuses, members, labels] = await Promise.all([
+  const [tickets, statuses, members, labels, savedViews] = await Promise.all([
     listTickets(wsId, project.id),
     listStatuses(wsId, project.id),
     listAssignableMembers(wsId),
     listLabels(wsId, project.id),
+    listSavedViews(wsId, ctx.user.id, project.id),
   ]);
 
   return (
@@ -51,6 +53,7 @@ export default async function ProjectPage({ params }: Props) {
           members={members}
           labels={labels}
           initialTickets={tickets}
+          savedViews={savedViews}
         />
       </Suspense>
     </div>

@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { getPrefs, lastFolderSort, lastProjectSort, updatePrefs } from "@/db/queries/explorer";
 import { createFolder, deleteFolder, folderExists, moveFolder, renameFolder } from "@/db/queries/folders";
+import { createSavedView, deleteSavedView, type SavedViewRow } from "@/db/queries/views";
 import {
   createProjectWithDefaults,
   createStatus,
@@ -232,5 +233,27 @@ export async function deleteStatusAction(_: FormState, formData: FormData): Prom
   if (target.ticketCount > 0 && !moveTo) return { error: de.projectSettings.chooseTarget };
   await deleteStatus(ctx.workspace.id, project.id, statusId, moveTo);
   refresh(ctx.workspace.slug);
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Saved views (per user)
+// ---------------------------------------------------------------------------
+
+export async function createSavedViewAction(input: { workspaceId: string; projectId: string; name: string; query: string }): Promise<{ ok: true; view: SavedViewRow } | { ok: false; error: string }> {
+  const parsed = z
+    .object({ workspaceId: id, projectId: id, name: z.string().trim().min(1, de.views.nameRequired).max(60, de.views.nameTooLong), query: z.string().max(2000) })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? de.common.invalidInput };
+  const ctx = await requireMember({ workspaceId: parsed.data.workspaceId });
+  const view = await createSavedView(ctx.workspace.id, ctx.user.id, parsed.data.projectId, parsed.data.name, parsed.data.query);
+  return view ? { ok: true, view } : { ok: false, error: de.common.invalidInput };
+}
+
+export async function deleteSavedViewAction(input: { workspaceId: string; viewId: string }): Promise<Result> {
+  const parsed = z.object({ workspaceId: id, viewId: id }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: de.common.invalidInput };
+  const ctx = await requireMember({ workspaceId: parsed.data.workspaceId });
+  await deleteSavedView(ctx.workspace.id, ctx.user.id, parsed.data.viewId);
   return { ok: true };
 }

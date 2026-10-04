@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition, type ReactNode } from "react";
@@ -9,7 +10,7 @@ import { Explorer, type ExplorerData } from "@/components/explorer/explorer";
 import { Avatar } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
 import { Dropdown } from "@/components/ui/dropdown";
-import { Home, Menu, Sidebar as SidebarIcon, Users } from "@/components/ui/icons";
+import { CheckSquare, Home, Menu, Sidebar as SidebarIcon, Users } from "@/components/ui/icons";
 import { ToastProvider } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
@@ -26,6 +27,10 @@ type Props = {
   initialConfetti: boolean;
   children: ReactNode;
 };
+
+// Loaded on first use – kept out of every page's initial JS (budget ≤ 200 KB gzip).
+const CommandPalette = dynamic(() => import("./command-palette").then((m) => m.CommandPalette));
+const ShortcutHelp = dynamic(() => import("./command-palette").then((m) => m.ShortcutHelp));
 
 const noopSubscribe = () => () => {};
 /** "⌘B" on Apple devices, "Strg+B" elsewhere – resolved after hydration. */
@@ -69,11 +74,31 @@ export function AppShell({ shell, user, explorer, initialCollapsed, initialConfe
 
   const toggle = useCallback(() => setCollapsed((c) => !c), []);
 
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "b") {
+      const key = e.key.toLowerCase();
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && key === "b") {
         e.preventDefault();
         toggle();
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && key === "k") {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+        return;
+      }
+      const el = e.target instanceof HTMLElement ? e.target : null;
+      const typing = el && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) || el.closest("dialog,[role=menu]"));
+      if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "/") {
+        e.preventDefault();
+        setPaletteOpen(true);
+      } else if (e.key === "?") {
+        e.preventDefault();
+        setHelpOpen(true);
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -101,13 +126,25 @@ export function AppShell({ shell, user, explorer, initialCollapsed, initialConfe
           </aside>
 
           <div className="flex min-w-0 flex-1 flex-col">
-            <Topbar user={user} explorer={explorer} onOpenDrawer={() => setDrawer(true)} confetti={confetti} onToggleConfetti={() => setConfetti(!confetti)} />
+            <Topbar
+              user={user}
+              explorer={explorer}
+              onOpenDrawer={() => setDrawer(true)}
+              onOpenPalette={() => setPaletteOpen(true)}
+              onShowHelp={() => setHelpOpen(true)}
+              confetti={confetti}
+              onToggleConfetti={() => setConfetti(!confetti)}
+            />
             <main id="main" tabIndex={-1} className="min-h-0 flex-1 overflow-y-auto">
               {children}
             </main>
           </div>
         </div>
 
+        {paletteOpen ? (
+          <CommandPalette open onClose={() => setPaletteOpen(false)} explorer={explorer} onToggleSidebar={toggle} onShowHelp={() => setHelpOpen(true)} />
+        ) : null}
+        {helpOpen ? <ShortcutHelp open onClose={() => setHelpOpen(false)} /> : null}
         <Dialog open={drawer} onClose={() => setDrawer(false)} title={de.shell.sidebar} hideTitle placement="left" className="md:hidden">
           <SidebarContent collapsed={false} explorer={explorer} />
         </Dialog>
@@ -125,7 +162,9 @@ function SidebarContent({ collapsed, explorer, onToggle }: { collapsed: boolean;
   const members = `${home}/settings/members`;
   const shortcut = useShortcutLabel();
 
+  const me = `${home}/me`;
   const nav = [
+    { href: me, label: de.me.title, icon: <CheckSquare />, active: pathname === me },
     { href: home, label: de.shell.overview, icon: <Home />, active: pathname === home },
     ...(shell.canAdmin ? [{ href: members, label: de.members.title, icon: <Users />, active: pathname.startsWith(members) }] : []),
   ];
@@ -226,18 +265,23 @@ function Topbar({
   user,
   explorer,
   onOpenDrawer,
+  onOpenPalette,
+  onShowHelp,
   confetti,
   onToggleConfetti,
 }: {
   user: Props["user"];
   explorer: ExplorerData;
   onOpenDrawer: () => void;
+  onOpenPalette: () => void;
+  onShowHelp: () => void;
   confetti: boolean;
   onToggleConfetti: () => void;
 }) {
   const shell = useShell();
   const router = useRouter();
   const crumbs = useBreadcrumb(explorer);
+  const shortcutK = useShortcutLabel().replace("B", "K");
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-surface px-3 md:px-4">
@@ -267,6 +311,15 @@ function Topbar({
           ))}
         </ol>
       </nav>
+      <button
+        type="button"
+        onClick={onOpenPalette}
+        aria-keyshortcuts="Meta+K Control+K"
+        className="flex h-8 items-center gap-2 rounded-[var(--radius-badge)] border border-border px-2.5 text-[13px] text-muted hover:bg-bg hover:text-text"
+      >
+        <span>{de.shell.search}</span>
+        <kbd className="hidden font-mono text-[11px] sm:inline">{shortcutK}</kbd>
+      </button>
       <Dropdown
         align="end"
         trigger={<Avatar user={user} size="sm" />}
@@ -276,6 +329,7 @@ function Topbar({
           ...(shell.canAdmin ? [{ label: de.members.title, onSelect: () => router.push(`/${shell.slug}/settings/members`) }] : []),
           { label: de.shell.switchWorkspace, onSelect: () => router.push("/start") },
           { label: confetti ? de.shell.confettiOff : de.shell.confettiOn, onSelect: onToggleConfetti },
+          { label: de.command.shortcuts, onSelect: onShowHelp },
           { label: de.common.signOut, onSelect: () => void signOut() },
           { label: "Impressum", onSelect: () => router.push("/impressum") },
           { label: "Datenschutz", onSelect: () => router.push("/datenschutz") },
@@ -300,6 +354,8 @@ function useBreadcrumb(explorer: ExplorerData): Crumb[] {
     if (folder) crumbs.push({ label: folder.name });
     crumbs.push({ label: project?.name ?? rest[1]!, href: `${base}/p/${rest[1]}` });
     if (rest[2] === "settings") crumbs.push({ label: de.explorer.settings });
+  } else if (rest[0] === "me") {
+    crumbs.push({ label: de.me.title });
   } else if (rest[0] === "settings" && rest[1] === "members") {
     crumbs.push({ label: de.members.title });
   } else if (rest.length === 0) {

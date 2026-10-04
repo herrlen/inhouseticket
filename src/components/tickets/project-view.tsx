@@ -1,22 +1,34 @@
 "use client";
 
 import { useIsMutating } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LabelRow, MemberOption, TicketRow } from "@/db/queries/tickets";
+import type { SavedViewRow } from "@/db/queries/views";
+import { cleanViewQuery } from "@/lib/view-query";
+import { FilterBar } from "./filter-bar";
+import { applyFilters, readFilters } from "./filters";
 import { SlideOver } from "@/components/ui/dialog";
 import { de } from "@/lib/i18n/de";
 import { usePrefs } from "@/components/shell/prefs-context";
 import { confettiBurst } from "@/lib/confetti";
 import { cn } from "@/lib/cn";
-import { Board } from "./board";
 import { BulkBar } from "./bulk-bar";
 import { ProjectInfoProvider, type ProjectInfo } from "./context";
 import { groupTickets, todayInBerlin, type GroupBy, type SortBy, type StatusOption } from "./list-model";
 import { QuickAdd } from "./quick-add";
-import { TicketDetail } from "./ticket-detail";
 import { TicketList } from "./ticket-list";
 import { useBulkUpdate, useCreateTicket, useTickets, useUpdateTicket } from "./use-tickets";
+
+// Loaded on demand to keep the list view within the JS budget (≤ 200 KB gzip): the board pulls in
+// dnd-kit, the detail panel Markdown, uploads and comments.
+const Board = dynamic(() => import("./board").then((m) => m.Board), {
+  loading: () => <div className="h-[60vh] animate-pulse rounded-[var(--radius-card)] bg-bg" aria-hidden />,
+});
+const TicketDetail = dynamic(() => import("./ticket-detail").then((m) => m.TicketDetail), {
+  loading: () => <div className="h-96 animate-pulse rounded-[var(--radius-badge)] bg-bg" aria-hidden />,
+});
 
 const GROUPS: GroupBy[] = ["status", "priority", "assignee", "due", "none"];
 const SORTS: SortBy[] = ["manual", "priority", "due", "created", "number"];
@@ -27,6 +39,7 @@ type Props = {
   members: MemberOption[];
   labels: LabelRow[];
   initialTickets: TicketRow[];
+  savedViews: SavedViewRow[];
 };
 
 /** Updates the query string without a server round trip (Next syncs useSearchParams). */
@@ -42,7 +55,7 @@ function setParams(patch: Record<string, string | null>, mode: "push" | "replace
 const isEditable = (el: EventTarget | null) =>
   el instanceof HTMLElement && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) || Boolean(el.closest("[role=menu],dialog")));
 
-export function ProjectView({ info, statuses, members, labels: initialLabels, initialTickets }: Props) {
+export function ProjectView({ info, statuses, members, labels: initialLabels, initialTickets, savedViews }: Props) {
   const params = useSearchParams();
   const groupBy = (GROUPS.find((g) => g === params.get("group")) ?? "status") as GroupBy;
   const sortBy = (SORTS.find((s) => s === params.get("sort")) ?? "manual") as SortBy;
@@ -51,6 +64,9 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
   const { confetti } = usePrefs();
 
   const [labels, setLabels] = useState(initialLabels);
+  const [views, setViews] = useState(savedViews);
+  const filters = useMemo(() => readFilters(params), [params]);
+  const currentQuery = cleanViewQuery(params);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const quickAdd = useRef<HTMLInputElement>(null);
 
@@ -72,9 +88,22 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [saving]);
-  const groups = useMemo(() => groupTickets(tickets, { groupBy, sortBy, statuses, members, today }), [tickets, groupBy, sortBy, statuses, members, today]);
+  const doneStatusIds = useMemo(() => new Set(statuses.filter((s) => s.category === "done").map((s) => s.id)), [statuses]);
+  const filtered = useMemo(
+    () => applyFilters(tickets, filters, { currentUserId: info.currentUserId, today, doneStatusIds, projectKey: project.key }),
+    [tickets, filters, info.currentUserId, today, doneStatusIds, project.key],
+  );
+  const groups = useMemo(() => groupTickets(filtered, { groupBy, sortBy, statuses, members, today }), [filtered, groupBy, sortBy, statuses, members, today]);
   const visibleOrder = groups.flatMap((g) => g.tickets).filter((t) => !t.id.startsWith("temp-"));
   const openTicket = openKey ? tickets.find((t) => `${project.key}-${t.number}` === openKey) ?? null : null;
+
+  // "Neues Ticket" from the command palette arrives as ?new=1.
+  const wantsNew = params.get("new") === "1";
+  useEffect(() => {
+    if (!wantsNew) return;
+    setParams({ new: null });
+    quickAdd.current?.focus();
+  }, [wantsNew]);
 
   // "C" focuses the quick add (KONZEPT §2.7) – not while typing or inside menus/dialogs.
   useEffect(() => {
@@ -136,7 +165,7 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
             {saving ? de.list.savingAll : ""}
           </span>
           <div className="min-w-64 flex-1">
-            <QuickAdd ref={quickAdd} onCreate={(title) => create.mutate({ title })} />
+            <QuickAdd ref={quickAdd} onCreate={({ title, assigneeId, priority, dueDate }) => create.mutate({ title, assigneeId, priority, dueDate })} />
           </div>
           {view === "list" ? (
           <>
@@ -156,9 +185,24 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
           ) : null}
         </div>
 
+        <FilterBar
+          filters={filters}
+          onChange={(patch) => setParams(patch)}
+          onApplyQuery={(query) => {
+            const url = new URL(window.location.href);
+            url.search = query;
+            window.history.replaceState(null, "", url);
+          }}
+          currentQuery={currentQuery}
+          views={views}
+          onViewsChange={setViews}
+          shown={filtered.length}
+          total={tickets.length}
+        />
+
         {view === "board" ? (
           <Board
-            tickets={tickets}
+            tickets={filtered}
             today={today}
             onOpen={open}
             onCreate={(title, statusId) => create.mutate({ title, statusId })}
@@ -171,8 +215,8 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
               }
             }}
           />
-        ) : tickets.length === 0 ? (
-          <p className="rounded-[var(--radius-card)] border border-dashed border-border p-8 text-center text-muted">{de.list.empty}</p>
+        ) : filtered.length === 0 ? (
+          <p className="rounded-[var(--radius-card)] border border-dashed border-border p-8 text-center text-muted">{tickets.length === 0 ? de.list.empty : de.filters.noMatch}</p>
         ) : (
           <TicketList
             groups={groups}

@@ -14,7 +14,7 @@ import { shrinkImage } from "@/lib/compress-image";
 import { de } from "@/lib/i18n/de";
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_TICKET, MAX_COMMENT, MAX_DESCRIPTION, MAX_SUBTASKS, MAX_TITLE } from "@/lib/limits";
 import { useProjectInfo } from "./context";
-import { usePartActions, useParts, partsKey } from "./use-parts";
+import { partsKey, type usePartActions } from "./use-parts";
 import { ticketsKey } from "./use-tickets";
 
 type Actions = ReturnType<typeof usePartActions>;
@@ -489,11 +489,4 @@ export function CommentComposer({
       </div>
     </div>
   );
-}
-
-/** Loads parts once and renders subtasks + attachments (used by the detail panel). */
-export function useTicketParts(workspaceId: string, projectId: string, ticketId: string) {
-  const parts = useParts(workspaceId, ticketId);
-  const actions = usePartActions(workspaceId, projectId, ticketId);
-  return { parts, actions };
 }

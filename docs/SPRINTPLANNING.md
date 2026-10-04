@@ -78,12 +78,12 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 
 ## Sprint 6 – Speed-Features & Meine Aufgaben
 **Ziel:** Power-User lieben es.
-- [ ] P1 Command Palette (`Cmd+K`)
-- [ ] P1 Tastenkürzel + Hilfe-Overlay (`?`)
-- [ ] P1 „Meine Aufgaben“ projektübergreifend
-- [ ] P2 Quick-Add-Parser (`@person !prio ^datum`)
-- [ ] P2 Filterleiste + gespeicherte Views
-- [ ] P2 Volltextsuche (tsvector)
+- [x] P1 Command Palette (`Cmd+K`)
+- [x] P1 Tastenkürzel + Hilfe-Overlay (`?`)
+- [x] P1 „Meine Aufgaben“ projektübergreifend
+- [x] P2 Quick-Add-Parser (`@person !prio ^datum`)
+- [x] P2 Filterleiste + gespeicherte Views
+- [x] P2 Volltextsuche (tsvector)
 
 ## Sprint 7 – Dashboard & Benachrichtigungen
 **Ziel:** Überblick über Auslastung.

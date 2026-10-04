@@ -151,7 +151,7 @@ test("main pages render without console errors (e.g. hydration mismatches)", asy
   });
   page.on("pageerror", (e) => errors.push(e.message));
   const path = await createWorkspace(page, `clean@${uniqueDomain("console")}`, "Console GmbH");
-  for (const sub of ["", "/p/MKT", "/p/MKT/settings", "/settings/members"]) {
+  for (const sub of ["", "/me", "/p/MKT", "/p/MKT?view=board", "/p/MKT?t=MKT-1", "/p/MKT/settings", "/settings/members"]) {
     await page.goto(path + sub);
     await expect(page.getByRole("main")).toBeVisible();
     await waitForHydration(page.getByRole("button", { name: /^Konto von/ }));

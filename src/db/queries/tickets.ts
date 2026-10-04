@@ -335,3 +335,57 @@ export async function listAssignableMembers(workspaceId: string): Promise<Member
     .where(and(eq(membership.workspaceId, workspaceId), eq(membership.status, "active")))
     .orderBy(asc(user.name));
 }
+
+export type MyTask = {
+  id: string;
+  key: string;
+  title: string;
+  priority: number;
+  dueDate: string | null;
+  statusName: string;
+  statusColor: string;
+  projectKey: string;
+  projectName: string;
+  projectColor: string;
+};
+
+/** Open tickets assigned to a user across all active projects of the workspace (KONZEPT §2.4). */
+export async function listMyTasks(workspaceId: string, userId: string): Promise<MyTask[]> {
+  const rows = await db
+    .select({
+      id: ticket.id,
+      number: ticket.number,
+      title: ticket.title,
+      priority: ticket.priority,
+      dueAt: ticket.dueAt,
+      statusName: status.name,
+      statusColor: status.color,
+      projectKey: project.key,
+      projectName: project.name,
+      projectColor: project.color,
+    })
+    .from(ticket)
+    .innerJoin(status, eq(status.id, ticket.statusId))
+    .innerJoin(project, eq(project.id, ticket.projectId))
+    .where(
+      and(
+        eq(ticket.workspaceId, workspaceId),
+        eq(ticket.assigneeId, userId),
+        sql`${status.category} <> 'done'`,
+        isNull(project.archivedAt),
+      ),
+    )
+    .orderBy(sql`${ticket.dueAt} asc nulls last`, desc(ticket.priority), asc(ticket.createdAt));
+  return rows.map((r) => ({
+    id: r.id,
+    key: `${r.projectKey}-${r.number}`,
+    title: r.title,
+    priority: r.priority,
+    dueDate: timestampToDueDate(r.dueAt),
+    statusName: r.statusName,
+    statusColor: r.statusColor,
+    projectKey: r.projectKey,
+    projectName: r.projectName,
+    projectColor: r.projectColor,
+  }));
+}
