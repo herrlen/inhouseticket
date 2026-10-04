@@ -27,6 +27,7 @@ export default async function WorkspaceLayout({ children, params }: Props) {
         favorites: prefs.favorites.filter((id) => projects.some((p) => p.id === id)),
       }}
       initialCollapsed={prefs.sidebarCollapsed}
+      initialConfetti={prefs.confetti}
     >
       {children}
     </AppShell>

@@ -3,7 +3,7 @@ import { de } from "@/lib/i18n/de";
 
 // Pure list logic (unit-tested): grouping, sorting, due-date buckets.
 
-export type StatusOption = { id: string; name: string; color: string; category: "open" | "active" | "done"; sort: string };
+export type StatusOption = { id: string; name: string; color: string; category: "open" | "active" | "done"; sort: string; wipLimit?: number | null };
 export type ListTicket = {
   id: string;
   number: number;

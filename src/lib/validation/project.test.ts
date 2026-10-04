@@ -44,3 +44,14 @@ describe("createProjectSchema", () => {
     expect(createProjectSchema.safeParse({ name: "IT", key: "I-T", color: "#3A86FF" }).success).toBe(false);
   });
 });
+
+describe("statusSchema wipLimit", () => {
+  const base = { name: "In Arbeit", color: "#3B82F6", category: "active" };
+  it("maps empty to null and coerces numbers", async () => {
+    const { statusSchema } = await import("./project");
+    expect(statusSchema.parse(base).wipLimit).toBeNull();
+    expect(statusSchema.parse({ ...base, wipLimit: "3" }).wipLimit).toBe(3);
+    expect(statusSchema.safeParse({ ...base, wipLimit: "0" }).success).toBe(false);
+    expect(statusSchema.safeParse({ ...base, wipLimit: "2.5" }).success).toBe(false);
+  });
+});

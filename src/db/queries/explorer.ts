@@ -14,9 +14,9 @@ export type ExplorerProject = {
   sort: string;
   openCount: number;
 };
-export type Prefs = { sidebarCollapsed: boolean; expandedFolders: string[]; favorites: string[]; theme: "system" | "light" | "dark" };
+export type Prefs = { sidebarCollapsed: boolean; expandedFolders: string[]; favorites: string[]; theme: "system" | "light" | "dark"; confetti: boolean };
 
-export const DEFAULT_PREFS: Prefs = { sidebarCollapsed: false, expandedFolders: [], favorites: [], theme: "system" };
+export const DEFAULT_PREFS: Prefs = { sidebarCollapsed: false, expandedFolders: [], favorites: [], theme: "system", confetti: true };
 
 export async function getExplorer(workspaceId: string, userId: string) {
   const [folders, projects, prefs] = await Promise.all([
@@ -55,6 +55,7 @@ export async function getPrefs(workspaceId: string, userId: string): Promise<Pre
       expandedFolders: userPref.expandedFolders,
       favorites: userPref.favorites,
       theme: userPref.theme,
+      confetti: userPref.confetti,
     })
     .from(userPref)
     .where(and(eq(userPref.workspaceId, workspaceId), eq(userPref.userId, userId)))

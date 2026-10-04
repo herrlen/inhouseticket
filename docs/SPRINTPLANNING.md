@@ -60,16 +60,16 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 
 ## Sprint 4 – Kanban
 **Ziel:** Board mit flüssigem Drag & Drop.
-- [ ] P1 Board mit Spalten = Status (dnd-kit)
-- [ ] P1 Fractional Indexing für Sortierung
-- [ ] P1 Karte: Key, Titel, Priorität, Avatar, Fälligkeit, Unteraufgaben-Fortschritt
-- [ ] P2 WIP-Limit je Spalte (visuelle Warnung)
-- [ ] P2 Schnell-Anlage direkt in Spalte
-- [ ] P3 Konfetti bei „Erledigt“ (abschaltbar)
+- [x] P1 Board mit Spalten = Status (dnd-kit)
+- [x] P1 Fractional Indexing für Sortierung
+- [x] P1 Karte: Key, Titel, Priorität, Avatar, Fälligkeit (Unteraufgaben-Fortschritt folgt mit Sprint 5)
+- [x] P2 WIP-Limit je Spalte (visuelle Warnung)
+- [x] P2 Schnell-Anlage direkt in Spalte
+- [x] P3 Konfetti bei „Erledigt“ (abschaltbar)
 
 ## Sprint 5 – Unteraufgaben, Anhänge, Kommentare
 **Ziel:** Ticket ist inhaltlich vollständig.
-- [ ] P1 Unteraufgaben (max. 5, eine Ebene) + Trigger-Absicherung
+- [ ] P1 Unteraufgaben (max. 5, eine Ebene) + Trigger-Absicherung, Fortschritt `3/5` auf Board-Karten
 - [ ] P1 Anhänge: WebP/JPEG/PNG, ≤ 100 KB, Magic-Byte-Check, S3-Upload
 - [ ] P1 Client-Auto-Kompression zu WebP < 100 KB
 - [ ] P2 Bildvorschau/Lightbox

@@ -35,6 +35,17 @@ export function useActivity(workspaceId: string, ticketId: string | null) {
   });
 }
 
+/**
+ * After every mutation, refetch the list once no other ticket mutation is running. This cancels a
+ * background refetch that started before the server committed (it would otherwise land late and
+ * overwrite the confirmed value with stale data).
+ */
+function settle(qc: ReturnType<typeof useQueryClient>, projectId: string) {
+  if (qc.isMutating({ mutationKey: ["tickets", projectId] }) <= 1) {
+    void qc.invalidateQueries({ queryKey: ticketsKey(projectId) });
+  }
+}
+
 /** Applies a patch locally the way the server will (labels, due date, status). */
 function applyPatch(t: TicketRow, patch: TicketPatch): TicketRow {
   const { labelIds, ...rest } = patch;
@@ -48,6 +59,7 @@ export function useUpdateTicket(workspaceId: string, projectId: string) {
   const router = useRouter();
 
   const mutation = useMutation({
+    mutationKey: ["tickets", projectId],
     mutationFn: async ({ ticketId, patch }: { ticketId: string; patch: TicketPatch }) => {
       const r = await updateTicketAction({ workspaceId, ticketId, patch });
       if (!r.ok) throw new Error(r.error);
@@ -72,6 +84,7 @@ export function useUpdateTicket(workspaceId: string, projectId: string) {
       void qc.invalidateQueries({ queryKey: activityKey(row.id) });
       if (patch.statusId) router.refresh(); // explorer counts
     },
+    onSettled: () => settle(qc, projectId),
   });
   return mutation;
 }
@@ -80,6 +93,7 @@ export function useCreateTicket(workspaceId: string, projectId: string) {
   const qc = useQueryClient();
   const toast = useToast();
   return useMutation({
+    mutationKey: ["tickets", projectId],
     mutationFn: async (input: { title: string; statusId?: string; priority?: number; assigneeId?: string | null }) => {
       const r = await createTicketAction({ workspaceId, projectId, ...input });
       if (!r.ok) throw new Error(r.error);
@@ -116,6 +130,7 @@ export function useCreateTicket(workspaceId: string, projectId: string) {
     onSuccess: (row, _input, context) => {
       qc.setQueryData<TicketRow[]>(ticketsKey(projectId), (list) => list?.map((t) => (t.id === context?.tempId ? row : t)));
     },
+    onSettled: () => settle(qc, projectId),
   });
 }
 
@@ -124,6 +139,7 @@ export function useBulkUpdate(workspaceId: string, projectId: string) {
   const toast = useToast();
   const router = useRouter();
   return useMutation({
+    mutationKey: ["tickets", projectId],
     mutationFn: async ({ ticketIds, patch }: { ticketIds: string[]; patch: Pick<TicketPatch, "statusId" | "priority" | "assigneeId"> }) => {
       const r = await bulkUpdateTicketsAction({ workspaceId, ticketIds, patch });
       if (!r.ok) throw new Error(r.error);
@@ -145,5 +161,6 @@ export function useBulkUpdate(workspaceId: string, projectId: string) {
       toast({ message: de.list.bulkDone(rows.length), tone: "success" });
       if (patch.statusId) router.refresh();
     },
+    onSettled: () => settle(qc, projectId),
   });
 }

@@ -151,6 +151,7 @@ const prefsInput = z.object({
   sidebarCollapsed: z.boolean().optional(),
   expandedFolders: z.array(id).max(500).optional(),
   favorites: z.array(id).max(500).optional(),
+  confetti: z.boolean().optional(),
 });
 
 export async function savePrefsAction(input: z.input<typeof prefsInput>): Promise<Result> {

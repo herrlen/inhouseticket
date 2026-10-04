@@ -43,6 +43,8 @@ export const ticketPatchSchema = z
     assigneeId: z.string().min(1).max(100).nullable(),
     dueDate: dueDateSchema,
     labelIds: z.array(z.uuid()).max(20),
+    /** Fractional sort key (board/list drag & drop). */
+    sort: z.string().min(1).max(200).regex(/^[0-9A-Za-z]+$/),
   })
   .partial()
   .refine((p) => Object.keys(p).length > 0, "Nichts zu ändern.");

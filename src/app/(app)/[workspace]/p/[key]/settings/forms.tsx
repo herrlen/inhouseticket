@@ -50,7 +50,7 @@ export function ProjectForm({ workspaceId, project }: { workspaceId: string; pro
 }
 
 type StatusRef = { workspaceId: string; projectKey: string };
-type StatusData = { id: string; name: string; color: string; category: "open" | "active" | "done"; ticketCount: number };
+type StatusData = { id: string; name: string; color: string; category: "open" | "active" | "done"; ticketCount: number; wipLimit: number | null };
 
 function Hidden({ workspaceId, projectKey, statusId }: StatusRef & { statusId?: string }) {
   return (
@@ -82,6 +82,18 @@ function StatusFields({ status, idPrefix }: { status?: StatusData; idPrefix: str
         <option value="active">{de.projectSettings.categories.active}</option>
         <option value="done">{de.projectSettings.categories.done}</option>
       </select>
+      <label htmlFor={`${idPrefix}-wip`} className="sr-only">{de.projectSettings.wipLimit}</label>
+      <input
+        id={`${idPrefix}-wip`}
+        name="wipLimit"
+        type="number"
+        min={1}
+        max={999}
+        defaultValue={status?.wipLimit ?? ""}
+        placeholder={de.projectSettings.wipPlaceholder}
+        title={de.projectSettings.wipLimit}
+        className="h-8 w-20 rounded-[var(--radius-badge)] border border-border bg-surface px-2 text-sm placeholder:text-muted"
+      />
     </>
   );
 }

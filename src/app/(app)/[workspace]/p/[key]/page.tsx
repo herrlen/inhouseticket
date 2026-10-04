@@ -47,7 +47,7 @@ export default async function ProjectPage({ params }: Props) {
       <Suspense>
         <ProjectView
           info={{ workspaceId: wsId, slug: ctx.workspace.slug, project: { id: project.id, key: project.key, name: project.name, color: project.color }, currentUserId: ctx.user.id }}
-          statuses={statuses.map((s) => ({ id: s.id, name: s.name, color: s.color, category: s.category, sort: s.sort }))}
+          statuses={statuses.map((s) => ({ id: s.id, name: s.name, color: s.color, category: s.category, sort: s.sort, wipLimit: s.wipLimit }))}
           members={members}
           labels={labels}
           initialTickets={tickets}

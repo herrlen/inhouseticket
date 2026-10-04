@@ -43,4 +43,9 @@ export const statusSchema = z.object({
   name: z.string().trim().min(1, "Bitte einen Namen eingeben.").max(50, "Höchstens 50 Zeichen."),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Ungültige Farbe."),
   category: z.enum(["open", "active", "done"]),
+  /** Empty = no limit. */
+  wipLimit: z
+    .union([z.literal(""), z.coerce.number().int("Ganze Zahl.").min(1, "Mindestens 1.").max(999, "Höchstens 999.")])
+    .transform((v) => (v === "" ? null : v))
+    .prefault(""),
 });

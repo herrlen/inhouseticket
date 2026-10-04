@@ -14,6 +14,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
 import { de } from "@/lib/i18n/de";
+import { PrefsProvider } from "./prefs-context";
 import { QueryProvider } from "./query-provider";
 import { ShellProvider, useShell, type ShellInfo } from "./shell-context";
 
@@ -22,6 +23,7 @@ type Props = {
   user: { id: string; name: string; email: string; image?: string | null };
   explorer: ExplorerData;
   initialCollapsed: boolean;
+  initialConfetti: boolean;
   children: ReactNode;
 };
 
@@ -35,10 +37,18 @@ function useShortcutLabel() {
   );
 }
 
-export function AppShell({ shell, user, explorer, initialCollapsed, children }: Props) {
+export function AppShell({ shell, user, explorer, initialCollapsed, initialConfetti, children }: Props) {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
-  const [drawer, setDrawer] = useState(false);
   const [, startTransition] = useTransition();
+  const [confetti, setConfettiState] = useState(initialConfetti);
+  const setConfetti = useCallback(
+    (on: boolean) => {
+      setConfettiState(on);
+      startTransition(() => void savePrefsAction({ workspaceId: shell.workspaceId, confetti: on }));
+    },
+    [shell.workspaceId],
+  );
+  const [drawer, setDrawer] = useState(false);
   const pathname = usePathname();
 
   // Close the mobile drawer after navigating.
@@ -74,6 +84,7 @@ export function AppShell({ shell, user, explorer, initialCollapsed, children }: 
   return (
     <ShellProvider value={shell}>
       <QueryProvider>
+      <PrefsProvider value={{ confetti, setConfetti }}>
       <ToastProvider>
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-surface focus:p-2">
           {de.common.skipToContent}
@@ -91,7 +102,7 @@ export function AppShell({ shell, user, explorer, initialCollapsed, children }: 
           </aside>
 
           <div className="flex min-w-0 flex-1 flex-col">
-            <Topbar user={user} explorer={explorer} onOpenDrawer={() => setDrawer(true)} />
+            <Topbar user={user} explorer={explorer} onOpenDrawer={() => setDrawer(true)} confetti={confetti} onToggleConfetti={() => setConfetti(!confetti)} />
             <main id="main" tabIndex={-1} className="min-h-0 flex-1 overflow-y-auto">
               {children}
             </main>
@@ -102,6 +113,7 @@ export function AppShell({ shell, user, explorer, initialCollapsed, children }: 
           <SidebarContent collapsed={false} explorer={explorer} />
         </Dialog>
       </ToastProvider>
+      </PrefsProvider>
       </QueryProvider>
     </ShellProvider>
   );
@@ -211,7 +223,19 @@ function CollapsedProjects({ explorer }: { explorer: ExplorerData }) {
   );
 }
 
-function Topbar({ user, explorer, onOpenDrawer }: { user: Props["user"]; explorer: ExplorerData; onOpenDrawer: () => void }) {
+function Topbar({
+  user,
+  explorer,
+  onOpenDrawer,
+  confetti,
+  onToggleConfetti,
+}: {
+  user: Props["user"];
+  explorer: ExplorerData;
+  onOpenDrawer: () => void;
+  confetti: boolean;
+  onToggleConfetti: () => void;
+}) {
   const shell = useShell();
   const router = useRouter();
   const crumbs = useBreadcrumb(explorer);
@@ -252,6 +276,7 @@ function Topbar({ user, explorer, onOpenDrawer }: { user: Props["user"]; explore
         items={[
           ...(shell.canAdmin ? [{ label: de.members.title, onSelect: () => router.push(`/${shell.slug}/settings/members`) }] : []),
           { label: de.shell.switchWorkspace, onSelect: () => router.push("/start") },
+          { label: confetti ? de.shell.confettiOff : de.shell.confettiOn, onSelect: onToggleConfetti },
           { label: de.common.signOut, onSelect: () => void signOut() },
           { label: "Impressum", onSelect: () => router.push("/impressum") },
           { label: "Datenschutz", onSelect: () => router.push("/datenschutz") },

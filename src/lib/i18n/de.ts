@@ -196,6 +196,27 @@ export const de = {
     assigneeOf: (ticket: string, name: string) => `Zuständig für ${ticket}: ${name}`,
     dueOf: (ticket: string) => `Fälligkeit von ${ticket}`,
   },
+  board: {
+    label: (project: string) => `Board ${project}`,
+    column: (name: string) => `Spalte ${name}`,
+    cardRole: "verschiebbare Karte",
+    add: "Ticket",
+    addIn: (status: string) => `Neues Ticket in ${status}`,
+    addPlaceholder: "Titel … (Enter)",
+    countLabel: (n: number) => (n === 1 ? "1 Ticket" : `${n} Tickets`),
+    wipLabel: (n: number, max: number) => `${n} von maximal ${max} Tickets`,
+    wipOver: (max: number) => `WIP-Limit von ${max} überschritten`,
+    dnd: {
+      instructions:
+        "Leertaste zum Aufnehmen. Mit den Pfeiltasten verschieben, auch in andere Spalten. Leertaste oder Enter zum Ablegen, Escape zum Abbrechen. Enter öffnet das Ticket.",
+      start: (card: string) => `${card} aufgenommen.`,
+      over: (card: string, target: string) => `${card} ist über ${target}.`,
+      outside: (card: string) => `${card} ist außerhalb des Boards.`,
+      end: (card: string, target: string) => `${card} bei ${target} abgelegt.`,
+      cancel: (card: string) => `Verschieben von ${card} abgebrochen.`,
+    },
+  },
+  view: { list: "Liste", board: "Board", switcher: "Ansicht" },
   detail: {
     title: "Titel",
     labels: "Labels",
@@ -242,6 +263,8 @@ export const de = {
     breadcrumb: "Pfad",
     userMenu: (name: string) => `Konto von ${name}`,
     switchWorkspace: "Workspace wechseln",
+    confettiOn: "Konfetti einschalten",
+    confettiOff: "Konfetti ausschalten",
   },
   projectForm: {
     name: "Name",
@@ -271,6 +294,8 @@ export const de = {
     statusName: "Name des Status",
     statusColor: "Farbe des Status",
     category: "Art",
+    wipLimit: "WIP-Limit (max. Tickets gleichzeitig in dieser Spalte, leer = unbegrenzt)",
+    wipPlaceholder: "WIP",
     categories: { open: "Offen", active: "In Arbeit", done: "Erledigt" },
     colorName: (hex: string) =>
       ({ "#78716C": "Grau", "#3B82F6": "Blau", "#9B5DE5": "Violett", "#22C55E": "Grün", "#FF6B5B": "Koralle", "#FF9F1C": "Orange",

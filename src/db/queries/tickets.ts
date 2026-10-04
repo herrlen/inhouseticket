@@ -237,6 +237,9 @@ export async function updateTicket(actor: Actor, ticketId: string, patch: Ticket
       await log(tx, actor, ticketId, "due", { from: timestampToDueDate(current.dueAt), to: patch.dueDate });
     }
 
+    // Reordering is not logged – it is not a change of the ticket's content.
+    if (patch.sort !== undefined && patch.sort !== current.sort) set.sort = patch.sort;
+
     if (Object.keys(set).length > 0) {
       await tx.update(ticket).set(set).where(and(eq(ticket.id, ticketId), eq(ticket.workspaceId, actor.workspaceId)));
     }

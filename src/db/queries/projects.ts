@@ -143,7 +143,7 @@ export type StatusCategory = (typeof status.$inferSelect)["category"];
 export async function createStatus(
   workspaceId: string,
   projectId: string,
-  input: { name: string; color: string; category: StatusCategory; sort: string },
+  input: { name: string; color: string; category: StatusCategory; sort: string; wipLimit?: number | null },
 ) {
   await db.insert(status).values({ workspaceId, projectId, ...input });
 }
@@ -151,7 +151,7 @@ export async function createStatus(
 export async function updateStatus(
   workspaceId: string,
   statusId: string,
-  patch: Partial<{ name: string; color: string; category: StatusCategory; sort: string }>,
+  patch: Partial<{ name: string; color: string; category: StatusCategory; sort: string; wipLimit: number | null }>,
 ) {
   await db.update(status).set(patch).where(and(eq(status.id, statusId), eq(status.workspaceId, workspaceId)));
 }
