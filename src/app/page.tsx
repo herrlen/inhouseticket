@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { LegalLinks } from "@/components/legal-links";
 import { de } from "@/lib/i18n/de";
 import { getSession } from "@/lib/session";
 
@@ -13,6 +14,7 @@ export default async function Home() {
       <Link href="/login" className="inline-flex h-9 items-center rounded-[var(--radius-badge)] bg-accent px-3.5 font-medium text-accent-contrast">
         {de.login.title}
       </Link>
+      <LegalLinks className="mt-8" />
     </main>
   );
 }

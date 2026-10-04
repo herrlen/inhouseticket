@@ -253,6 +253,8 @@ function Topbar({ user, explorer, onOpenDrawer }: { user: Props["user"]; explore
           ...(shell.canAdmin ? [{ label: de.members.title, onSelect: () => router.push(`/${shell.slug}/settings/members`) }] : []),
           { label: de.shell.switchWorkspace, onSelect: () => router.push("/start") },
           { label: de.common.signOut, onSelect: () => void signOut() },
+          { label: "Impressum", onSelect: () => router.push("/impressum") },
+          { label: "Datenschutz", onSelect: () => router.push("/datenschutz") },
         ]}
       />
     </header>

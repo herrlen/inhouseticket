@@ -45,11 +45,19 @@ trap 'rm -f "$ENVFILE"' EXIT
 
 PG="$(env_of postgres POSTGRES_PASSWORD)"
 AUTH="$(env_of app BETTER_AUTH_SECRET)"
+SERVICES="$(jq -r '[.[0].services[]?.serviceName] | join(" ")' <<<"$STATE")"
+FORCE=()
 if [[ -z "$PG" || -z "$AUTH" ]]; then
-  [[ -z "$(jq -r '.[0].services[]?.serviceName' <<<"$STATE")" ]] || fehler "Stack läuft, aber Secrets nicht lesbar – Abbruch, damit die Datenbank nicht neu verschlüsselt wird"
+  # Never regenerate secrets while our database exists – that would lock the app out of its data.
+  [[ " $SERVICES " != *" postgres "* ]] || fehler "postgres läuft, aber Secrets nicht lesbar – Abbruch"
   echo "Erster Deploy: Datenbank-Passwort und Auth-Secret werden erzeugt (nicht ausgegeben)."
   PG="$(openssl rand -hex 24)"
   AUTH="$(openssl rand -base64 32)"
+  # mStudio needs a first container to create the stack (e.g. nginx:alpine); it gets replaced.
+  if [[ -n "$SERVICES" ]]; then
+    echo "Platzhalter im Stack wird ersetzt: $SERVICES"
+    FORCE=(-f)
+  fi
 fi
 SMTP="${SMTP_PASSWORD:-$(env_of app SMTP_PASSWORD)}"
 BETA="${BETA_ALLOWED_DOMAINS:-$(env_of app BETA_ALLOWED_DOMAINS)}"
@@ -67,7 +75,7 @@ BETA="${BETA_ALLOWED_DOMAINS:-$(env_of app BETA_ALLOWED_DOMAINS)}"
 } >"$ENVFILE"
 
 schritt "Ausrollen ($TAG)"
-mw stack deploy -s "$STACK" -c infra/mittwald-stack.yml --env-file "$ENVFILE" -q >/dev/null
+mw stack deploy -s "$STACK" -c infra/mittwald-stack.yml --env-file "$ENVFILE" -q "${FORCE[@]}" >/dev/null
 rm -f "$ENVFILE"
 
 schritt "Prüfen"
