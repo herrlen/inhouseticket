@@ -6,12 +6,13 @@ import type { ActivityRow, LabelRow, TicketRow } from "@/db/queries/tickets";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 import { de } from "@/lib/i18n/de";
-import { MAX_DESCRIPTION, MAX_TITLE } from "@/lib/limits";
+import { MAX_TITLE } from "@/lib/limits";
 import { PALETTE } from "@/lib/palette";
 import type { TicketPatch } from "@/lib/validation/ticket";
 import { useProjectInfo } from "./context";
 import { dueBucket, todayInBerlin } from "./list-model";
 import { AssigneePicker, DueDateInput, PriorityPicker, StatusPicker } from "./pickers";
+import { Attachments, Comments, DescriptionField, Subtasks, useTicketParts } from "./detail-parts";
 import { useActivity } from "./use-tickets";
 
 type Props = {
@@ -56,7 +57,8 @@ export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Pr
     const t = v.trim();
     if (t && t.length <= MAX_TITLE) onPatch({ title: t });
   });
-  const description = useDraft(ticket.description ?? "", (v) => onPatch({ description: v }));
+  const { parts, actions } = useTicketParts(workspaceId, project.id, ticket.id);
+  const [tab, setTab] = useState<"comments" | "activity">("comments");
 
   // ↑/↓ switch tickets while the panel is open – wherever focus is, except in fields and menus.
   const navigateRef = useRef(onNavigate);
@@ -123,23 +125,53 @@ export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Pr
         </dd>
       </dl>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="ticket-description" className="text-[13px] font-medium">{de.detail.description}</label>
-        <textarea
-          id="ticket-description"
-          value={description.draft}
-          maxLength={MAX_DESCRIPTION}
-          onChange={(e) => description.setDraft(e.target.value)}
-          onBlur={description.commit}
-          placeholder={de.detail.descriptionPlaceholder}
-          className="field-sizing-content min-h-28 resize-y rounded-[var(--radius-badge)] border border-border bg-surface p-2 text-sm placeholder:text-muted"
-        />
-        <div className="flex justify-end">
-          <Counter value={description.draft.length} max={MAX_DESCRIPTION} />
-        </div>
-      </div>
+      <DescriptionField value={ticket.description ?? ""} onSave={(v) => onPatch({ description: v })} />
 
-      <Activity workspaceId={workspaceId} ticketId={ticket.id} />
+      {parts.data ? (
+        <>
+          <Subtasks subtasks={parts.data.subtasks} actions={actions} />
+          <Attachments workspaceId={workspaceId} ticketId={ticket.id} attachments={parts.data.attachments} actions={actions} />
+        </>
+      ) : parts.isError ? (
+        <p className="text-xs text-prio-urgent-ink">{de.detail.activityError}</p>
+      ) : (
+        <div className="h-24 animate-pulse rounded-[var(--radius-badge)] bg-bg" aria-hidden />
+      )}
+
+      <section aria-label={de.detail.tabs}>
+        <div role="tablist" aria-label={de.detail.tabs} className="mb-3 flex gap-4 border-b border-border text-[13px]">
+          {(["comments", "activity"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              role="tab"
+              id={`tab-${t}`}
+              aria-selected={tab === t}
+              aria-controls={`panel-${t}`}
+              tabIndex={tab === t ? 0 : -1}
+              onClick={() => setTab(t)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                  e.preventDefault();
+                  const next = t === "comments" ? "activity" : "comments";
+                  setTab(next);
+                  document.getElementById(`tab-${next}`)?.focus();
+                }
+              }}
+              className={cn("-mb-px border-b-2 pb-2", tab === t ? "border-accent font-medium" : "border-transparent text-muted hover:text-text")}
+            >
+              {t === "comments" ? `${de.detail.comments}${parts.data?.comments.length ? ` (${parts.data.comments.length})` : ""}` : de.detail.activity}
+            </button>
+          ))}
+        </div>
+        <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+          {tab === "comments" ? (
+            parts.data ? <Comments comments={parts.data.comments} actions={actions} /> : null
+          ) : (
+            <Activity workspaceId={workspaceId} ticketId={ticket.id} />
+          )}
+        </div>
+      </section>
       <p className="text-xs text-muted">{de.detail.navHint}</p>
     </div>
   );
@@ -237,6 +269,12 @@ function describe(a: ActivityRow): string {
     case "assignee": return p.to ? de.activity.assignee(str(p.to)) : de.activity.unassigned;
     case "due": return p.to ? de.activity.due(new Intl.DateTimeFormat("de-DE", { timeZone: "UTC" }).format(new Date(`${String(p.to)}T00:00:00Z`))) : de.activity.dueRemoved;
     case "labels": return de.activity.labels((p.added as string[]) ?? [], (p.removed as string[]) ?? []);
+    case "subtask_added": return de.activity.subtask_added(str(p.title));
+    case "subtask_done": return de.activity.subtask_done(str(p.title));
+    case "subtask_reopened": return de.activity.subtask_reopened(str(p.title));
+    case "subtask_removed": return de.activity.subtask_removed(str(p.title));
+    case "attachment_added": return de.activity.attachment_added(str(p.fileName));
+    case "attachment_removed": return de.activity.attachment_removed(str(p.fileName));
     default: return a.type;
   }
 }
@@ -244,8 +282,7 @@ function describe(a: ActivityRow): string {
 function Activity({ workspaceId, ticketId }: { workspaceId: string; ticketId: string }) {
   const { data, isError } = useActivity(workspaceId, ticketId);
   return (
-    <section aria-labelledby="activity-heading">
-      <h3 id="activity-heading" className="mb-2 text-[13px] font-medium">{de.detail.activity}</h3>
+    <section>
       {isError ? <p className="text-xs text-prio-urgent-ink">{de.detail.activityError}</p> : null}
       <ol className="flex flex-col gap-1.5 border-l border-border pl-3 text-xs">
         {(data ?? []).map((a) => (

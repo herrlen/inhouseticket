@@ -6,6 +6,7 @@ import { de } from "@/lib/i18n/de";
 import { useProjectInfo } from "./context";
 import { dueBucket, type Group } from "./list-model";
 import { AssigneePicker, DueDateInput, PriorityPicker, StatusDot, StatusPicker } from "./pickers";
+import { TicketMeta } from "./ticket-meta";
 import type { TicketPatch } from "@/lib/validation/ticket";
 
 type Props = {
@@ -115,6 +116,7 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
                             {l.name}
                           </span>
                         ))}
+                        <TicketMeta subtaskDone={t.subtaskDone} subtaskTotal={t.subtaskTotal} commentCount={t.commentCount} attachmentCount={t.attachmentCount} className="ml-auto" />
                       </button>
                     </td>
                     {pending ? (

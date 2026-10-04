@@ -29,7 +29,7 @@ test("board shows columns and moves cards with the keyboard and the mouse", asyn
   await page.keyboard.press("ArrowRight");
   await page.waitForTimeout(200);
   await Promise.all([
-    page.waitForResponse((r) => r.request().method() === "POST" && r.request().headers()["next-action"] !== undefined),
+    page.waitForResponse((r) => r.request().method() === "PATCH" && /\/api\/w\/[^/]+\/tickets\/[^/]+$/.test(r.url())),
     page.keyboard.press("Space"),
   ]);
   await expect(column(page, "In Arbeit").getByText("MKT-1")).toBeVisible();
@@ -44,10 +44,11 @@ test("board shows columns and moves cards with the keyboard and the mouse", asyn
   await page.mouse.move(from!.x + 40, from!.y + 30, { steps: 5 });
   await page.mouse.move(Math.min(to!.x + 40, viewport.width - 10), to!.y + 120, { steps: 15 });
   await Promise.all([
-    page.waitForResponse((r) => r.request().method() === "POST" && r.request().headers()["next-action"] !== undefined),
+    page.waitForResponse((r) => r.request().method() === "PATCH" && /\/api\/w\/[^/]+\/tickets\/[^/]+$/.test(r.url())),
     page.mouse.up(),
   ]);
   await expect(column(page, "Erledigt").getByText("MKT-2")).toBeVisible();
+  await expect(page.getByText("Speichert …")).toHaveCount(0);
 
   await page.reload();
   await expect(column(page, "In Arbeit").getByText("MKT-1")).toBeVisible();

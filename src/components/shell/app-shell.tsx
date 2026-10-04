@@ -58,13 +58,12 @@ export function AppShell({ shell, user, explorer, initialCollapsed, initialConfe
     setDrawer(false);
   }
 
-  // Persist the collapsed state whenever it changes (not on first render).
-  const isFirstRender = useRef(true);
+  // Persist the collapsed state when it changes – compared with the last saved value, so mounting
+  // (and React's dev double-invocation) never triggers a write.
+  const savedCollapsed = useRef(initialCollapsed);
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
+    if (collapsed === savedCollapsed.current) return;
+    savedCollapsed.current = collapsed;
     startTransition(() => void savePrefsAction({ workspaceId: shell.workspaceId, sidebarCollapsed: collapsed }));
   }, [collapsed, shell.workspaceId]);
 

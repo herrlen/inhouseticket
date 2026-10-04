@@ -1,5 +1,6 @@
 "use client";
 
+import { useIsMutating } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LabelRow, MemberOption, TicketRow } from "@/db/queries/tickets";
@@ -60,6 +61,17 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
   const bulk = useBulkUpdate(workspaceId, project.id);
 
   const today = todayInBerlin();
+
+  // Unsaved edits: show it, and ask before leaving the page while requests are in flight.
+  const saving = useIsMutating() > 0;
+  useEffect(() => {
+    if (!saving) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [saving]);
   const groups = useMemo(() => groupTickets(tickets, { groupBy, sortBy, statuses, members, today }), [tickets, groupBy, sortBy, statuses, members, today]);
   const visibleOrder = groups.flatMap((g) => g.tickets).filter((t) => !t.id.startsWith("temp-"));
   const openTicket = openKey ? tickets.find((t) => `${project.key}-${t.number}` === openKey) ?? null : null;
@@ -120,6 +132,9 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
               </button>
             ))}
           </div>
+          <span role="status" aria-live="polite" className="order-last w-full text-xs text-muted sm:order-none sm:w-auto">
+            {saving ? de.list.savingAll : ""}
+          </span>
           <div className="min-w-64 flex-1">
             <QuickAdd ref={quickAdd} onCreate={(title) => create.mutate({ title })} />
           </div>

@@ -27,6 +27,7 @@ import { cardDndId, columnCards, columnDndId, computeCardMove, orderedStatuses, 
 import { useProjectInfo } from "./context";
 import { dueBucket, priorityKey } from "./list-model";
 import { formatDue, PriorityIcon, StatusDot } from "./pickers";
+import { TicketMeta } from "./ticket-meta";
 
 /**
  * ←/→ jump straight to the neighbouring column (top of its list); ↑/↓ move within a column.
@@ -242,8 +243,9 @@ function CardBody({ ticket, today, lifted }: { ticket: TicketRow; today: string;
           ))}
         </div>
       ) : null}
-      {ticket.dueDate || assignee ? (
+      {ticket.dueDate || assignee || ticket.subtaskTotal || ticket.commentCount || ticket.attachmentCount ? (
         <div className="flex items-center gap-2 text-xs">
+          <TicketMeta subtaskDone={ticket.subtaskDone} subtaskTotal={ticket.subtaskTotal} commentCount={ticket.commentCount} attachmentCount={ticket.attachmentCount} />
           {ticket.dueDate ? (
             <span className={cn(overdue ? "font-medium text-prio-urgent-ink" : "text-muted")}>
               {formatDue(ticket.dueDate)}

@@ -69,12 +69,12 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 
 ## Sprint 5 – Unteraufgaben, Anhänge, Kommentare
 **Ziel:** Ticket ist inhaltlich vollständig.
-- [ ] P1 Unteraufgaben (max. 5, eine Ebene) + Trigger-Absicherung, Fortschritt `3/5` auf Board-Karten
-- [ ] P1 Anhänge: WebP/JPEG/PNG, ≤ 100 KB, Magic-Byte-Check, S3-Upload
-- [ ] P1 Client-Auto-Kompression zu WebP < 100 KB
-- [ ] P2 Bildvorschau/Lightbox
-- [ ] P2 Kommentare mit @Erwähnung
-- [ ] P2 Leichtes Markdown in Beschreibung/Kommentaren
+- [x] P1 Unteraufgaben (max. 5, eine Ebene) + Trigger-Absicherung, Fortschritt `3/5` auf Board-Karten
+- [x] P1 Anhänge: WebP/JPEG/PNG, ≤ 100 KB, Magic-Byte-Check, Speicherung in Postgres (ADR 002), max. 20 pro Ticket
+- [x] P1 Client-Auto-Kompression zu WebP < 100 KB
+- [x] P2 Bildvorschau/Lightbox
+- [x] P2 Kommentare mit @Erwähnung
+- [x] P2 Leichtes Markdown in Beschreibung/Kommentaren
 
 ## Sprint 6 – Speed-Features & Meine Aufgaben
 **Ziel:** Power-User lieben es.

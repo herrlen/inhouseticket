@@ -45,3 +45,6 @@ export const Grip = (p: IconProps) => (
   </Svg>
 );
 export const Archive = (p: IconProps) => <Svg {...p}><rect x="2" y="3" width="12" height="3" rx=".5" /><path d="M3 6v6.5a.5.5 0 00.5.5h9a.5.5 0 00.5-.5V6M6.5 8.5h3" /></Svg>;
+export const CheckSquare = (p: IconProps) => <Svg {...p}><rect x="2.5" y="2.5" width="11" height="11" rx="2" /><path d="M5.5 8l1.8 1.8L10.5 6" /></Svg>;
+export const CommentIcon = (p: IconProps) => <Svg {...p}><path d="M3 3.5h10a1 1 0 011 1v6a1 1 0 01-1 1H7l-3 2.5v-2.5H3a1 1 0 01-1-1v-6a1 1 0 011-1z" /></Svg>;
+export const Paperclip = (p: IconProps) => <Svg {...p}><path d="M10.5 5l-4.6 4.6a1.2 1.2 0 001.7 1.7L12.5 6.4a2.5 2.5 0 00-3.5-3.5L4 7.9a3.7 3.7 0 005.3 5.3l3.2-3.2" /></Svg>;
