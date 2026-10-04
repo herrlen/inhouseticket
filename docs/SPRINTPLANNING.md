@@ -56,6 +56,7 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [ ] P1 Beta-Freigabeliste für Domains (Registrierung nur für gelistete Domains), `noindex`
 - [ ] P1 Schlanke Seiten Impressum + Datenschutz (Inhalte von Len freigegeben)
 - [ ] P2 Automatisches Deploy nach grüner CI auf `main`, Health-Check von außen
+- [ ] P2 Bundle-Budget automatisch prüfen (Produktions-Build, ≤ 200 KB gz pro Seite)
 
 ## Sprint 4 – Kanban
 **Ziel:** Board mit flüssigem Drag & Drop.
@@ -106,7 +107,7 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 
 ## Sprint 9 – Polish, Recht, Launch
 **Ziel:** Live auf inhouseticket.com.
-- [ ] P1 Performance-Budget prüfen (JS < 150 KB gz, LCP < 1,5 s)
+- [ ] P1 Performance-Budget prüfen (JS ≤ 200 KB gz pro Seite, eigener Code ≤ 50 KB, LCP < 1,5 s)
 - [ ] P1 Security-Review (Workspace-Scope, Rate-Limits, CSP)
 - [ ] P1 Impressum, Datenschutz, AGB, AVV
 - [ ] P1 Deployment EU (Container + managed Postgres + Backups), Domain, SSL – neues mittwald-Projekt auf dem bestehenden Space-Server, Stack mit App- und Postgres-Container, vHost `inhouseticket.com` → App, SMTP-Zugang no-reply@ in die Umgebung des App-Containers, RAM messen
