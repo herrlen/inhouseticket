@@ -81,7 +81,7 @@ export async function countSeats(workspaceId: string, tx: Tx | Db = db) {
 }
 
 export class LimitError extends Error {
-  constructor(public readonly code: "max_users" | "max_subtasks") {
+  constructor(public readonly code: "max_users" | "max_subtasks" | "max_attachments") {
     super(code);
   }
 }
@@ -91,6 +91,7 @@ export function asLimitError(e: unknown): LimitError | null {
   const message = e instanceof Error ? `${e.message} ${String((e as { cause?: unknown }).cause ?? "")}` : "";
   if (message.includes("max_users")) return new LimitError("max_users");
   if (message.includes("max_subtasks")) return new LimitError("max_subtasks");
+  if (message.includes("max_attachments")) return new LimitError("max_attachments");
   return null;
 }
 

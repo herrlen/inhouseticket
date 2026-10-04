@@ -119,6 +119,10 @@ export function useCreateTicket(workspaceId: string, projectId: string) {
         updatedAt: now,
         completedAt: null,
         labelIds: [],
+        subtaskTotal: 0,
+        subtaskDone: 0,
+        commentCount: 0,
+        attachmentCount: 0,
       };
       qc.setQueryData<TicketRow[]>(ticketsKey(projectId), [temp, ...previous]);
       return { previous, tempId: temp.id };

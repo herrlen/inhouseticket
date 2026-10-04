@@ -23,6 +23,10 @@ export type TicketRow = {
   updatedAt: string;
   completedAt: string | null;
   labelIds: string[];
+  subtaskTotal: number;
+  subtaskDone: number;
+  commentCount: number;
+  attachmentCount: number;
 };
 
 export type Actor = { userId: string; workspaceId: string; via?: "web" | "mcp" | "api" };
@@ -52,6 +56,11 @@ function selectTickets(executor: Tx | typeof db) {
       updatedAt: ticket.updatedAt,
       completedAt: ticket.completedAt,
       labelIds: sql<string[]>`coalesce(array_agg(${ticketLabel.labelId}) filter (where ${ticketLabel.labelId} is not null), '{}')`,
+      // Fully qualified on purpose: drizzle renders bare column names inside sql`` (see Sprint 2 fix).
+      subtaskTotal: sql<number>`(select count(*) from "subtask" s where s."ticket_id" = "ticket"."id")`.mapWith(Number),
+      subtaskDone: sql<number>`(select count(*) from "subtask" s where s."ticket_id" = "ticket"."id" and s."done")`.mapWith(Number),
+      commentCount: sql<number>`(select count(*) from "comment" c where c."ticket_id" = "ticket"."id")`.mapWith(Number),
+      attachmentCount: sql<number>`(select count(*) from "attachment" a where a."ticket_id" = "ticket"."id")`.mapWith(Number),
     })
     .from(ticket)
     .leftJoin(ticketLabel, eq(ticketLabel.ticketId, ticket.id))
@@ -75,6 +84,10 @@ function toRow(r: Awaited<ReturnType<ReturnType<typeof selectTickets>["execute"]
     updatedAt: r.updatedAt.toISOString(),
     completedAt: iso(r.completedAt),
     labelIds: r.labelIds,
+    subtaskTotal: r.subtaskTotal,
+    subtaskDone: r.subtaskDone,
+    commentCount: r.commentCount,
+    attachmentCount: r.attachmentCount,
   };
 }
 
