@@ -5,6 +5,12 @@ export const de = {
     retry: "Erneut versuchen",
     notifications: "Benachrichtigungen",
     signOut: "Abmelden",
+    invalidInput: "Ungültige Eingabe.",
+    saved: "Gespeichert.",
+    cancel: "Abbrechen",
+    create: "Anlegen",
+    save: "Speichern",
+    delete: "Löschen",
     skipToContent: "Zum Inhalt springen",
     mainNav: "Hauptnavigation",
   },
@@ -114,6 +120,15 @@ export const de = {
     autoJoinOff: "Aus – nur mit Einladung",
     enable: "Einschalten",
     disable: "Ausschalten",
+  },
+  explorer: {
+    folderGone: "Diesen Ordner gibt es nicht mehr.",
+    keyTaken: (key: string) => `Das Kürzel ${key} ist schon vergeben.`,
+  },
+  projectSettings: {
+    needsDone: "Ein Projekt braucht mindestens einen Status der Art „Erledigt“.",
+    needsOne: "Ein Projekt braucht mindestens einen Status.",
+    chooseTarget: "Dieser Status enthält Tickets. Wähle, wohin sie verschoben werden.",
   },
   palette: {
     coral: "Koralle", orange: "Orange", sun: "Sonne", lime: "Limette", mint: "Mint", turquoise: "Türkis",

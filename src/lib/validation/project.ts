@@ -1,0 +1,63 @@
+import { z } from "zod";
+import { MAX_PROJECT_KEY, PROJECT_KEY_PATTERN } from "@/lib/limits";
+import { PALETTE } from "@/lib/palette";
+
+const paletteHex = Object.values(PALETTE) as [string, ...string[]];
+
+export const projectNameSchema = z.string().trim().min(1, "Bitte einen Namen eingeben.").max(100, "Höchstens 100 Zeichen.");
+
+export const projectKeySchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .max(MAX_PROJECT_KEY, `Höchstens ${MAX_PROJECT_KEY} Zeichen.`)
+  .regex(PROJECT_KEY_PATTERN, "2–10 Zeichen, Großbuchstaben und Ziffern, beginnt mit einem Buchstaben.");
+
+export const projectColorSchema = z.enum(paletteHex, "Bitte eine Farbe aus der Palette wählen.");
+
+/** One emoji or empty. Grapheme-based, so flags and skin tones count as one. */
+export const projectIconSchema = z
+  .string()
+  .trim()
+  .max(16)
+  .refine((s) => s === "" || ([...new Intl.Segmenter("de", { granularity: "grapheme" }).segment(s)].length === 1 && /\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(s)), "Bitte genau ein Emoji.")
+  .transform((s) => s || null);
+
+export const createProjectSchema = z.object({
+  name: projectNameSchema,
+  key: projectKeySchema,
+  color: projectColorSchema,
+  icon: projectIconSchema.prefault(""),
+  folderId: z.union([z.uuid(), z.literal("")]).transform((v) => v || null).prefault(""),
+});
+
+export const updateProjectSchema = z.object({
+  name: projectNameSchema,
+  color: projectColorSchema,
+  icon: projectIconSchema.prefault(""),
+});
+
+export const folderNameSchema = z.string().trim().min(1, "Bitte einen Namen eingeben.").max(100, "Höchstens 100 Zeichen.");
+
+export const statusSchema = z.object({
+  name: z.string().trim().min(1, "Bitte einen Namen eingeben.").max(50, "Höchstens 50 Zeichen."),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Ungültige Farbe."),
+  category: z.enum(["open", "active", "done"]),
+});
+
+/** Suggests a ticket key from a project name: "Kampagne Q4" → "KQ", "Marketing" → "MAR". */
+export function suggestProjectKey(name: string): string {
+  const clean = name
+    .toUpperCase()
+    .replace(/Ä/g, "AE")
+    .replace(/Ö/g, "OE")
+    .replace(/Ü/g, "UE")
+    .replace(/ß/g, "SS")
+    .normalize("NFKD")
+    .replace(/[^A-Z0-9 ]/g, " ")
+    .trim();
+  const words = clean.split(/\s+/).filter(Boolean);
+  let key = words.length > 1 ? words.map((w) => w[0]).join("") : (words[0] ?? "").slice(0, 3);
+  key = key.replace(/^[0-9]+/, "").slice(0, 10);
+  return key.length >= 2 ? key : (key + "PRJ").slice(0, 3);
+}

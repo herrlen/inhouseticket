@@ -180,3 +180,16 @@ describe("full-text search", () => {
     });
   });
 });
+
+describe("sort keys", () => {
+  it("order byte-wise (COLLATE \"C\") like fractional indexing expects", async () => {
+    await inRollback(async (tx) => {
+      const s = await seed(tx);
+      for (const [i, key] of ["a0V", "Zz", "a0", "b"].entries()) {
+        await tx`INSERT INTO subtask (workspace_id, ticket_id, title, sort) VALUES (${s.wsId}, ${s.ticketId}, ${`s${i}`}, ${key})`;
+      }
+      const rows = await tx`SELECT sort FROM subtask WHERE ticket_id = ${s.ticketId} ORDER BY sort`;
+      expect(rows.map((r) => r.sort)).toEqual(["Zz", "a0", "a0V", "b"]);
+    });
+  });
+});

@@ -22,6 +22,13 @@
       "when": 1791056374775,
       "tag": "0002_workspace_slug",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791092602593,
+      "tag": "0003_sort_collation",
+      "breakpoints": true
     }
   ]
 }
