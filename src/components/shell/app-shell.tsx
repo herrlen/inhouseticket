@@ -14,6 +14,7 @@ import { ToastProvider } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
 import { de } from "@/lib/i18n/de";
+import { QueryProvider } from "./query-provider";
 import { ShellProvider, useShell, type ShellInfo } from "./shell-context";
 
 type Props = {
@@ -72,6 +73,7 @@ export function AppShell({ shell, user, explorer, initialCollapsed, children }: 
 
   return (
     <ShellProvider value={shell}>
+      <QueryProvider>
       <ToastProvider>
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-surface focus:p-2">
           {de.common.skipToContent}
@@ -100,6 +102,7 @@ export function AppShell({ shell, user, explorer, initialCollapsed, children }: 
           <SidebarContent collapsed={false} explorer={explorer} />
         </Dialog>
       </ToastProvider>
+      </QueryProvider>
     </ShellProvider>
   );
 }

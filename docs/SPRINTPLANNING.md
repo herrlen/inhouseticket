@@ -39,14 +39,14 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 
 ## Sprint 3 – Tickets & Listenansicht
 **Ziel:** Tickets anlegen, bearbeiten, in Liste sehen.
-- [ ] P1 Ticket anlegen (Titel 500, Beschreibung 5000, Zähler sichtbar)
-- [ ] P1 Ticket-Keys `KEY-123` (atomar hochzählen)
-- [ ] P1 Priorität, Person, Enddatum, Status
-- [ ] P1 Listenansicht: Gruppierung, Sortierung, Inline-Edit, Optimistic Updates
-- [ ] P1 Slide-Over-Detailansicht, `Esc`, `↑/↓`
-- [ ] P2 Labels
-- [ ] P2 Mehrfachauswahl + Bulk-Aktionen
-- [ ] P2 Aktivitätslog
+- [x] P1 Ticket anlegen (Titel 500, Beschreibung 5000, Zähler sichtbar)
+- [x] P1 Ticket-Keys `KEY-123` (atomar hochzählen)
+- [x] P1 Priorität, Person, Enddatum, Status
+- [x] P1 Listenansicht: Gruppierung, Sortierung, Inline-Edit, Optimistic Updates
+- [x] P1 Slide-Over-Detailansicht, `Esc`, `↑/↓`
+- [x] P2 Labels
+- [x] P2 Mehrfachauswahl + Bulk-Aktionen
+- [x] P2 Aktivitätslog
 
 ## Sprint 3b – Geschlossene Beta live (entschieden 2026-10-04)
 **Ziel:** inhouseticket.com läuft, nur für freigegebene Firmen-Domains.
