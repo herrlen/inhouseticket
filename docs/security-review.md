@@ -28,11 +28,13 @@ gehasht gespeichert.
 
 ## Offen
 
-- **Client-IP hinter mittwald:** Better Auth wertet `X-Forwarded-For` ohne `trustedProxies` aus. Je nach
-  Verhalten des mittwald-Proxys teilen sich Anfragen einen Zähler oder die IP ist fälschbar. Klären, welchen
-  Header mittwald zuverlässig setzt, dann `advanced.ipAddress` konfigurieren.
-- **Server Actions** (Tickets, Kommentare, Unteraufgaben) haben noch kein Limit pro Person – nur die
-  `/api/w`-Routen und MCP.
+- **Client-IP hinter mittwald – teilweise geklärt (2026-10-05):** Von außen geprüft: Ein gefälschter
+  `X-Forwarded-For` bzw. `X-Real-IP` umgeht die Begrenzung pro IP nicht (6. Anmeldeanfrage → 429, auch mit
+  gefälschtem Header) – der Proxy überschreibt den Header. Noch offen: ob dort die echte Client-IP oder eine
+  Proxy-Adresse steht (dann teilen sich alle einen Zähler). Dafür zeigt `/admin` jetzt „Erkannte IP-Adresse“;
+  Len vergleicht sie einmal mit seiner echten IP.
+- ~~**Server Actions** ohne Limit pro Person~~ – erledigt: `requireMember` begrenzt Seitenaufrufe und Server
+  Actions auf 600 pro Minute und Person (gilt damit für alle heutigen und künftigen Actions).
 - **Anhänge löschen:** jedes Mitglied darf jeden Anhang löschen (Kommentare: nur Autor oder Admin).
   Produktentscheidung offen.
 - API-Tokens ohne Ablauf und ohne Lese-only-Variante; Session-Cookie-Cache 5 min (Abmelden wirkt bis zu

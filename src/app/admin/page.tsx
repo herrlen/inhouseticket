@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,9 @@ export default async function AdminPage({ searchParams }: Props) {
   const page = Math.max(1, Number.parseInt(rawPage ?? "1", 10) || 1);
   const [{ total, rows }, totals] = await Promise.all([listWorkspacesForAdmin(q, page), platformTotals()]);
   const pages = Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE));
+  // Which client IP the rate limits see (Better Auth reads the first X-Forwarded-For entry).
+  const h = await headers();
+  const seenIp = h.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
   const pageHref = (p: number) => `/admin?${new URLSearchParams({ ...(q ? { q } : {}), page: String(p) })}`;
   const tiles = [
     { label: de.admin.workspaces, value: totals.workspaces },
@@ -156,6 +160,13 @@ export default async function AdminPage({ searchParams }: Props) {
           {page < pages ? <Link href={pageHref(page + 1)} className="text-accent hover:underline">{de.admin.next}</Link> : null}
         </nav>
       ) : null}
+      <section aria-labelledby="ip-heading" className="rounded-[var(--radius-card)] border border-border bg-surface p-4 text-[13px]">
+        <h2 id="ip-heading" className="mb-1 font-semibold">
+          {de.admin.ipTitle}
+        </h2>
+        <p className="text-muted">{de.admin.ipText}</p>
+        <p className="mt-2 font-mono">{seenIp ?? de.admin.ipNone}</p>
+      </section>
       <LegalLinks />
     </main>
   );

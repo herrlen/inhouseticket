@@ -2,7 +2,17 @@ import "server-only";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { findMembershipById, findMembershipBySlug, type Role } from "@/db/queries/workspaces";
+import { rateLimit } from "@/lib/rate-limit";
 import { requireUser } from "@/lib/session";
+
+/** Page renders and server actions per person – far above real use, stops scripted floods. */
+const MEMBER_REQUESTS_PER_MINUTE = 600;
+
+export class RateLimitedError extends Error {
+  constructor(readonly retryAfterSec: number) {
+    super("rate_limited");
+  }
+}
 
 /**
  * The only way into workspace data (CLAUDE.md rule 1). Non-members get a 404, so the
@@ -10,6 +20,8 @@ import { requireUser } from "@/lib/session";
  */
 export const requireMember = cache(async (ref: { slug: string } | { workspaceId: string }) => {
   const user = await requireUser("slug" in ref ? `/${ref.slug}` : undefined);
+  const limit = rateLimit(`member:${user.id}`, MEMBER_REQUESTS_PER_MINUTE, 60_000);
+  if (!limit.ok) throw new RateLimitedError(limit.retryAfterSec);
   const row = "slug" in ref ? await findMembershipBySlug(ref.slug, user.id) : await findMembershipById(ref.workspaceId, user.id);
   if (!row) notFound();
   return { user, workspace: row.workspace, membership: row.membership };

@@ -109,7 +109,7 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 **Ziel:** Live auf inhouseticket.com.
 - [ ] P1 Performance-Budget prüfen (JS ≤ 200 KB gz pro Seite, eigener Code ≤ 50 KB, LCP < 1,5 s)
   - [x] JS-Budget automatisch in CI (Stand 2026-10-05: Projektseite 197 KB, übrige App-Seiten 183–186 KB, Login 157 KB)
-  - [ ] LCP von einem EU-Standort messen (Messung aus dem Cloud-Container über Proxy: `/login` 1,0–1,8 s, davon TTFB 0,6–1,3 s)
+  - [x] LCP von einem EU-Standort messen – 2026-10-05 aus Deutschland, kalter Cache, je 5 Läufe: `/login` Median 168 ms (TTFB 79 ms), `/impressum` 156 ms (TTFB 68 ms)
 - [x] P1 Security-Review (Workspace-Scope, Rate-Limits, CSP) – Ergebnis und offene Punkte: `docs/security-review.md`
 - [ ] P1 Impressum, Datenschutz, AGB, AVV
 - [ ] P1 Deployment EU (Container + managed Postgres + Backups), Domain, SSL – neues mittwald-Projekt auf dem bestehenden Space-Server, Stack mit App- und Postgres-Container, vHost `inhouseticket.com` → App, SMTP-Zugang no-reply@ in die Umgebung des App-Containers, RAM messen
