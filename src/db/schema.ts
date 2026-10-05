@@ -513,6 +513,8 @@ export const apiToken = pgTable(
     lastUsedAt: timestamp({ withTimezone: true }),
     createdAt: createdAt(),
     revokedAt: timestamp({ withTimezone: true }),
+    /** Chosen by the user when creating the token; null = no expiry. */
+    expiresAt: timestamp({ withTimezone: true }),
   },
   (t) => [uniqueIndex().on(t.tokenHash), index().on(t.userId, t.workspaceId)],
 );

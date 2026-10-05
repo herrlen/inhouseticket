@@ -28,14 +28,15 @@ gehasht gespeichert.
 
 ## Offen
 
-- **Client-IP hinter mittwald – teilweise geklärt (2026-10-05):** Von außen geprüft: Ein gefälschter
-  `X-Forwarded-For` bzw. `X-Real-IP` umgeht die Begrenzung pro IP nicht (6. Anmeldeanfrage → 429, auch mit
-  gefälschtem Header) – der Proxy überschreibt den Header. Noch offen: ob dort die echte Client-IP oder eine
-  Proxy-Adresse steht (dann teilen sich alle einen Zähler). Dafür zeigt `/admin` jetzt „Erkannte IP-Adresse“;
-  Len vergleicht sie einmal mit seiner echten IP.
+- ~~**Client-IP hinter mittwald**~~ – erledigt (2026-10-05): Gefälschte `X-Forwarded-For`/`X-Real-IP` umgehen
+  die Begrenzung nicht (der Proxy überschreibt), und `/admin` zeigt Len seine echte IP – die Zähler laufen also
+  pro tatsächlichem Client.
 - ~~**Server Actions** ohne Limit pro Person~~ – erledigt: `requireMember` begrenzt Seitenaufrufe und Server
   Actions auf 600 pro Minute und Person (gilt damit für alle heutigen und künftigen Actions).
-- **Anhänge löschen:** jedes Mitglied darf jeden Anhang löschen (Kommentare: nur Autor oder Admin).
-  Produktentscheidung offen.
-- API-Tokens ohne Ablauf und ohne Lese-only-Variante; Session-Cookie-Cache 5 min (Abmelden wirkt bis zu
-  5 min verzögert, Mitgliedschaft wird trotzdem bei jeder Anfrage geprüft).
+- ~~**Anhänge löschen**~~ – entschieden (Len): Hochladende, Autor des Tickets und Admins; serverseitig erzwungen,
+  der Knopf erscheint nur für Berechtigte.
+- ~~**API-Tokens ohne Ablauf**~~ – entschieden (Len): Ablauf wählt die Person beim Erstellen (30/90 Tage, 1 Jahr,
+  eigenes Datum bis 2 Jahre, oder ohne Ablauf; Standard 90 Tage). Abgelaufene Tokens werden abgelehnt und zählen
+  nicht gegen das Limit von 10.
+- Offen: keine Lese-only-Tokens; Session-Cookie-Cache 5 min (Abmelden wirkt bis zu 5 min verzögert,
+  Mitgliedschaft wird trotzdem bei jeder Anfrage geprüft).

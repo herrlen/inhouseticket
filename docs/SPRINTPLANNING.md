@@ -55,7 +55,7 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [x] P1 SMTP über `no-reply@inhouseticket.com` (Passwort trägt Len in mittwald ein), Reply-To `hello@`
 - [x] P1 Beta-Freigabeliste für Domains (Registrierung nur für gelistete Domains), `noindex`
 - [x] P1 Schlanke Seiten Impressum + Datenschutz (Inhalte von Len freigegeben)
-- [ ] P2 Automatisches Deploy nach grüner CI auf `main`, Health-Check von außen
+- [x] ~~P2 Automatisches Deploy nach grüner CI auf `main`~~ – entschieden (Len, 2026-10-05): ausgerollt wird bewusst per Befehl (`scripts/deploy.sh`, prüft CI-Status und Health von außen)
 - [x] P2 Bundle-Budget automatisch prüfen (Produktions-Build, ≤ 200 KB gz pro Seite) – `scripts/check-bundle-budget.mjs`, CI-Schritt nach `pnpm build`
 
 ## Sprint 4 – Kanban

@@ -153,7 +153,7 @@ export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Pr
       {parts.data ? (
         <>
           <Subtasks subtasks={parts.data.subtasks} actions={actions} />
-          <Attachments workspaceId={workspaceId} ticketId={ticket.id} attachments={parts.data.attachments} actions={actions} />
+          <Attachments workspaceId={workspaceId} ticketId={ticket.id} attachments={parts.data.attachments} manageAll={parts.data.manageAttachments} actions={actions} />
         </>
       ) : parts.isError ? (
         <p className="text-xs text-prio-urgent-ink">{de.detail.activityError}</p>

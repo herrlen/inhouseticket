@@ -94,7 +94,7 @@ export async function deleteAttachmentAction(input: { workspaceId: string; attac
   if (!parsed.success) return issue(parsed.error);
   const ctx = await requireMember({ workspaceId: parsed.data.workspaceId });
   try {
-    await deleteAttachment({ userId: ctx.user.id, workspaceId: ctx.workspace.id }, parsed.data.attachmentId);
+    await deleteAttachment({ userId: ctx.user.id, workspaceId: ctx.workspace.id }, parsed.data.attachmentId, hasRole(ctx, "admin"));
     return { ok: true, data: null };
   } catch (e) {
     return fail(e);

@@ -15,7 +15,8 @@ import { useToast } from "@/components/ui/toast";
 import { de } from "@/lib/i18n/de";
 import { activityKey, ticketsKey } from "./use-tickets";
 
-export type Parts = { subtasks: SubtaskRow[]; attachments: AttachmentRow[]; comments: CommentRow[] };
+/** `manageAttachments`: the viewer may delete every attachment (ticket author or admin), not just their own. */
+export type Parts = { subtasks: SubtaskRow[]; attachments: AttachmentRow[]; comments: CommentRow[]; manageAttachments: boolean };
 export const partsKey = (ticketId: string) => ["parts", ticketId] as const;
 
 export function useParts(workspaceId: string, ticketId: string) {

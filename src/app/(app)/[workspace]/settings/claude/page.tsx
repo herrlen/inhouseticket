@@ -14,6 +14,7 @@ type Props = { params: Promise<{ workspace: string }> };
 
 const dateFmt = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Berlin" });
 const fmt = (iso: string) => dateFmt.format(new Date(iso));
+const expired = (iso: string) => new Date(iso).getTime() <= Date.now();
 
 export default async function ClaudePage({ params }: Props) {
   const { workspace: slug } = await params;
@@ -34,7 +35,7 @@ export default async function ClaudePage({ params }: Props) {
 
       <section aria-labelledby="tokens-heading">
         <h2 id="tokens-heading" className="mb-2 font-semibold">
-          {de.claude.tokensTitle(tokens.filter((t) => !t.revokedAt).length)}
+          {de.claude.tokensTitle(tokens.filter((t) => !t.revokedAt && !(t.expiresAt && expired(t.expiresAt))).length)}
         </h2>
         {tokens.length === 0 ? (
           <p className="text-[13px] text-muted">{de.claude.none}</p>
@@ -45,7 +46,8 @@ export default async function ClaudePage({ params }: Props) {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{t.name}</p>
                   <p className="text-[13px] text-muted">
-                    {de.claude.created(fmt(t.createdAt))} · {t.lastUsedAt ? de.claude.lastUsed(fmt(t.lastUsedAt)) : de.claude.neverUsed}
+                    {de.claude.created(fmt(t.createdAt))} · {t.lastUsedAt ? de.claude.lastUsed(fmt(t.lastUsedAt)) : de.claude.neverUsed} ·{" "}
+                    {t.expiresAt ? (expired(t.expiresAt) ? de.claude.expired : de.claude.expiresOn(fmt(t.expiresAt))) : de.claude.noExpiry}
                   </p>
                 </div>
                 {t.revokedAt ? (

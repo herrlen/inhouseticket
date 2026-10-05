@@ -41,6 +41,7 @@ test("connect Claude: token, tools, writes show up 'via Claude', revoke", async 
   await expect(page.getByLabel("Claude Code", { exact: true })).toContainText(`Bearer ${token}`);
   await expect(page.getByLabel("Claude Desktop", { exact: true })).toContainText(token);
   await expect(page.getByRole("region", { name: /Deine Tokens/ })).toContainText("Claude Code Laptop");
+  await expect(page.getByRole("region", { name: /Deine Tokens/ })).toContainText("läuft ab"); // default: 90 days
 
   const api = (await browser.newContext()).request; // no cookies: the token alone authenticates
 
@@ -137,4 +138,31 @@ test("MCP endpoint rejects missing, unknown and foreign tokens", async ({ browse
   expect(own.structuredContent?.total).toBe(1);
   const cross = await call(api, tokenB, "inhouseticket_get_ticket", { key: "MKT-4" });
   expect(cross.isError).toBe(true);
+});
+
+test("token expiry is chosen by the user: custom date, validation, no expiry", async ({ page }) => {
+  const path = await createWorkspace(page, `ute@${uniqueDomain("expiry")}`, "Ablauf GmbH");
+  await page.goto(`${path}/settings/claude`);
+  const name = page.getByRole("textbox", { name: "Name des Tokens" });
+  await waitForHydration(name);
+  const tokens = page.getByRole("region", { name: /Deine Tokens/ });
+
+  await name.fill("Bis Weihnachten");
+  await page.getByRole("combobox", { name: "Gültig" }).selectOption("custom");
+  const date = page.getByLabel("Gültig bis einschließlich");
+  await date.fill("2020-01-01");
+  await page.getByRole("button", { name: "Token erstellen" }).click();
+  await expect(page.getByText(/Ablaufdatum in der Zukunft/)).toBeVisible();
+
+  const next = new Date(Date.now() + 40 * 86_400_000).toISOString().slice(0, 10);
+  await date.fill(next);
+  await page.getByRole("button", { name: "Token erstellen" }).click();
+  await expect(page.getByRole("textbox", { name: "Dein neues Token" })).toHaveValue(/^iht_/);
+  const [y, m, d] = next.split("-");
+  await expect(tokens).toContainText(`läuft ab ${d}.${m}.${y}`);
+
+  await name.fill("Dauerhaft");
+  await page.getByRole("combobox", { name: "Gültig" }).selectOption("never");
+  await page.getByRole("button", { name: "Token erstellen" }).click();
+  await expect(tokens).toContainText("ohne Ablauf");
 });

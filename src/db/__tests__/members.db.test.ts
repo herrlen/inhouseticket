@@ -75,13 +75,23 @@ describe("disableMember", () => {
   it("revokes the member's API tokens so a rejoin does not revive them", async () => {
     const dora = await newUser("dora");
     await db.transaction((tx) => addMember(tx, wsId, dora, "member"));
-    const created = await createApiToken(wsId, dora, "laptop");
+    const created = await createApiToken(wsId, dora, "laptop", null);
     if ("error" in created) throw new Error("token limit");
     expect(await authenticateApiToken(created.token)).not.toBeNull();
 
     await disableMember(wsId, (await membershipOf(dora)).id);
     await db.transaction((tx) => addMember(tx, wsId, dora, "member"));
     expect(await authenticateApiToken(created.token)).toBeNull();
+  });
+
+  it("rejects expired tokens and does not count them against the limit", async () => {
+    const eve = await newUser("eve");
+    await db.transaction((tx) => addMember(tx, wsId, eve, "member"));
+    const soon = await createApiToken(wsId, eve, "kurz", new Date(Date.now() + 60_000));
+    if ("error" in soon) throw new Error("token limit");
+    expect(await authenticateApiToken(soon.token)).not.toBeNull();
+    await db.update(schema.apiToken).set({ expiresAt: new Date(Date.now() - 1000) }).where(eq(schema.apiToken.id, soon.row.id));
+    expect(await authenticateApiToken(soon.token)).toBeNull();
   });
 
   it("never disables the owner", async () => {

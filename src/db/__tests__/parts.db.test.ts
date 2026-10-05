@@ -79,6 +79,34 @@ describe("attachments", () => {
   });
 });
 
+describe("deleting attachments (uploader, ticket author, admin)", () => {
+  it("allows the uploader, the ticket author and admins – nobody else", async () => {
+    const c = await setup("pc", ["kim", "lea"]);
+    const [, kim, lea] = c.users as [string, string, string];
+    const as = (userId: string) => ({ userId, workspaceId: c.actor.workspaceId });
+    // The owner (c.actor) authored the ticket.
+    const kims = await parts.createAttachment(as(kim), c.ticketId, { bytes: PNG, fileName: "kim.png" });
+    await expect(parts.deleteAttachment(as(lea), kims.id, false)).rejects.toMatchObject({ code: "forbidden" });
+    await parts.deleteAttachment(as(kim), kims.id, false); // uploader
+
+    const leas = await parts.createAttachment(as(lea), c.ticketId, { bytes: PNG, fileName: "lea.png" });
+    await parts.deleteAttachment(c.actor, leas.id, false); // ticket author
+
+    const again = await parts.createAttachment(as(kim), c.ticketId, { bytes: PNG, fileName: "kim2.png" });
+    await parts.deleteAttachment(as(lea), again.id, true); // admin
+    expect(await parts.listAttachments(c.actor.workspaceId, c.ticketId)).toEqual([]);
+
+    expect(await parts.canManageAttachments(c.actor.workspaceId, c.ticketId, c.actor.userId, false)).toBe(true);
+    expect(await parts.canManageAttachments(c.actor.workspaceId, c.ticketId, lea, false)).toBe(false);
+    expect(await parts.canManageAttachments(c.actor.workspaceId, c.ticketId, lea, true)).toBe(true);
+  });
+
+  it("cannot delete attachments of another workspace", async () => {
+    const row = await parts.createAttachment(a.actor, a.ticketId, { bytes: PNG, fileName: "fremd.png" });
+    await expect(parts.deleteAttachment(b.actor, row.id, true)).rejects.toMatchObject({ code: "not_found" });
+  });
+});
+
 describe("comments", () => {
   it("notifies mentioned members only (not self, not outsiders)", async () => {
     const kim = a.users[1]!;

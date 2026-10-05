@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, desc, eq, isNull, lt, or } from "drizzle-orm";
+import { and, count, desc, eq, gt, isNull, lt, or } from "drizzle-orm";
 import { db } from "@/db/client";
 import { apiToken, membership, workspace } from "@/db/schema";
 import { hashToken } from "@/lib/tokens";
@@ -10,7 +10,10 @@ import { randomBytes } from "node:crypto";
 export const MAX_TOKENS_PER_USER = 10;
 const PREFIX = "iht_";
 
-export type ApiTokenRow = { id: string; name: string; createdAt: string; lastUsedAt: string | null; revokedAt: string | null };
+export type ApiTokenRow = { id: string; name: string; createdAt: string; lastUsedAt: string | null; revokedAt: string | null; expiresAt: string | null };
+
+/** Not revoked and not expired. */
+const usable = () => and(isNull(apiToken.revokedAt), or(isNull(apiToken.expiresAt), gt(apiToken.expiresAt, new Date())));
 
 export function generateApiToken(): string {
   return PREFIX + randomBytes(32).toString("base64url");
@@ -18,26 +21,26 @@ export function generateApiToken(): string {
 
 export async function listApiTokens(workspaceId: string, userId: string): Promise<ApiTokenRow[]> {
   const rows = await db
-    .select({ id: apiToken.id, name: apiToken.name, createdAt: apiToken.createdAt, lastUsedAt: apiToken.lastUsedAt, revokedAt: apiToken.revokedAt })
+    .select({ id: apiToken.id, name: apiToken.name, createdAt: apiToken.createdAt, lastUsedAt: apiToken.lastUsedAt, revokedAt: apiToken.revokedAt, expiresAt: apiToken.expiresAt })
     .from(apiToken)
     .where(and(eq(apiToken.workspaceId, workspaceId), eq(apiToken.userId, userId)))
     .orderBy(desc(apiToken.createdAt));
-  return rows.map((r) => ({ id: r.id, name: r.name, createdAt: r.createdAt.toISOString(), lastUsedAt: r.lastUsedAt?.toISOString() ?? null, revokedAt: r.revokedAt?.toISOString() ?? null }));
+  return rows.map((r) => ({ id: r.id, name: r.name, createdAt: r.createdAt.toISOString(), lastUsedAt: r.lastUsedAt?.toISOString() ?? null, revokedAt: r.revokedAt?.toISOString() ?? null, expiresAt: r.expiresAt?.toISOString() ?? null }));
 }
 
 /** Creates a token and returns the plain value – the only time it exists outside the hash. */
-export async function createApiToken(workspaceId: string, userId: string, name: string): Promise<{ token: string; row: ApiTokenRow } | { error: "limit" }> {
+export async function createApiToken(workspaceId: string, userId: string, name: string, expiresAt: Date | null): Promise<{ token: string; row: ApiTokenRow } | { error: "limit" }> {
   const [{ n } = { n: 0 }] = await db
     .select({ n: count() })
     .from(apiToken)
-    .where(and(eq(apiToken.workspaceId, workspaceId), eq(apiToken.userId, userId), isNull(apiToken.revokedAt)));
+    .where(and(eq(apiToken.workspaceId, workspaceId), eq(apiToken.userId, userId), usable()));
   if (n >= MAX_TOKENS_PER_USER) return { error: "limit" };
   const token = generateApiToken();
   const [row] = await db
     .insert(apiToken)
-    .values({ workspaceId, userId, name, tokenHash: hashToken(token) })
+    .values({ workspaceId, userId, name, tokenHash: hashToken(token), expiresAt })
     .returning({ id: apiToken.id, name: apiToken.name, createdAt: apiToken.createdAt });
-  return { token, row: { id: row!.id, name: row!.name, createdAt: row!.createdAt.toISOString(), lastUsedAt: null, revokedAt: null } };
+  return { token, row: { id: row!.id, name: row!.name, createdAt: row!.createdAt.toISOString(), lastUsedAt: null, revokedAt: null, expiresAt: expiresAt?.toISOString() ?? null } };
 }
 
 export async function revokeApiToken(workspaceId: string, userId: string, tokenId: string) {
@@ -60,7 +63,7 @@ export async function authenticateApiToken(raw: string): Promise<TokenActor | nu
     .from(apiToken)
     .innerJoin(membership, and(eq(membership.userId, apiToken.userId), eq(membership.workspaceId, apiToken.workspaceId), eq(membership.status, "active")))
     .innerJoin(workspace, and(eq(workspace.id, apiToken.workspaceId), isNull(workspace.lockedAt)))
-    .where(and(eq(apiToken.tokenHash, hashToken(raw)), isNull(apiToken.revokedAt)))
+    .where(and(eq(apiToken.tokenHash, hashToken(raw)), usable()))
     .limit(1);
   if (!row) return null;
   // Touch "last used" at most once a minute.

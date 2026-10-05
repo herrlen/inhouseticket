@@ -165,14 +165,28 @@ export async function getAttachmentFile(workspaceId: string, key: string) {
   return row ?? null;
 }
 
-export async function deleteAttachment(actor: Actor, attachmentId: string) {
+/** Who may delete a ticket's attachments besides the uploader: the ticket's author and admins. */
+export async function canManageAttachments(workspaceId: string, ticketId: string, userId: string, isAdmin: boolean): Promise<boolean> {
+  if (isAdmin) return true;
+  const [t] = await db
+    .select({ createdBy: ticket.createdBy })
+    .from(ticket)
+    .where(and(eq(ticket.id, ticketId), eq(ticket.workspaceId, workspaceId)))
+    .limit(1);
+  return t?.createdBy === userId;
+}
+
+/** Allowed for the uploader, the ticket's author and admins (Len, 2026-10-05). */
+export async function deleteAttachment(actor: Actor, attachmentId: string, isAdmin: boolean) {
   await db.transaction(async (tx) => {
     const [current] = await tx
-      .select({ ticketId: attachment.ticketId, fileName: attachment.fileName })
+      .select({ ticketId: attachment.ticketId, fileName: attachment.fileName, uploadedBy: attachment.uploadedBy, ticketAuthor: ticket.createdBy })
       .from(attachment)
+      .innerJoin(ticket, and(eq(ticket.id, attachment.ticketId), eq(ticket.workspaceId, attachment.workspaceId)))
       .where(and(eq(attachment.id, attachmentId), eq(attachment.workspaceId, actor.workspaceId)))
       .limit(1);
     if (!current) throw new PartError("not_found");
+    if (!isAdmin && current.uploadedBy !== actor.userId && current.ticketAuthor !== actor.userId) throw new PartError("forbidden");
     await tx.delete(attachment).where(eq(attachment.id, attachmentId));
     await log(tx, actor, current.ticketId, "attachment_removed", { fileName: current.fileName });
     await touch(tx, current.ticketId);

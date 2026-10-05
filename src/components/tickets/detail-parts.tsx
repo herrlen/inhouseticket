@@ -180,7 +180,8 @@ function SubtaskItem({ subtask, actions }: { subtask: Parts["subtasks"][number];
 // Attachments
 // ---------------------------------------------------------------------------
 
-export function Attachments({ workspaceId, ticketId, attachments, actions }: { workspaceId: string; ticketId: string; attachments: AttachmentRow[]; actions: Actions }) {
+export function Attachments({ workspaceId, ticketId, attachments, manageAll, actions }: { workspaceId: string; ticketId: string; attachments: AttachmentRow[]; manageAll: boolean; actions: Actions }) {
+  const { currentUserId } = useProjectInfo();
   const { project } = useProjectInfo();
   const qc = useQueryClient();
   const toast = useToast();
@@ -242,6 +243,7 @@ export function Attachments({ workspaceId, ticketId, attachments, actions }: { w
                 {/* eslint-disable-next-line @next/next/no-img-element -- member-only API route, no optimizer */}
                 <img src={`/api/w/${workspaceId}/attachments/${a.key}`} alt={a.fileName} loading="lazy" width={a.width} height={a.height} className="aspect-square w-full object-cover" />
               </button>
+              {manageAll || a.uploadedBy === currentUserId ? (
               <button
                 type="button"
                 onClick={() => actions.removeAttachment.mutate(a.id)}
@@ -250,6 +252,7 @@ export function Attachments({ workspaceId, ticketId, attachments, actions }: { w
               >
                 <Close size={12} />
               </button>
+              ) : null}
               <p className="mt-0.5 truncate text-[11px] text-muted" title={a.fileName}>{a.fileName} · {kb(a.bytes)}</p>
             </li>
           ))}

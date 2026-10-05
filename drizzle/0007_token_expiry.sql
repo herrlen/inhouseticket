@@ -1,0 +1,1 @@
+ALTER TABLE "api_token" ADD COLUMN "expires_at" timestamp with time zone;

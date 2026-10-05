@@ -1,25 +1,29 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { de } from "@/lib/i18n/de";
+import { DEFAULT_EXPIRY, EXPIRY_CHOICES, type ExpiryChoice } from "@/lib/token-expiry";
 import { createTokenAction, type TokenState } from "./actions";
 
 export function TokenForm({ workspaceId, onToken }: { workspaceId: string; onToken?: (token: string) => void }) {
-  const [state, action, pending] = useActionState<TokenState, FormData>(createTokenAction, {});
-  const form = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    if (state.token) {
-      form.current?.reset();
-      onToken?.(state.token);
+  // Controlled fields: React resets uncontrolled ones after every submit, which would drop the input on errors.
+  const [name, setName] = useState("");
+  const [expiry, setExpiry] = useState<ExpiryChoice>(DEFAULT_EXPIRY);
+  const [expiryDate, setExpiryDate] = useState("");
+  const [state, action, pending] = useActionState<TokenState, FormData>(async (prev, formData) => {
+    const result = await createTokenAction(prev, formData);
+    if (result.token) {
+      setName(""); // expiry stays selected for the next token
+      onToken?.(result.token);
     }
-  }, [state, onToken]);
+    return result;
+  }, {});
 
   return (
     <div className="flex flex-col gap-3">
-      <form ref={form} action={action} className="flex flex-wrap items-end gap-3">
+      <form action={action} className="flex flex-wrap items-end gap-3">
         <input type="hidden" name="workspaceId" value={workspaceId} />
         <div className="flex min-w-56 flex-1 flex-col gap-1">
           <label htmlFor="token-name" className="text-[13px] font-medium">
@@ -28,12 +32,40 @@ export function TokenForm({ workspaceId, onToken }: { workspaceId: string; onTok
           <input
             id="token-name"
             name="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             required
             maxLength={60}
             placeholder={de.claude.namePlaceholder}
             className="h-9 rounded-[var(--radius-badge)] border border-border bg-surface px-3 text-sm placeholder:text-muted"
           />
         </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="token-expiry" className="text-[13px] font-medium">
+            {de.claude.expiryLabel}
+          </label>
+          <select
+            id="token-expiry"
+            name="expiry"
+            value={expiry}
+            onChange={(e) => setExpiry(e.target.value as ExpiryChoice)}
+            className="h-9 rounded-[var(--radius-badge)] border border-border bg-surface px-2 text-sm"
+          >
+            {EXPIRY_CHOICES.map((c) => (
+              <option key={c} value={c}>
+                {de.claude.expiryOptions[c]}
+              </option>
+            ))}
+          </select>
+        </div>
+        {expiry === "custom" ? (
+          <div className="flex flex-col gap-1">
+            <label htmlFor="token-expiry-date" className="text-[13px] font-medium">
+              {de.claude.expiryDateLabel}
+            </label>
+            <input id="token-expiry-date" name="expiryDate" type="date" required value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} className="h-9 rounded-[var(--radius-badge)] border border-border bg-surface px-2 text-sm" />
+          </div>
+        ) : null}
         <Button type="submit" variant="primary" size="sm" disabled={pending}>
           {pending ? de.claude.creating : de.claude.create}
         </Button>

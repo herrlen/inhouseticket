@@ -50,6 +50,13 @@
       "when": 1791139946665,
       "tag": "0006_workspace_lock",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791225493667,
+      "tag": "0007_token_expiry",
+      "breakpoints": true
     }
   ]
 }
