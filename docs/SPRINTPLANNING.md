@@ -52,7 +52,7 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 **Ziel:** inhouseticket.com läuft, nur für freigegebene Firmen-Domains.
 - [x] P1 Deploy-Pipeline: GitHub Actions baut Image (GHCR), mittwald-Stack auf dem Space-Server (App + Postgres), Migrationen
 - [x] P1 vHost `inhouseticket.com` (+ `www` → 301), Let's Encrypt
-- [ ] P1 SMTP über `no-reply@inhouseticket.com` (Passwort trägt Len in mittwald ein), Reply-To `hello@`
+- [x] P1 SMTP über `no-reply@inhouseticket.com` (Passwort trägt Len in mittwald ein), Reply-To `hello@`
 - [x] P1 Beta-Freigabeliste für Domains (Registrierung nur für gelistete Domains), `noindex`
 - [x] P1 Schlanke Seiten Impressum + Datenschutz (Inhalte von Len freigegeben)
 - [ ] P2 Automatisches Deploy nach grüner CI auf `main`, Health-Check von außen

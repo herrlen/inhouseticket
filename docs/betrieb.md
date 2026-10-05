@@ -61,3 +61,15 @@ muss der vHost neu verbunden werden (`mw domain virtualhost update f3f931a6-… 
 
 - `BETA_ALLOWED_DOMAINS=studioluy.de,ursalz.com`; Impressum ohne EU-OS-Hinweis (Plattform seit 20.07.2025 eingestellt).
 - Live nach 20 s. `SMTP_PASSWORD` weiterhin offen → `scripts/set-smtp-password.sh` (Len).
+
+### 2026-10-04 — SMTP gesetzt
+
+- `SMTP_PASSWORD` von Len über `scripts/set-smtp-password.sh` eingetragen; Anmeldelinks werden versendet.
+
+### Stand 2026-10-05 — `b47bc2b` live
+
+- Zwischen `0f6bb00` und `b47bc2b` ausgerollt (einzelne Deploys nicht protokolliert): Kanban (S4),
+  Unteraufgaben/Anhänge/Kommentare (S5), Speed-Features (S6), Dashboard/Inbox/Digest (S7), API-Tokens und
+  MCP-Server (S8), Betreiber-Übersicht `/admin`.
+- Migrationen bis `0006_workspace_lock` beim Start gelaufen.
+- Von außen geprüft: `/api/health` ok (Datenbank ok, Version `sha-b47bc2b…`), `/admin` ohne Anmeldung → 307.
