@@ -95,13 +95,23 @@ export function asLimitError(e: unknown): LimitError | null {
   return null;
 }
 
-/** Adds an active membership. Throws LimitError("max_users") when the workspace is full. */
+/**
+ * Adds an active membership. Throws LimitError("max_users") when the workspace is full.
+ * A removed member who rejoins gets the role of this join, never their old one;
+ * an active member keeps their role.
+ */
 export async function addMember(tx: Tx, workspaceId: string, userId: string, role: Role = "member") {
   try {
     await tx
       .insert(membership)
       .values({ workspaceId, userId, role, status: "active" })
-      .onConflictDoUpdate({ target: [membership.workspaceId, membership.userId], set: { status: "active" } });
+      .onConflictDoUpdate({
+        target: [membership.workspaceId, membership.userId],
+        set: {
+          status: "active",
+          role: sql`CASE WHEN ${membership.status} = 'active' THEN ${membership.role} ELSE excluded.role END`,
+        },
+      });
   } catch (e) {
     throw asLimitError(e) ?? e;
   }

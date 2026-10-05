@@ -1,5 +1,5 @@
 import { createAttachment, PartError } from "@/db/queries/ticket-parts";
-import { json, jsonError, requireApiMember } from "@/lib/api";
+import { json, jsonError, requireApiMember, requireSameOrigin } from "@/lib/api";
 import { de } from "@/lib/i18n/de";
 import { MAX_ATTACHMENT_BYTES } from "@/lib/limits";
 
@@ -7,6 +7,8 @@ type Ctx = { params: Promise<{ workspaceId: string; ticketId: string }> };
 
 /** Upload one image (multipart field "file"). Type is decided by magic bytes, not the header. */
 export async function POST(request: Request, { params }: Ctx) {
+  const blocked = await requireSameOrigin();
+  if (blocked) return blocked;
   const { workspaceId, ticketId } = await params;
   const r = await requireApiMember(workspaceId);
   if ("error" in r) return r.error;

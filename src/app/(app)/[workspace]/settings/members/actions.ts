@@ -62,7 +62,7 @@ export async function removeMemberAction(formData: FormData) {
 export async function revokeInvitationAction(formData: FormData) {
   const { workspaceId } = workspaceRef.parse({ workspaceId: formData.get("workspaceId") });
   const ctx = await requireRole({ workspaceId }, "admin");
-  await revokeInvitation(workspaceId, z.uuid().parse(formData.get("invitationId")));
+  await revokeInvitation(workspaceId, z.uuid().parse(formData.get("invitationId")), ctx.membership.role);
   revalidatePath(path(ctx.workspace.slug));
 }
 

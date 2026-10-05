@@ -96,13 +96,15 @@ export default async function MembersPage({ params }: Props) {
                 <span className="flex-1 truncate">{inv.email}</span>
                 <Badge>{de.roles[inv.role]}</Badge>
                 <span className="text-[13px] text-muted">{de.members.validUntil(dateFmt.format(inv.expiresAt))}</span>
-                <form action={revokeInvitationAction}>
-                  <input type="hidden" name="workspaceId" value={wsId} />
-                  <input type="hidden" name="invitationId" value={inv.id} />
-                  <Button type="submit" variant="ghost" size="sm" aria-label={de.members.revokeLabel(inv.email)}>
-                    {de.members.revoke}
-                  </Button>
-                </form>
+                {isOwner || inv.role !== "admin" ? (
+                  <form action={revokeInvitationAction}>
+                    <input type="hidden" name="workspaceId" value={wsId} />
+                    <input type="hidden" name="invitationId" value={inv.id} />
+                    <Button type="submit" variant="ghost" size="sm" aria-label={de.members.revokeLabel(inv.email)}>
+                      {de.members.revoke}
+                    </Button>
+                  </form>
+                ) : null}
               </li>
             ))}
           </ul>
