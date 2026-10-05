@@ -128,7 +128,7 @@ test("MCP endpoint rejects missing, unknown and foreign tokens", async ({ browse
   expect(none.status).toBe(401);
   expect(none.headers["www-authenticate"]).toContain("Bearer");
   expect((await rpc(api, "iht_doesnotexist", "tools/list")).status).toBe(401);
-  expect((await api.get("/mcp")).status()).toBe(405);
+  expect((await api.get("/mcp")).status()).toBe(401); // unauthenticated probes get the OAuth discovery hint
 
   // A token only sees its own workspace.
   await call(api, tokenA, "inhouseticket_create_ticket", { project_key: "MKT", title: "Geheim in Alpha" });

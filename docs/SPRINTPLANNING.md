@@ -103,7 +103,7 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [x] P2 Tools: `add_comment`, `toggle_subtask`, `get_workload`, `list_members`
 - [x] P2 Rate-Limits (120 Anfragen/min pro Token, im Speicher – reicht für einen Container), Aktivitätslog „via Claude“
 - [x] P2 Seite „Mit Claude verbinden“ (Token, Config-Snippets für Claude Code und Claude Desktop, Beispiele)
-- [ ] P3 OAuth 2.1 vorbereiten (Connector in claude.ai) → Backlog; ohne OAuth funktionieren Claude Code und Claude Desktop (über `mcp-remote`)
+- [x] P3 OAuth 2.1 für den Connector in claude.ai (2026-10-05): `@better-auth/oauth-provider`, dynamische Client-Registrierung, PKCE, Magic-Link-Login, Einwilligung mit Workspace-Auswahl, opake Tokens (gehasht), „Verbundene Apps“ mit Trennen
 
 ## Sprint 9 – Polish, Recht, Launch
 **Ziel:** Live auf inhouseticket.com.
@@ -129,7 +129,6 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - Kalenderansicht
 - Intake-Formular → Ticket (ohne Account)
 - Slack/Teams-Benachrichtigungen
-- OAuth-Connector für claude.ai
 - SSO (Google Workspace / Microsoft Entra) als möglicher Pro-Plan
 - Subdomain pro Workspace (`firma.inhouseticket.com`) als mögliche Pro-Option – braucht Wildcard-DNS/-Zertifikat
 - Englische UI

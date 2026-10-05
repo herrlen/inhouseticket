@@ -40,3 +40,13 @@ gehasht gespeichert.
   nicht gegen das Limit von 10.
 - Offen: keine Lese-only-Tokens; Session-Cookie-Cache 5 min (Abmelden wirkt bis zu 5 min verzögert,
   Mitgliedschaft wird trotzdem bei jeder Anfrage geprüft).
+
+## Nachtrag 2026-10-05: OAuth für Connectors
+
+- `@better-auth/oauth-provider`: dynamische Client-Registrierung (offen, wie von MCP vorgesehen; rate-limitiert
+  durch das Plugin), Authorization Code nur mit PKCE (S256), Ressource `https://inhouseticket.com/mcp` als
+  Zielgruppe – Tokens für andere Ressourcen werden am MCP-Endpunkt abgelehnt.
+- Access-Tokens opak, nur als sha256-Hash gespeichert, 1 h gültig; Refresh-Tokens rotieren.
+- Workspace-Bindung über die Einwilligungsseite (`oauth_workspace`); Mitgliedschaft und Sperre werden bei jedem
+  MCP-Aufruf geprüft. „Trennen“ löscht Einwilligung, alle Tokens und die Workspace-Wahl sofort.
+- Login-Weiterleitung prüft die Signatur der Anfrage, bevor sie zum Authorize-Endpunkt zurückleitet.

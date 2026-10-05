@@ -1,10 +1,14 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { authenticateApiToken } from "@/db/queries/api-tokens";
+import { authenticateOAuthAccessToken } from "@/db/queries/oauth";
+import { MCP_RESOURCE } from "@/lib/auth";
+import { PROTECTED_RESOURCE_METADATA_URL } from "@/lib/oauth-metadata";
 import { tooManyRequests } from "@/lib/api";
 import { rateLimit } from "@/lib/rate-limit";
 import { createMcpServer } from "@/mcp/server";
 
-// Remote MCP endpoint (Streamable HTTP, stateless JSON). Auth: personal API token as Bearer.
+// Remote MCP endpoint (Streamable HTTP, stateless JSON). Auth: personal API token (iht_…) or an
+// OAuth access token from a connector (claude.ai), both as Bearer.
 // Each request gets its own server bound to the token's user and workspace.
 
 export const dynamic = "force-dynamic";
@@ -19,17 +23,27 @@ async function messageCount(request: Request): Promise<number> {
   return Array.isArray(body) ? Math.max(body.length, 1) : 1;
 }
 
+/** 401 with the RFC 9728 pointer, so OAuth clients can discover where to sign in. */
 function unauthorized() {
-  return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Gültiges API-Token als Bearer-Token erforderlich." } }), {
+  return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Gültiges API-Token oder Anmeldung erforderlich." } }), {
     status: 401,
-    headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "WWW-Authenticate": 'Bearer realm="inhouseticket"' },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "WWW-Authenticate": `Bearer realm="inhouseticket", resource_metadata="${PROTECTED_RESOURCE_METADATA_URL}"`,
+    },
   });
 }
 
-export async function POST(request: Request) {
+async function authenticate(request: Request) {
   const match = /^Bearer\s+(\S+)$/i.exec(request.headers.get("authorization") ?? "");
-  if (!match?.[1]) return unauthorized();
-  const auth = await authenticateApiToken(match[1]);
+  const raw = match?.[1];
+  if (!raw) return null;
+  return raw.startsWith("iht_") ? authenticateApiToken(raw) : authenticateOAuthAccessToken(raw, MCP_RESOURCE);
+}
+
+export async function POST(request: Request) {
+  const auth = await authenticate(request);
   if (!auth) return unauthorized();
 
   const cost = await messageCount(request);
@@ -49,6 +63,8 @@ export async function POST(request: Request) {
 }
 
 // Stateless server: no SSE stream, no sessions to delete.
-const notAllowed = () => new Response(null, { status: 405, headers: { Allow: "POST" } });
+// Unauthenticated probes still get the 401 discovery hint.
+const notAllowed = async (request: Request) =>
+  (await authenticate(request)) ? new Response(null, { status: 405, headers: { Allow: "POST" } }) : unauthorized();
 export const GET = notAllowed;
 export const DELETE = notAllowed;

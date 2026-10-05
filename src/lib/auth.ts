@@ -4,6 +4,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { magicLink } from "better-auth/plugins/magic-link";
+import { oauthProvider } from "@better-auth/oauth-provider";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 import { env } from "@/lib/env";
@@ -14,6 +15,10 @@ import { de } from "@/lib/i18n/de";
 import { buttonMail, sendMail } from "@/lib/mail";
 import { nameFromEmail } from "@/lib/names";
 import { rateLimit } from "@/lib/rate-limit";
+import { hashToken } from "@/lib/tokens";
+
+/** The MCP endpoint is the one protected resource OAuth clients (claude.ai connectors) get tokens for. */
+export const MCP_RESOURCE = new URL("/mcp", env.APP_URL).toString();
 
 const MAGIC_LINK_TTL_SECONDS = 15 * 60;
 /** Login mails per address – the per-IP limit alone does not stop mail bombing one inbox. */
@@ -84,6 +89,20 @@ export const auth = betterAuth({
           }),
         });
       },
+    }),
+    // OAuth 2.1 for claude.ai / Claude Desktop connectors: dynamic client registration, PKCE,
+    // magic-link login, consent page with workspace choice. Access tokens are opaque and stored as
+    // sha256 hashes, so /mcp checks them with one lookup and revocation takes effect at once.
+    oauthProvider({
+      loginPage: "/login",
+      consentPage: "/oauth/consent",
+      disableJwtPlugin: true,
+      allowDynamicClientRegistration: true,
+      allowUnauthenticatedClientRegistration: true,
+      scopes: ["openid", "profile", "email", "offline_access"],
+      resources: [MCP_RESOURCE],
+      clientRegistrationDefaultResources: [MCP_RESOURCE],
+      storeTokens: { hash: (token) => hashToken(token) },
     }),
     nextCookies(), // must be last
   ],

@@ -1,0 +1,53 @@
+"use server";
+
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { verifyOAuthQueryParams } from "@better-auth/oauth-provider";
+import { z } from "zod";
+import { setOAuthWorkspace } from "@/db/queries/oauth";
+import { listWorkspacesForUser } from "@/db/queries/workspaces";
+import { auth } from "@/lib/auth";
+import { env } from "@/lib/env";
+import { de } from "@/lib/i18n/de";
+import { requireUser } from "@/lib/session";
+
+export type ConsentState = { error?: string };
+
+const input = z.object({ oauthQuery: z.string().min(1).max(8000), workspaceId: z.uuid().optional(), accept: z.enum(["yes", "no"]) });
+
+/** Stores the workspace choice, then lets the OAuth provider issue the code and redirect to the client. */
+export async function consentAction(_: ConsentState, formData: FormData): Promise<ConsentState> {
+  const user = await requireUser();
+  const parsed = input.safeParse({ oauthQuery: formData.get("oauthQuery"), workspaceId: formData.get("workspaceId") || undefined, accept: formData.get("accept") });
+  if (!parsed.success) return { error: de.oauth.invalid };
+  const { oauthQuery, workspaceId, accept } = parsed.data;
+  const { secret } = await auth.$context;
+  if (!(await verifyOAuthQueryParams(oauthQuery, secret))) return { error: de.oauth.invalid };
+  const clientId = new URLSearchParams(oauthQuery).get("client_id");
+  if (!clientId) return { error: de.oauth.invalid };
+
+  if (accept === "yes") {
+    const workspaces = await listWorkspacesForUser(user.id);
+    const chosen = workspaces.find((w) => w.id === workspaceId) ?? (workspaces.length === 1 ? workspaces[0] : undefined);
+    if (!chosen) return { error: de.oauth.noWorkspace };
+    await setOAuthWorkspace(user.id, clientId, chosen.id);
+  }
+
+  // Through the auth handler as a real request: on accept the provider re-runs /oauth2/authorize,
+  // which needs one (a plain auth.api call has no request object).
+  const incoming = await headers();
+  const res = await auth.handler(
+    new Request(new URL("/api/auth/oauth2/consent", env.APP_URL), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", cookie: incoming.get("cookie") ?? "", origin: new URL(env.APP_URL).origin },
+      body: JSON.stringify({ accept: accept === "yes", oauth_query: oauthQuery }),
+    }),
+  );
+  const data = (await res.json().catch(() => null)) as { redirect_uri?: string; url?: string } | null;
+  const target = data?.redirect_uri ?? data?.url;
+  if (!res.ok || !target) {
+    console.error("oauth consent failed", res.status);
+    return { error: de.oauth.invalid };
+  }
+  redirect(target);
+}

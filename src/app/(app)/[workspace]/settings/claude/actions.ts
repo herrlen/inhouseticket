@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createApiToken, MAX_TOKENS_PER_USER, revokeApiToken } from "@/db/queries/api-tokens";
+import { revokeOAuthConnection } from "@/db/queries/oauth";
 import { requireMember } from "@/lib/authz";
 import { de } from "@/lib/i18n/de";
 import { resolveExpiry } from "@/lib/token-expiry";
@@ -31,5 +32,15 @@ export async function revokeTokenAction(formData: FormData) {
   if (!parsed.success) return;
   const ctx = await requireMember({ workspaceId: parsed.data.workspaceId });
   await revokeApiToken(ctx.workspace.id, ctx.user.id, parsed.data.tokenId);
+  revalidatePath(path(ctx.workspace.slug));
+}
+
+const disconnectSchema = z.object({ workspaceId: z.uuid(), clientId: z.string().min(1).max(200) });
+
+export async function disconnectAppAction(formData: FormData) {
+  const parsed = disconnectSchema.safeParse({ workspaceId: formData.get("workspaceId"), clientId: formData.get("clientId") });
+  if (!parsed.success) return;
+  const ctx = await requireMember({ workspaceId: parsed.data.workspaceId });
+  await revokeOAuthConnection(ctx.workspace.id, ctx.user.id, parsed.data.clientId);
   revalidatePath(path(ctx.workspace.slug));
 }

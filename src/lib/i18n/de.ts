@@ -624,6 +624,25 @@ export const de = {
     next: "Weiter →",
     pageOf: (p: number, n: number) => `Seite ${p} von ${n}`,
   },
+  oauth: {
+    loginHint: "Melde dich an, um Claude mit inhouseticket zu verbinden.",
+    title: "Zugriff erlauben?",
+    request: (app: string) => `${app} möchte in deinem Namen auf inhouseticket zugreifen: Tickets lesen, anlegen und ändern, kommentieren und die Auslastung sehen – mit deinen Rechten.`,
+    workspaceLabel: "Workspace",
+    oneWorkspace: (name: string) => `Workspace: ${name}`,
+    noWorkspace: "Du bist noch in keinem Workspace. Lege zuerst einen an oder nimm eine Einladung an.",
+    allow: "Erlauben",
+    deny: "Ablehnen",
+    invalid: "Diese Anfrage ist ungültig oder abgelaufen. Starte die Verbindung in Claude bitte neu.",
+    revokeHint: "Du kannst den Zugriff jederzeit unter „Mit Claude verbinden“ wieder entfernen.",
+    connectedTitle: "Verbundene Apps",
+    connectedNone: "Keine App über „Connector hinzufügen“ verbunden.",
+    connectedSince: (d: string) => `verbunden seit ${d}`,
+    disconnect: "Trennen",
+    disconnectLabel: (name: string) => `${name} trennen`,
+    connectorTitle: "claude.ai (Connector)",
+    connectorText: "In claude.ai unter Einstellungen → Connectors → „Benutzerdefinierten Connector hinzufügen“ diese URL eintragen. Anmeldung und Workspace-Auswahl folgen im Browser – kein Token nötig.",
+  },
 } as const;
 
 export type Messages = typeof de;
