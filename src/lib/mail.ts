@@ -7,6 +7,8 @@ const transport = nodemailer.createTransport({
   host: env.SMTP_HOST,
   port: env.SMTP_PORT,
   secure: env.SMTP_PORT === 465,
+  // STARTTLS is mandatory in production – magic links never travel in clear text.
+  requireTLS: env.NODE_ENV === "production" && env.SMTP_PORT !== 465,
   auth: env.SMTP_USER ? { user: env.SMTP_USER, pass: env.SMTP_PASSWORD } : undefined,
 });
 

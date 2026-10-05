@@ -110,6 +110,7 @@ export const de = {
     alreadyMember: (emails: string) => `Schon Mitglied: ${emails}.`,
     overLimit: (emails: string) => `Kein Platz mehr für: ${emails}.`,
     noPermission: "Dafür fehlen dir die Rechte.",
+    tooManyInvites: "Gerade wurden sehr viele Einladungen verschickt. Bitte versuch es in einer Stunde noch einmal.",
     active: (n: number) => `Aktiv (${n})`,
     pending: (n: number) => `Offene Einladungen (${n})`,
     you: "du",

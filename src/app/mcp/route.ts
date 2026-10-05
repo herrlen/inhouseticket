@@ -1,6 +1,6 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { authenticateApiToken } from "@/db/queries/api-tokens";
-import { jsonError } from "@/lib/api";
+import { tooManyRequests } from "@/lib/api";
 import { rateLimit } from "@/lib/rate-limit";
 import { createMcpServer } from "@/mcp/server";
 
@@ -10,6 +10,14 @@ import { createMcpServer } from "@/mcp/server";
 export const dynamic = "force-dynamic";
 
 const REQUESTS_PER_MINUTE = 120;
+/** A user may hold several tokens; together they share this budget. */
+const USER_REQUESTS_PER_MINUTE = 240;
+
+/** JSON-RPC batches count once per message, so a batch cannot multiply the limit. */
+async function messageCount(request: Request): Promise<number> {
+  const body: unknown = await request.clone().json().catch(() => null);
+  return Array.isArray(body) ? Math.max(body.length, 1) : 1;
+}
 
 function unauthorized() {
   return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Gültiges API-Token als Bearer-Token erforderlich." } }), {
@@ -24,12 +32,11 @@ export async function POST(request: Request) {
   const auth = await authenticateApiToken(match[1]);
   if (!auth) return unauthorized();
 
-  const limit = rateLimit(`mcp:${auth.tokenId}`, REQUESTS_PER_MINUTE, 60_000);
-  if (!limit.ok) {
-    const res = jsonError(429, "rate_limited", `Zu viele Anfragen. Bitte in ${limit.retryAfterSec} s erneut versuchen.`);
-    res.headers.set("Retry-After", String(limit.retryAfterSec));
-    return res;
-  }
+  const cost = await messageCount(request);
+  const limited =
+    tooManyRequests(rateLimit(`mcp:${auth.tokenId}`, REQUESTS_PER_MINUTE, 60_000, Date.now(), cost)) ??
+    tooManyRequests(rateLimit(`mcp-user:${auth.userId}`, USER_REQUESTS_PER_MINUTE, 60_000, Date.now(), cost));
+  if (limited) return limited;
 
   const server = createMcpServer({ userId: auth.userId, workspaceId: auth.workspaceId, via: "mcp" });
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });

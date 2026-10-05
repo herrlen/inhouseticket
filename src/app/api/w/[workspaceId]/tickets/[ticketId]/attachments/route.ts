@@ -1,7 +1,11 @@
 import { createAttachment, PartError } from "@/db/queries/ticket-parts";
-import { json, jsonError, requireApiMember, requireSameOrigin } from "@/lib/api";
+import { json, jsonError, requireApiMember, requireSameOrigin, tooManyRequests } from "@/lib/api";
+import { readBodyLimited } from "@/lib/body";
+import { rateLimit } from "@/lib/rate-limit";
 import { de } from "@/lib/i18n/de";
 import { MAX_ATTACHMENT_BYTES } from "@/lib/limits";
+
+const UPLOADS_PER_MINUTE = 30;
 
 type Ctx = { params: Promise<{ workspaceId: string; ticketId: string }> };
 
@@ -14,11 +18,14 @@ export async function POST(request: Request, { params }: Ctx) {
   if ("error" in r) return r.error;
   if (!/^[0-9a-f-]{36}$/i.test(ticketId)) return jsonError(404, "not_found", "Nicht gefunden.");
 
-  // Reject oversized bodies before reading them (multipart overhead allowed).
-  const declared = Number(request.headers.get("content-length") ?? 0);
-  if (declared > MAX_ATTACHMENT_BYTES + 16 * 1024) return jsonError(413, "too_large", de.parts.errors.too_large);
+  const limited = tooManyRequests(rateLimit(`upload:${r.ctx.user.id}`, UPLOADS_PER_MINUTE, 60_000));
+  if (limited) return limited;
 
-  const form = await request.formData().catch(() => null);
+  // Never buffer more than one image plus multipart overhead – also without Content-Length.
+  const body = await readBodyLimited(request, MAX_ATTACHMENT_BYTES + 16 * 1024);
+  if (body === "too_large") return jsonError(413, "too_large", de.parts.errors.too_large);
+  const contentType = request.headers.get("content-type") ?? "";
+  const form = await new Response(body, { headers: { "content-type": contentType } }).formData().catch(() => null);
   const file = form?.get("file");
   if (!(file instanceof File)) return jsonError(400, "invalid_image", de.parts.errors.invalid_image);
   if (file.size > MAX_ATTACHMENT_BYTES) return jsonError(413, "too_large", de.parts.errors.too_large);

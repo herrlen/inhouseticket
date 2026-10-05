@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { connection } from "next/server";
 import "./globals.css";
 
 // next/font self-hosts the files at build time – no requests to Google at runtime.
@@ -25,7 +26,9 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Every page renders per request: the CSP nonce from src/proxy.ts only reaches dynamic pages.
+  await connection();
   return (
     <html lang="de" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body>{children}</body>

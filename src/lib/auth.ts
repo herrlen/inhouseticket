@@ -13,8 +13,13 @@ import { isSuperadminEmail } from "@/lib/superadmin";
 import { de } from "@/lib/i18n/de";
 import { buttonMail, sendMail } from "@/lib/mail";
 import { nameFromEmail } from "@/lib/names";
+import { rateLimit } from "@/lib/rate-limit";
 
 const MAGIC_LINK_TTL_SECONDS = 15 * 60;
+/** Login mails per address – the per-IP limit alone does not stop mail bombing one inbox. */
+const MAGIC_LINKS_PER_EMAIL = 5;
+const MAGIC_LINK_EMAIL_WINDOW_MS = 15 * 60_000;
+const MAX_NAME = 100;
 
 export const auth = betterAuth({
   baseURL: env.APP_URL,
@@ -27,6 +32,8 @@ export const auth = betterAuth({
   },
   // Per-IP limits in production only; local and E2E runs share one IP.
   rateLimit: { enabled: env.NODE_ENV === "production", window: 60, max: 100 },
+  // Profile changes are not offered; the endpoint would accept any avatar URL and unbounded names.
+  disabledPaths: ["/update-user"],
   hooks: {
     // Friendly, early rejection before a mail is sent (CLAUDE.md rule 3).
     before: createAuthMiddleware(async (ctx) => {
@@ -38,6 +45,12 @@ export const auth = betterAuth({
       if (!(await mayEnterBeta(email))) {
         throw new APIError("FORBIDDEN", { code: "BETA_CLOSED", message: de.auth.betaClosed });
       }
+      if (
+        env.NODE_ENV === "production" &&
+        !rateLimit(`magic-link:${email.trim().toLowerCase()}`, MAGIC_LINKS_PER_EMAIL, MAGIC_LINK_EMAIL_WINDOW_MS).ok
+      ) {
+        throw new APIError("TOO_MANY_REQUESTS", { code: "TOO_MANY_LINKS", message: de.login.tooMany });
+      }
     }),
   },
   databaseHooks: {
@@ -46,7 +59,8 @@ export const auth = betterAuth({
         // Hard guard for every sign-up path.
         before: async (user) => {
           if (!isCompanyEmail(user.email) && !isSuperadminEmail(user.email)) return false;
-          return { data: { ...user, email: user.email.toLowerCase(), name: user.name || nameFromEmail(user.email) } };
+          const name = (user.name || nameFromEmail(user.email)).trim().slice(0, MAX_NAME);
+          return { data: { ...user, email: user.email.toLowerCase(), name } };
         },
       },
     },

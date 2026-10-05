@@ -9,9 +9,13 @@ import { requireRole } from "@/lib/authz";
 import { de } from "@/lib/i18n/de";
 import { canChangeRole, canInviteAs, canRemove } from "@/lib/member-permissions";
 import { inviteSchema, roleChangeSchema } from "@/lib/validation/workspace";
+import { rateLimit } from "@/lib/rate-limit";
 import { isPersonalWorkspaceDomain } from "@/lib/workspace-domain";
 
 export type ActionState = { error?: string; success?: string };
+
+/** Invitation mails per workspace and hour – protects the shared sender address. */
+const INVITE_MAILS_PER_HOUR = 100;
 
 const workspaceRef = z.object({ workspaceId: z.uuid() });
 const path = (slug: string) => `/${slug}/settings/members`;
@@ -22,6 +26,9 @@ export async function inviteAction(_: ActionState, formData: FormData): Promise<
   const parsed = inviteSchema.safeParse({ emails: formData.get("emails") ?? "", role: formData.get("role") });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
   if (!canInviteAs(ctx.membership.role, parsed.data.role)) return { error: de.members.noPermission };
+  if (!rateLimit(`invite:${workspaceId}`, INVITE_MAILS_PER_HOUR, 3_600_000, Date.now(), parsed.data.emails.length).ok) {
+    return { error: de.members.tooManyInvites };
+  }
 
   const { result, mails } = await db.transaction((tx) =>
     createInvitations(tx, { workspaceId, inviterId: ctx.user.id, emails: parsed.data.emails, role: parsed.data.role }),
