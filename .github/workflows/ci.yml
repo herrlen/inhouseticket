@@ -50,6 +50,8 @@ jobs:
       - name: Database tests
         run: VITEST_DB=1 node ./node_modules/vitest/vitest.mjs run
       - run: pnpm build
+      - name: Bundle budget
+        run: node scripts/check-bundle-budget.mjs
 
   e2e:
     runs-on: ubuntu-latest
