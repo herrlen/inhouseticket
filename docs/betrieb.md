@@ -56,7 +56,10 @@ Zwei Ebenen:
 2. **Nächtlicher `pg_dump`** – mittwald-Cronjob im Postgres-Container, täglich 03:30 (Berlin), Format `-Fc`, nach
    `/backups` im Volume `inhouseticket-pgbackup`; 14 Tage dort, über das Projekt-Backup 30 Tage. Angelegt mit
    `scripts/setup-db-backup.sh` (idempotent). Fehler gehen per Mail an hello@inhouseticket.com.
-   Läufe prüfen: `pnpm dlx @mittwald/cli@1.25.0 cronjob execution list <cronjob-id> -p p-flw0r0`.
+   Cronjob-ID `257ad452-1d55-4df4-b830-f0646b82bbd4`. Läufe prüfen:
+   `pnpm dlx @mittwald/cli@1.25.0 cronjob execution list --cronjob-id 257ad452-… -o txt`, Ausgabe eines Laufs:
+   `… cronjob execution logs <cronjob-id> <execution-id> --no-pager`.
+   ⚠ Cronjob-Läufe bekommen die Umgebung des Containers nicht – Benutzer und Datenbank stehen deshalb im Befehl.
 
 ### Wiederherstellen
 
@@ -71,6 +74,14 @@ Liegt der benötigte Dump nicht mehr im Volume: in mStudio das Projekt-Backup de
 (`mw container stop` für `app`), damit niemand während der Wiederherstellung schreibt.
 
 ## Deploys
+
+### 2026-10-06 — `21d5087`, Backups, Export, Lazy-DnD, OAuth
+
+- OAuth-Connector (`a4df15f`) und danach `21d5087` ausgerollt; Migration 0008 beim Start.
+- Neues Volume `inhouseticket-pgbackup` am Postgres-Container (Container-IDs unverändert).
+- Cronjob „nightly pg_dump“ angelegt; erster Lauf scheiterte (`role "root" does not exist`, Umgebung fehlt im
+  Cronjob), nach Korrektur Lauf `Complete`.
+
 
 ### 2026-10-04 — erster Deploy, `908587a` (geschlossene Beta)
 
