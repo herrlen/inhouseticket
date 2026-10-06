@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LegalLinks } from "@/components/legal-links";
 import { ADMIN_PAGE_SIZE, listWorkspacesForAdmin, platformTotals } from "@/db/queries/admin";
 import { de } from "@/lib/i18n/de";
+import { pageViewStats } from "@/lib/pageviews";
 import { requireSuperadmin } from "@/lib/superadmin";
 import { isPersonalWorkspaceDomain } from "@/lib/workspace-domain";
 import { deleteWorkspaceAction, setLockedAction } from "./actions";
@@ -23,7 +24,8 @@ export default async function AdminPage({ searchParams }: Props) {
   const { deleted, mismatch, q: rawQ, page: rawPage } = await searchParams;
   const q = (rawQ ?? "").trim().slice(0, 100);
   const page = Math.max(1, Number.parseInt(rawPage ?? "1", 10) || 1);
-  const [{ total, rows }, totals] = await Promise.all([listWorkspacesForAdmin(q, page), platformTotals()]);
+  const [{ total, rows }, totals, stats] = await Promise.all([listWorkspacesForAdmin(q, page), platformTotals(), pageViewStats(30)]);
+  const viewsTotal = stats.perDay.reduce((n, d) => n + d.views, 0);
   const pages = Math.max(1, Math.ceil(total / ADMIN_PAGE_SIZE));
   // Which client IP the rate limits see (Better Auth reads the first X-Forwarded-For entry).
   const h = await headers();
@@ -160,6 +162,40 @@ export default async function AdminPage({ searchParams }: Props) {
           {page < pages ? <Link href={pageHref(page + 1)} className="text-accent hover:underline">{de.admin.next}</Link> : null}
         </nav>
       ) : null}
+      <section aria-labelledby="stats-heading" className="rounded-[var(--radius-card)] border border-border bg-surface p-4 text-[13px]">
+        <h2 id="stats-heading" className="mb-1 font-semibold">
+          {de.admin.statsTitle}
+        </h2>
+        <p className="mb-3 text-muted">{viewsTotal ? de.admin.statsTotal(viewsTotal) : de.admin.statsNone} · {de.admin.statsText}</p>
+        {viewsTotal ? (
+          <div className="grid gap-4 md:grid-cols-3">
+            {[
+              { title: de.admin.statsPerDay, rows: stats.perDay.map((d) => [d.day.split("-").reverse().join("."), d.views] as const) },
+              { title: de.admin.statsTopPages, rows: stats.perPath.map((p) => [p.path, p.views] as const) },
+              { title: de.admin.statsReferrers, rows: stats.perReferrer.map((r) => [r.referrer, r.views] as const) },
+            ].map((block) => (
+              <table key={block.title} className="w-full">
+                <caption className="mb-1 text-left font-medium">{block.title}</caption>
+                <tbody>
+                  {block.rows.length === 0 ? (
+                    <tr>
+                      <td className="text-muted">–</td>
+                    </tr>
+                  ) : (
+                    block.rows.map(([label, n]) => (
+                      <tr key={label} className="border-b border-border last:border-0">
+                        <td className="truncate py-0.5 pr-2 font-mono text-[12px]">{label}</td>
+                        <td className="py-0.5 text-right tabular-nums">{n.toLocaleString("de-DE")}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            ))}
+          </div>
+        ) : null}
+      </section>
+
       <section aria-labelledby="ip-heading" className="rounded-[var(--radius-card)] border border-border bg-surface p-4 text-[13px]">
         <h2 id="ip-heading" className="mb-1 font-semibold">
           {de.admin.ipTitle}

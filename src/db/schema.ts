@@ -697,3 +697,19 @@ export const oauthWorkspace = pgTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.clientId] }), index().on(t.workspaceId)],
 );
+
+/**
+ * Cookieless page statistics (Sprint 9): views per day, normalized path and referring site.
+ * No IP, no user, no workspace names – app paths are stored as patterns like /[workspace]/p/[key].
+ */
+export const pageViewDaily = pgTable(
+  "page_view_daily",
+  {
+    day: text().notNull(),
+    path: varchar({ length: 100 }).notNull(),
+    /** Host of an external referrer, "" for direct/internal. */
+    referrer: varchar({ length: 253 }).notNull().default(""),
+    count: integer().notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.day, t.path, t.referrer] })],
+);
