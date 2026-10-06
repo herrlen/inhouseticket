@@ -171,4 +171,14 @@ test("legal pages are public and linked from the login page", async ({ page }) =
   await expect(page.getByText("ec.europa.eu/consumers/odr")).toHaveCount(0);
   await page.goto("/datenschutz");
   await expect(page.getByRole("heading", { name: "Datenschutzerklärung" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "5. Anonyme Nutzungsstatistik" })).toBeVisible();
+
+  // AGB and AVV are drafts: reachable, clearly marked, not linked yet.
+  for (const [path, heading] of [["/agb", "Allgemeine Geschäftsbedingungen"], ["/avv", "Auftragsverarbeitungsvertrag (AVV)"]] as const) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
+    await expect(page.getByRole("note")).toContainText("Entwurf");
+  }
+  await page.goto("/login");
+  await expect(page.getByRole("link", { name: /AGB|AVV/ })).toHaveCount(0);
 });

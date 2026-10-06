@@ -112,6 +112,9 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
   - [x] LCP von einem EU-Standort messen – 2026-10-05 aus Deutschland, kalter Cache, je 5 Läufe: `/login` Median 168 ms (TTFB 79 ms), `/impressum` 156 ms (TTFB 68 ms)
 - [x] P1 Security-Review (Workspace-Scope, Rate-Limits, CSP) – Ergebnis und offene Punkte: `docs/security-review.md`
 - [ ] P1 Impressum, Datenschutz, AGB, AVV
+  - [x] Impressum, Datenschutz (aktualisiert 2026-10-06: Statistik, KI-Assistenten, Backups, Export)
+  - [x] Entwürfe AGB (`/agb`) und AVV (`/avv`, druckbar als PDF) – als Entwurf markiert, nicht verlinkt
+  - [ ] Rechtliche Prüfung durch Len/Kanzlei, danach in Footer und Onboarding verlinken
 - [x] P1 Deployment EU (Container + managed Postgres + Backups), Domain, SSL – live auf mittwald; Backups: Projekt-Backup täglich + nächtlicher `pg_dump` (docs/betrieb.md) – neues mittwald-Projekt auf dem bestehenden Space-Server, Stack mit App- und Postgres-Container, vHost `inhouseticket.com` → App, SMTP-Zugang no-reply@ in die Umgebung des App-Containers, RAM messen
 - [ ] P1 Landingpage (Claim, Screenshots, „Kostenlos bis 100 User“, MCP-Highlight)
 - [x] P2 Datenexport CSV/JSON, Workspace löschen – Seite „Daten & Workspace“ (Export für Admins, Löschen nur Owner mit Kürzel-Bestätigung)
