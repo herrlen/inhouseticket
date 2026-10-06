@@ -1,7 +1,5 @@
 "use client";
 
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Dropdown, type DropdownItem } from "@/components/ui/dropdown";
@@ -9,6 +7,7 @@ import { Grip, More } from "@/components/ui/icons";
 import { useShell } from "@/components/shell/shell-context";
 import { cn } from "@/lib/cn";
 import { de } from "@/lib/i18n/de";
+import { SortableItem } from "./dnd-bridge";
 import { projectDndId, type FolderItem, type ProjectItem } from "./model";
 
 type Props = {
@@ -28,27 +27,27 @@ export function ProjectRow(props: Props) {
 }
 
 function SortableProjectRow(props: Props) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
-    id: projectDndId(props.project.id),
-  });
   return (
-    <li ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform), transition }} className={cn(isDragging && "relative z-10 opacity-60")}>
-      <ProjectRowView
-        {...props}
-        handle={
-          <button
-            ref={setActivatorNodeRef}
-            type="button"
-            aria-label={de.explorer.dragProject(props.project.name)}
-            className="flex size-5 shrink-0 cursor-grab items-center justify-center rounded text-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 active:cursor-grabbing"
-            {...attributes}
-            {...listeners}
-          >
-            <Grip size={14} />
-          </button>
-        }
-      />
-    </li>
+    <SortableItem id={projectDndId(props.project.id)}>
+      {(s) => (
+        <li ref={s.setNodeRef} style={s.style} className={cn(s.isDragging && "relative z-10 opacity-60")}>
+          <ProjectRowView
+            {...props}
+            handle={
+              <button
+                ref={s.setActivatorNodeRef}
+                type="button"
+                aria-label={de.explorer.dragProject(props.project.name)}
+                className="flex size-5 shrink-0 cursor-grab items-center justify-center rounded text-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 active:cursor-grabbing"
+                {...s.handleProps}
+              >
+                <Grip size={14} />
+              </button>
+            }
+          />
+        </li>
+      )}
+    </SortableItem>
   );
 }
 

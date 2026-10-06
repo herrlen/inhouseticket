@@ -112,11 +112,11 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
   - [x] LCP von einem EU-Standort messen – 2026-10-05 aus Deutschland, kalter Cache, je 5 Läufe: `/login` Median 168 ms (TTFB 79 ms), `/impressum` 156 ms (TTFB 68 ms)
 - [x] P1 Security-Review (Workspace-Scope, Rate-Limits, CSP) – Ergebnis und offene Punkte: `docs/security-review.md`
 - [ ] P1 Impressum, Datenschutz, AGB, AVV
-- [ ] P1 Deployment EU (Container + managed Postgres + Backups), Domain, SSL – neues mittwald-Projekt auf dem bestehenden Space-Server, Stack mit App- und Postgres-Container, vHost `inhouseticket.com` → App, SMTP-Zugang no-reply@ in die Umgebung des App-Containers, RAM messen
+- [x] P1 Deployment EU (Container + managed Postgres + Backups), Domain, SSL – live auf mittwald; Backups: Projekt-Backup täglich + nächtlicher `pg_dump` (docs/betrieb.md) – neues mittwald-Projekt auf dem bestehenden Space-Server, Stack mit App- und Postgres-Container, vHost `inhouseticket.com` → App, SMTP-Zugang no-reply@ in die Umgebung des App-Containers, RAM messen
 - [ ] P1 Landingpage (Claim, Screenshots, „Kostenlos bis 100 User“, MCP-Highlight)
-- [ ] P2 Datenexport CSV/JSON, Workspace löschen
+- [x] P2 Datenexport CSV/JSON, Workspace löschen – Seite „Daten & Workspace“ (Export für Admins, Löschen nur Owner mit Kürzel-Bestätigung)
 - [ ] P2 Mobile-Feinschliff, Dark Mode, Accessibility-Audit
-- [ ] P2 Drag & Drop der Seitenleiste (dnd-kit) erst bei Bedarf laden (~10 KB, Budget-Ausnahme Ticket-Direktlink auflösen)
+- [x] P2 Drag & Drop der Seitenleiste (dnd-kit) erst bei Bedarf laden – Projektseite 197,5 → 182,0 KB, übrige App-Seiten je ~15 KB weniger
 - [ ] P2 Cookieless Analytics
 - [ ] P3 Launch: Product Hunt, LinkedIn, t3n/Gründerszene-Pitch
 

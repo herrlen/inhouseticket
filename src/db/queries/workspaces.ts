@@ -129,3 +129,15 @@ export async function createWorkspace(tx: Tx, input: { name: string; domain: str
   await addMember(tx, created!.id, input.ownerId, "owner");
   return created!;
 }
+
+/**
+ * Deletes a workspace with everything in it (cascade). Needs the slug as typed confirmation;
+ * returns false if it does not match. Used by the owner (settings) and the operator (/admin).
+ */
+export async function deleteWorkspace(workspaceId: string, confirmSlug: string): Promise<boolean> {
+  const deleted = await db
+    .delete(workspace)
+    .where(and(eq(workspace.id, workspaceId), eq(workspace.slug, confirmSlug)))
+    .returning({ id: workspace.id });
+  return deleted.length === 1;
+}

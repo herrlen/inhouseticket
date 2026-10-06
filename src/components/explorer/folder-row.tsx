@@ -1,12 +1,11 @@
 "use client";
 
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { Dropdown } from "@/components/ui/dropdown";
 import { ChevronDown, ChevronRight, Grip, More } from "@/components/ui/icons";
 import { useShell } from "@/components/shell/shell-context";
 import { cn } from "@/lib/cn";
 import { de } from "@/lib/i18n/de";
+import { SortableItem, SortableList } from "./dnd-bridge";
 import { folderDndId, projectDndId, type FolderItem, type ProjectItem } from "./model";
 
 type Props = {
@@ -24,22 +23,20 @@ type Props = {
 
 export function FolderRow({ folder, projects, expanded, onToggle, onRename, onDelete, onNewProject, dropTarget, children }: Props) {
   const { canAdmin } = useShell();
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
-    id: folderDndId(folder.id),
-  });
   const openCount = projects.reduce((n, p) => n + p.openCount, 0);
   const listId = `folder-${folder.id}`;
 
   return (
-    <li ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform), transition }} className={cn(isDragging && "relative z-10 opacity-60")}>
+    <SortableItem id={folderDndId(folder.id)}>
+      {(s) => (
+    <li ref={s.setNodeRef} style={s.style} className={cn(s.isDragging && "relative z-10 opacity-60")}>
       <div className={cn("group flex h-8 items-center gap-1 rounded-[var(--radius-badge)] pr-1 pl-1 hover:bg-bg", dropTarget && "bg-accent/10 ring-1 ring-accent")}>
         <button
-          ref={setActivatorNodeRef}
+          ref={s.setActivatorNodeRef}
           type="button"
           aria-label={de.explorer.dragFolder(folder.name)}
           className="flex size-5 shrink-0 cursor-grab items-center justify-center rounded text-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-          {...attributes}
-          {...listeners}
+          {...s.handleProps}
         >
           <Grip size={14} />
         </button>
@@ -67,12 +64,14 @@ export function FolderRow({ folder, projects, expanded, onToggle, onRename, onDe
         />
       </div>
       {expanded ? (
-        <SortableContext items={projects.map((p) => projectDndId(p.id))} strategy={verticalListSortingStrategy}>
+        <SortableList ids={projects.map((p) => projectDndId(p.id))}>
           <ul id={listId} className="ml-4 border-l border-border pl-1">
             {projects.length === 0 ? <li className="px-2 py-1 text-xs text-muted">{de.explorer.emptyFolder}</li> : children}
           </ul>
-        </SortableContext>
+        </SortableList>
       ) : null}
     </li>
+      )}
+    </SortableItem>
   );
 }

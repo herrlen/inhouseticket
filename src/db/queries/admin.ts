@@ -84,10 +84,4 @@ export async function setWorkspaceLocked(workspaceId: string, locked: boolean) {
 }
 
 /** Deletes a workspace with everything in it. Returns false if the slug confirmation does not match. */
-export async function deleteWorkspaceForAdmin(workspaceId: string, confirmSlug: string): Promise<boolean> {
-  const deleted = await db
-    .delete(workspace)
-    .where(sql`${workspace.id} = ${workspaceId} and ${workspace.slug} = ${confirmSlug}`)
-    .returning({ id: workspace.id });
-  return deleted.length === 1;
-}
+export { deleteWorkspace as deleteWorkspaceForAdmin } from "./workspaces";

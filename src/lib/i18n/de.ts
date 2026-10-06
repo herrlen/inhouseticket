@@ -643,6 +643,20 @@ export const de = {
     connectorTitle: "claude.ai (Connector)",
     connectorText: "In claude.ai unter Einstellungen → Connectors → „Benutzerdefinierten Connector hinzufügen“ diese URL eintragen. Anmeldung und Workspace-Auswahl folgen im Browser – kein Token nötig.",
   },
+  data: {
+    title: "Daten & Workspace",
+    navLabel: "Daten",
+    exportTitle: "Daten exportieren",
+    exportText: "Alle Daten dieses Workspace zum Mitnehmen. JSON enthält alles (Mitglieder, Projekte, Status, Labels, Tickets mit Unteraufgaben und Kommentaren, Anhänge als Metadaten); CSV ist eine Ticket-Liste für Excel.",
+    exportJson: "JSON herunterladen",
+    exportCsv: "CSV herunterladen",
+    deleteTitle: "Workspace löschen",
+    deleteText: (name: string) => `Löscht „${name}“ endgültig – alle Projekte, Tickets, Kommentare, Anhänge, Einladungen und API-Tokens. Das lässt sich nicht rückgängig machen. Exportiere vorher, was du behalten willst.`,
+    deleteConfirm: (slug: string) => `Zur Bestätigung „${slug}“ eintippen`,
+    deleteButton: "Workspace endgültig löschen",
+    deleteMismatch: "Das Kürzel stimmt nicht – nichts gelöscht.",
+    ownerOnly: "Nur der Besitzer kann den Workspace löschen.",
+  },
 } as const;
 
 export type Messages = typeof de;

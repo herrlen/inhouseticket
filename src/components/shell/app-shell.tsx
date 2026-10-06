@@ -10,7 +10,7 @@ import { Explorer, type ExplorerData } from "@/components/explorer/explorer";
 import { Avatar } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
 import { Dropdown } from "@/components/ui/dropdown";
-import { Chart, CheckSquare, Home, InboxIcon, Menu, Sidebar as SidebarIcon, Sparkle, Users } from "@/components/ui/icons";
+import { Archive, Chart, CheckSquare, Home, InboxIcon, Menu, Sidebar as SidebarIcon, Sparkle, Users } from "@/components/ui/icons";
 import { ToastProvider } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
@@ -167,6 +167,7 @@ function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: 
   const inbox = `${home}/inbox`;
   const dashboard = `${home}/dashboard`;
   const claude = `${home}/settings/claude`;
+  const data = `${home}/settings/data`;
   const nav: Array<{ href: string; label: string; icon: ReactNode; active: boolean; badge?: number; aria?: string }> = [
     { href: me, label: de.me.title, icon: <CheckSquare />, active: pathname === me },
     { href: inbox, label: de.inbox.title, icon: <InboxIcon />, active: pathname === inbox, badge: unread, aria: de.inbox.navLabel(unread) },
@@ -174,6 +175,7 @@ function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: 
     { href: home, label: de.shell.overview, icon: <Home />, active: pathname === home },
     ...(shell.canAdmin ? [{ href: members, label: de.members.title, icon: <Users />, active: pathname.startsWith(members) }] : []),
     { href: claude, label: de.claude.navLabel, icon: <Sparkle />, active: pathname === claude },
+    ...(shell.canAdmin ? [{ href: data, label: de.data.navLabel, icon: <Archive />, active: pathname === data }] : []),
   ];
 
   return (

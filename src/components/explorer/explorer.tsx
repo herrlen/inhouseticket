@@ -1,17 +1,6 @@
 "use client";
 
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type Announcements,
-  type DragEndEvent,
-  type DragOverEvent,
-} from "@dnd-kit/core";
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import type { Announcements, DragEndEvent, DragOverEvent } from "@dnd-kit/core";
 import { usePathname, useRouter } from "next/navigation";
 import { useId, useState, useTransition } from "react";
 import { deleteFolderAction, moveFolderAction, moveProjectAction, savePrefsAction, setProjectArchivedAction } from "@/app/(app)/[workspace]/actions";
@@ -21,6 +10,7 @@ import { useToast } from "@/components/ui/toast";
 import { keyBetween } from "@/lib/fractional";
 import { de } from "@/lib/i18n/de";
 import { FolderNameDialog, NewProjectDialog } from "./dialogs";
+import { DndRoot, SortableList } from "./dnd-bridge";
 import { FolderRow } from "./folder-row";
 import {
   applyProjectMove,
@@ -71,11 +61,6 @@ export function Explorer({ data }: { data: ExplorerData }) {
   const [dialog, setDialog] = useState<
     { kind: "project"; folderId: string | null } | { kind: "folder" } | { kind: "rename"; folder: FolderItem } | null
   >(null);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
 
   const sortedFolders = sortByKey(folders);
   const rootProjects = projectsIn(projects, null);
@@ -224,16 +209,15 @@ export function Explorer({ data }: { data: ExplorerData }) {
             {de.explorer.projects}
           </h2>
         </div>
-        <DndContext
+        <DndRoot
           id={dndId}
-          sensors={sensors}
-          collisionDetection={closestCenter}
           onDragOver={onDragOver}
           onDragEnd={onDragEnd}
           onDragCancel={() => setOverFolder(null)}
-          accessibility={{ announcements, screenReaderInstructions: { draggable: de.explorer.dnd.instructions } }}
+          announcements={announcements}
+          instructions={de.explorer.dnd.instructions}
         >
-          <SortableContext items={sortedFolders.map((f) => folderDndId(f.id))} strategy={verticalListSortingStrategy}>
+          <SortableList ids={sortedFolders.map((f) => folderDndId(f.id))}>
             <ul>
               {sortedFolders.map((f) => {
                 const inside = projectsIn(projects, f.id);
@@ -256,15 +240,15 @@ export function Explorer({ data }: { data: ExplorerData }) {
                 );
               })}
             </ul>
-          </SortableContext>
-          <SortableContext items={rootProjects.map((p) => projectDndId(p.id))} strategy={verticalListSortingStrategy}>
+          </SortableList>
+          <SortableList ids={rootProjects.map((p) => projectDndId(p.id))}>
             <ul>
               {rootProjects.map((p) => (
                 <ProjectRow key={p.id} project={p} favorite={favorites.includes(p.id)} {...rowProps} />
               ))}
             </ul>
-          </SortableContext>
-        </DndContext>
+          </SortableList>
+        </DndRoot>
 
         {projects.length === 0 ? <p className="px-2 py-1 text-[13px] text-muted">{de.explorer.noProjects}</p> : null}
 
