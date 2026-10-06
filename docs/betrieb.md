@@ -46,6 +46,30 @@ Logs: `mw container logs -p p-flw0r0 app`
 ⚠ Der vHost zeigt auf die Container-ID von `app`. Wird der Service umbenannt oder der Stack neu angelegt,
 muss der vHost neu verbunden werden (`mw domain virtualhost update f3f931a6-… --path-to-container "/:<id>:3000/tcp"`).
 
+## Backups
+
+Zwei Ebenen:
+
+1. **Projekt-Backup von mittwald** – täglich 04:25, 30 Tage aufbewahrt (`mw backup list -p p-flw0r0`). Enthält alle
+   Volumes, also auch die Datenbank-Dateien. Eine Dateikopie einer laufenden Datenbank ist aber nicht garantiert
+   konsistent – deshalb zusätzlich:
+2. **Nächtlicher `pg_dump`** – mittwald-Cronjob im Postgres-Container, täglich 03:30 (Berlin), Format `-Fc`, nach
+   `/backups` im Volume `inhouseticket-pgbackup`; 14 Tage dort, über das Projekt-Backup 30 Tage. Angelegt mit
+   `scripts/setup-db-backup.sh` (idempotent). Fehler gehen per Mail an hello@inhouseticket.com.
+   Läufe prüfen: `pnpm dlx @mittwald/cli@1.25.0 cronjob execution list <cronjob-id> -p p-flw0r0`.
+
+### Wiederherstellen
+
+```bash
+# Im Postgres-Container (mStudio → Container → postgres → Terminal, oder mw container ssh):
+ls -lt /backups | head                       # neuesten Dump wählen
+pg_restore -U inhouseticket -d inhouseticket --clean --if-exists --no-owner /backups/inhouseticket_<datum>.dump
+```
+
+Liegt der benötigte Dump nicht mehr im Volume: in mStudio das Projekt-Backup des Tages wiederherstellen
+(nur das Volume `inhouseticket-pgbackup` auswählen), danach wie oben. Vor einem Restore die App stoppen
+(`mw container stop` für `app`), damit niemand während der Wiederherstellung schreibt.
+
 ## Deploys
 
 ### 2026-10-04 — erster Deploy, `908587a` (geschlossene Beta)

@@ -19,6 +19,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - inhouseticket-pgdata:/var/lib/postgresql/data
+      # Nightly pg_dump target (mittwald cronjob, docs/betrieb.md → Backups); part of the project backup.
+      - inhouseticket-pgbackup:/backups
     ports:
       - "5432:5432/tcp"
     restartPolicy: unless-stopped
@@ -52,3 +54,4 @@ services:
 
 volumes:
   inhouseticket-pgdata: {}
+  inhouseticket-pgbackup: {}
