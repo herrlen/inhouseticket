@@ -85,8 +85,10 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
                     aria-selected={selected.has(t.id)}
                     className={cn(
                       "border-b border-border last:border-0 hover:bg-bg/60",
-                      selected.has(t.id) && "bg-accent/5",
-                      openTicketId === t.id && "bg-accent/10",
+                      // Neutral backgrounds keep muted text at ≥ 4.5:1 (an accent tint fell below, axe);
+                      // the open ticket is marked with an accent bar instead.
+                      selected.has(t.id) && "bg-bg",
+                      openTicketId === t.id && "bg-bg shadow-[inset_3px_0_0_var(--accent)]",
                       pending && "opacity-60",
                     )}
                   >

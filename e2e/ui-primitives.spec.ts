@@ -1,10 +1,15 @@
 import { expect, test } from "@playwright/test";
 import { waitForHydration } from "./helpers/hydration";
 
-test("home page renders", async ({ page }) => {
+test("landing page: claim, screenshots, start and Claude section", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "inhouseticket" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: /Tickets für dein Team/ })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "de");
+  await expect(page.getByRole("img", { name: /Listenansicht eines Projekts/ })).toBeVisible();
+  await page.getByRole("link", { name: "Mit Claude arbeiten" }).click();
+  await expect(page.getByRole("heading", { name: "Frag einfach." })).toBeInViewport();
+  await page.getByRole("link", { name: "Kostenlos starten" }).first().click();
+  await expect(page).toHaveURL(/\/login$/);
 });
 
 test.describe("UI primitives preview", () => {
