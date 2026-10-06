@@ -194,7 +194,7 @@ export function ThroughputChart({ rows }: { rows: ThroughputRow[] }) {
     <div className="flex flex-col gap-1">
       <div className="flex h-28 items-end gap-2 border-b border-border">
         {rows.map((r) => (
-          <span key={r.week} tabIndex={0} aria-label={de.dashboard.throughputLabel(isoWeek(r.week), r.done)} className="group relative flex h-full flex-1 items-end focus-visible:outline-offset-2">
+          <span key={r.week} role="img" tabIndex={0} aria-label={de.dashboard.throughputLabel(isoWeek(r.week), r.done)} className="group relative flex h-full flex-1 items-end focus-visible:outline-offset-2">
             <span className="w-full rounded-t-[4px] bg-viz-bar" style={{ height: `${(r.done / max) * 100}%`, minHeight: r.done ? 3 : 0 }} />
             <Tip>{de.dashboard.throughputLabel(isoWeek(r.week), r.done)}</Tip>
           </span>
@@ -232,6 +232,7 @@ export function DueHeatmap({ rows }: { rows: DueDayRow[] }) {
         return (
           <span
             key={r.day}
+            role="img"
             tabIndex={0}
             aria-label={de.dashboard.dueLabel(label, r.count)}
             className={cn(

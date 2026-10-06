@@ -116,6 +116,8 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [ ] P1 Landingpage (Claim, Screenshots, „Kostenlos bis 100 User“, MCP-Highlight)
 - [x] P2 Datenexport CSV/JSON, Workspace löschen – Seite „Daten & Workspace“ (Export für Admins, Löschen nur Owner mit Kürzel-Bestätigung)
 - [ ] P2 Mobile-Feinschliff, Dark Mode, Accessibility-Audit
+  - [x] Automatischer Audit (axe, WCAG 2.1 A/AA) auf 12 Seiten, hell und dunkel – in CI (`e2e/a11y.spec.ts`); einziger Befund: Diagramm-Balken/-Zellen mit `aria-label` ohne Rolle → `role="img"`
+  - [ ] Manueller Durchgang Tastatur/Screenreader, Mobile-Feinschliff
 - [x] P2 Drag & Drop der Seitenleiste (dnd-kit) erst bei Bedarf laden – Projektseite 197,5 → 182,0 KB, übrige App-Seiten je ~15 KB weniger
 - [ ] P2 Cookieless Analytics
 - [ ] P3 Launch: Product Hunt, LinkedIn, t3n/Gründerszene-Pitch
