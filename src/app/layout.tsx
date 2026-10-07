@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { connection } from "next/server";
+import { env } from "@/lib/env";
+import { de } from "@/lib/i18n/de";
 import "./globals.css";
 
 // next/font self-hosts the files at build time – no requests to Google at runtime.
@@ -12,12 +14,17 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: { default: "inhouseticket", template: "%s · inhouseticket" },
-  description: "Tickets. Ohne Ballast.",
-  // Closed beta: no indexing until launch.
-  robots: { index: false, follow: false },
-};
+// Indexing is switched on at launch via SITE_INDEXABLE (env read per request, not at build time).
+export function generateMetadata(): Metadata {
+  return {
+    metadataBase: new URL(env.APP_URL),
+    title: { default: "inhouseticket", template: "%s · inhouseticket" },
+    description: de.landing.subtitle,
+    robots: env.SITE_INDEXABLE ? { index: true, follow: true } : { index: false, follow: false },
+    openGraph: { type: "website", siteName: "inhouseticket", locale: "de_DE", title: de.landing.title, description: de.landing.subtitle },
+    twitter: { card: "summary_large_image" },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [

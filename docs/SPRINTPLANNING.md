@@ -125,6 +125,8 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
   - [ ] Screenreader-Durchgang mit VoiceOver/NVDA (braucht einen Menschen)
 - [x] P2 Drag & Drop der Seitenleiste (dnd-kit) erst bei Bedarf laden – Projektseite 197,5 → 182,0 KB, übrige App-Seiten je ~15 KB weniger
 - [x] P2 Cookieless Analytics – selbst gezählt (Len, 2026-10-06): Seitenaufrufe pro Tag/Pfad/Herkunft in Postgres, ohne IP und Cookies, App-Pfade ohne Workspace-Namen, Bots ausgefiltert; Anzeige in `/admin`
+- [x] P1 Vor dem Launch (2026-10-07): DMARC (`p=none`), Health-Check alle 5 Min. mit Mail-Alarm, Restore-Probe des nächtlichen Dumps, SEO-Schalter `SITE_INDEXABLE` (robots, Sitemap, Vorschaubild, Metadaten; bis zum Launch aus)
+- [ ] P1 Zum Launch: `SITE_INDEXABLE=true`, Beta-Liste leeren (Registrierung öffnen), AGB/AVV verlinken, externer Uptime-Check
 - [ ] P3 Launch: Product Hunt, LinkedIn, t3n/Gründerszene-Pitch, OMR Reviews (Produktprofil anlegen, erste Bewertungen von Beta-Firmen)
 
 ---

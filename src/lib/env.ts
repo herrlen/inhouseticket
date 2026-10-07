@@ -17,6 +17,11 @@ const envSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v ?? "").split(",").map((d) => d.trim().toLowerCase()).filter(Boolean)),
+  /** Launch switch: "true" lets search engines index the public pages (robots, sitemap). Default off. */
+  SITE_INDEXABLE: z
+    .string()
+    .optional()
+    .transform((v) => v === "true"),
   /** Platform operators (comma-separated e-mails): /admin access, may sign in with a freemail address. */
   SUPERADMIN_EMAILS: z
     .string()
@@ -49,4 +54,5 @@ export const env: Env = parsed.success
       MAIL_FROM: "build@localhost",
       BETA_ALLOWED_DOMAINS: [],
       SUPERADMIN_EMAILS: [],
+      SITE_INDEXABLE: false,
     } satisfies Env);

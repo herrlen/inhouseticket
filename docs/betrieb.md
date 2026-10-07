@@ -33,6 +33,7 @@ Nur in der Stack-Konfiguration bei mittwald, keine lokale Kopie: `POSTGRES_PASSW
 scripts/deploy.sh                                   # HEAD von main, CI muss grün sein
 BETA_ALLOWED_DOMAINS=studioluy.de,firma.de scripts/deploy.sh   # Beta-Liste ändern
 SUPERADMIN_EMAILS=a@x.de,b@y.de scripts/deploy.sh             # Betreiber-Zugang /admin ändern
+SITE_INDEXABLE=true scripts/deploy.sh                          # zum Launch: Suchmaschinen zulassen (Sitemap, robots)
 scripts/set-smtp-password.sh                        # SMTP-Passwort setzen (fragt verdeckt, nur Len)
 ```
 
@@ -72,6 +73,18 @@ pg_restore -U inhouseticket -d inhouseticket --clean --if-exists --no-owner /bac
 Liegt der benötigte Dump nicht mehr im Volume: in mStudio das Projekt-Backup des Tages wiederherstellen
 (nur das Volume `inhouseticket-pgbackup` auswählen), danach wie oben. Vor einem Restore die App stoppen
 (`mw container stop` für `app`), damit niemand während der Wiederherstellung schreibt.
+
+## Monitoring und E-Mail
+
+- **Health-Check:** mittwald-Cronjob im App-Container alle 5 Minuten (`scripts/setup-monitoring.sh`, ID
+  `883c622f-…`). Ruft die öffentliche URL `/api/health` ab (Proxy, TLS, App, Datenbank); bei Fehler Mail an
+  hello@. Erkennt **keinen** Komplettausfall von mittwald – dafür zusätzlich einen externen Dienst nutzen
+  (z. B. UptimeRobot oder Better Stack, Check auf `https://inhouseticket.com/api/health`, Schlüsselwort `"ok"`).
+- **E-Mail-Authentifizierung:** SPF (`include:agenturserver.de`), DKIM von mittwald (Selektoren `agenturserver`,
+  `agenturserver2048`), DMARC seit 2026-10-07 `p=none` mit Berichten an hello@ (Zone `_dmarc` per API angelegt).
+  Nach einigen Wochen ohne Auffälligkeiten auf `p=quarantine` anheben.
+- **Restore-Probe** 2026-10-07: Dump von 03:30 in eine temporäre Datenbank im Postgres-Container zurückgespielt,
+  30 Tabellen, Zeilenzahlen wie live (bis auf ein später angelegtes Ticket); Probe-Datenbank danach gelöscht.
 
 ## Deploys
 

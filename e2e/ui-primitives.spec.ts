@@ -71,3 +71,14 @@ test.describe("UI primitives preview", () => {
     expect(await bg()).toBe("rgb(14, 14, 17)");
   });
 });
+
+test("closed beta: search engines stay out, link preview image exists", async ({ request, page }) => {
+  expect(await (await request.get("/robots.txt")).text()).toContain("Disallow: /");
+  expect(await (await request.get("/sitemap.xml")).text()).not.toContain("<loc>");
+  const og = await request.get("/opengraph-image");
+  expect(og.status()).toBe(200);
+  expect(og.headers()["content-type"]).toBe("image/png");
+  await page.goto("/");
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex, nofollow");
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /opengraph-image/);
+});

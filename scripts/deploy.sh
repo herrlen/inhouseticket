@@ -62,8 +62,10 @@ fi
 SMTP="${SMTP_PASSWORD:-$(env_of app SMTP_PASSWORD)}"
 BETA="${BETA_ALLOWED_DOMAINS:-$(env_of app BETA_ALLOWED_DOMAINS)}"
 SUPER="${SUPERADMIN_EMAILS:-$(env_of app SUPERADMIN_EMAILS)}"
+INDEX="${SITE_INDEXABLE:-$(env_of app SITE_INDEXABLE)}"
 [[ -n "$SMTP" ]] || echo "Hinweis: SMTP_PASSWORD fehlt – Anmeldelinks können nicht verschickt werden. Setzen mit: scripts/set-smtp-password.sh"
 [[ -n "$BETA" ]] && echo "Beta-Domains: $BETA" || echo "Hinweis: BETA_ALLOWED_DOMAINS leer – Registrierung ist OFFEN."
+[[ "$INDEX" == "true" ]] && echo "Suchmaschinen: Indexierung AN" || echo "Suchmaschinen: noindex (Beta)"
 [[ -n "$SUPER" ]] && echo "Superadmins: $(echo "$SUPER" | tr ',' '\n' | grep -c .)" || echo "Hinweis: kein Superadmin (SUPERADMIN_EMAILS leer)."
 
 {
@@ -75,6 +77,7 @@ SUPER="${SUPERADMIN_EMAILS:-$(env_of app SUPERADMIN_EMAILS)}"
   printf 'SMTP_PASSWORD=%s\n' "$SMTP"
   printf 'BETA_ALLOWED_DOMAINS=%s\n' "$BETA"
   printf 'SUPERADMIN_EMAILS=%s\n' "$SUPER"
+  printf 'SITE_INDEXABLE=%s\n' "$INDEX"
 } >"$ENVFILE"
 
 schritt "Ausrollen ($TAG)"
