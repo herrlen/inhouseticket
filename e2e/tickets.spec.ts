@@ -191,3 +191,19 @@ test("ticket API is workspace-scoped", async ({ browser }) => {
   const anonymous = await (await browser.newContext()).request.get(url);
   expect(anonymous.status()).toBe(401);
 });
+
+test("on phones the list shows status and priority under the title, without sideways scrolling", async ({ browser }) => {
+  const page = await (await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })).newPage();
+  await openProject(page, "phone");
+  const row = page.locator("tr", { has: page.getByText("MKT-3", { exact: true }) });
+  await expect(row).toContainText("Offen");
+  await expect(row).toContainText("Hoch");
+  await expect(page.getByRole("button", { name: /^Status von MKT-3/ })).toBeHidden(); // column hidden, edit in the detail
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  const tableBox = await page.getByRole("table", { name: /Tickets in/ }).boundingBox();
+  expect(tableBox!.width).toBeLessThanOrEqual(390);
+
+  await row.getByRole("button", { name: /^MKT-3 öffnen/ }).click();
+  await expect(page.getByRole("dialog").getByRole("button", { name: /^Status/ }).first()).toBeVisible();
+  await expect(page.getByText(/nächstes Ticket/)).toBeHidden(); // no keyboard hints on touch screens
+});

@@ -195,7 +195,8 @@ export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Pr
           )}
         </div>
       </section>
-      <p className="text-xs text-muted">{de.detail.navHint}</p>
+      {/* Keyboard hints are pointless on touch screens. */}
+      <p className="hidden text-xs text-muted [@media(hover:hover)]:block">{de.detail.navHint}</p>
     </div>
   );
 }

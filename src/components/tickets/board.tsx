@@ -115,7 +115,7 @@ export function Board({ tickets, today, onOpen, onMove, onCreate }: Props) {
       onDragCancel={() => setActiveId(null)}
       accessibility={{ announcements, screenReaderInstructions: { draggable: de.board.dnd.instructions } }}
     >
-      <div className="-mx-4 overflow-x-auto px-4 pb-4 md:-mx-6 md:px-6">
+      <div className="-mx-4 snap-x snap-proximity scroll-px-4 overflow-x-auto px-4 pb-4 md:-mx-6 md:snap-none md:px-6">
         <div className="flex min-h-[60vh] gap-3" role="list" aria-label={de.board.label(project.name)}>
           {columns.map((s) => (
             <Column key={s.id} status={s} cards={columnCards(cards, s.id)} today={today} onOpen={onOpen} onCreate={(title) => onCreate(title, s.id)} />
@@ -152,7 +152,7 @@ function Column({
       role="listitem"
       aria-labelledby={headingId}
       className={cn(
-        "flex w-72 shrink-0 flex-col rounded-[var(--radius-card)] border bg-bg/60",
+        "flex w-72 shrink-0 snap-start flex-col rounded-[var(--radius-card)] border bg-bg/60",
         wip === "over" ? "border-prio-urgent-ink" : "border-border",
         isOver && "ring-2 ring-accent/40",
       )}

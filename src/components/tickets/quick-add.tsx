@@ -24,7 +24,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, { onCreate: (ticket: QuickA
       }}
       className="flex flex-col gap-1"
     >
-      <div className="flex items-center gap-2 rounded-[var(--radius-card)] border border-border bg-surface px-3 focus-within:border-accent">
+      <div className="flex items-center gap-2 rounded-[var(--radius-card)] border border-border bg-surface px-3 focus-within:border-accent focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--focus)]">
         <span aria-hidden className="text-muted">+</span>
         <label htmlFor="quick-add" className="sr-only">{de.list.quickAddLabel}</label>
         <input

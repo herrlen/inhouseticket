@@ -120,7 +120,9 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [x] P2 Datenexport CSV/JSON, Workspace löschen – Seite „Daten & Workspace“ (Export für Admins, Löschen nur Owner mit Kürzel-Bestätigung)
 - [ ] P2 Mobile-Feinschliff, Dark Mode, Accessibility-Audit
   - [x] Automatischer Audit (axe, WCAG 2.1 A/AA) auf 12 Seiten, hell und dunkel – in CI (`e2e/a11y.spec.ts`); einziger Befund: Diagramm-Balken/-Zellen mit `aria-label` ohne Rolle → `role="img"`
-  - [ ] Manueller Durchgang Tastatur/Screenreader, Mobile-Feinschliff
+  - [x] Mobile-Feinschliff (2026-10-07): Liste zeigt am Handy Status/Priorität/Person/Fälligkeit unter dem Titel statt abgeschnittener Spalten, Board-Spalten rasten ein, keine Tastatur-Hinweise auf Touch-Geräten; Test ohne seitliches Scrollen
+  - [x] Tastatur automatisiert (`e2e/keyboard.spec.ts`): jeder Tab-Stopp auf sechs Seiten mit sichtbarem Fokus, Kernablauf nur per Tastatur; Befund: Schnelleingabe hatte nur einen Farbwechsel als Fokus → Fokusrahmen
+  - [ ] Screenreader-Durchgang mit VoiceOver/NVDA (braucht einen Menschen)
 - [x] P2 Drag & Drop der Seitenleiste (dnd-kit) erst bei Bedarf laden – Projektseite 197,5 → 182,0 KB, übrige App-Seiten je ~15 KB weniger
 - [x] P2 Cookieless Analytics – selbst gezählt (Len, 2026-10-06): Seitenaufrufe pro Tag/Pfad/Herkunft in Postgres, ohne IP und Cookies, App-Pfade ohne Workspace-Namen, Bots ausgefiltert; Anzeige in `/admin`
 - [ ] P3 Launch: Product Hunt, LinkedIn, t3n/Gründerszene-Pitch
