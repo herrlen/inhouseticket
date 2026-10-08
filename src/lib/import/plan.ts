@@ -4,7 +4,7 @@
 
 import { MAX_COMMENT, MAX_DESCRIPTION, MAX_SUBTASKS, MAX_TITLE } from "@/lib/limits";
 import { DEFAULT_STATUSES } from "@/lib/project-templates";
-import type { Category, SourceFile, SourceSubtask } from "./source";
+import type { Category, ColumnField, SourceFile, SourceSubtask } from "./source";
 
 export const MAX_IMPORT_TICKETS = 5000;
 export const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
@@ -43,6 +43,8 @@ export type ImportPreview = {
   statuses: Array<{ from: string; to: DefaultStatusName; count: number }>;
   people: Array<{ name: string; member: string | null; count: number }>;
   sample: Array<{ ref: string; title: string; status: DefaultStatusName; priority: number; assignee: string | null }>;
+  /** Only for tools with free column names. */
+  columns: Array<{ field: ColumnField; column: string }> | null;
 };
 
 export type ImportPlan = { tickets: PlannedTicket[]; preview: ImportPreview };
@@ -73,6 +75,7 @@ export function buildPlan(file: SourceFile, members: Member[], sourceName: strin
     tickets: 0, subtasks: 0, comments: 0, labels: 0, skipped: 0,
     truncatedTitles: 0, truncatedDescriptions: 0, foldedSubtasks: 0,
     statuses: [], people: [], sample: [],
+    columns: file.columns ?? null,
   };
 
   const tickets: PlannedTicket[] = [];

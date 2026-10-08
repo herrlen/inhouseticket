@@ -119,7 +119,6 @@ export function ImportForm({ workspaceId }: { workspaceId: string }) {
               </option>
             ))}
           </select>
-          <p className="text-[13px] text-muted">{de.import.comingSoon}</p>
         </div>
         <p className="text-[13px]">{de.import.howTo[source]}</p>
         <div className="flex flex-wrap items-end gap-3">
@@ -247,6 +246,20 @@ function Preview({ preview: p, tool, children }: { preview: ImportPreview; tool:
             </tbody>
           </table>
           {p.people.some((x) => !x.member) ? <p className="mt-1 text-[13px] text-muted">{de.import.peopleHint}</p> : null}
+        </div>
+      ) : null}
+
+      {p.columns ? (
+        <div>
+          <h3 className="mb-1 text-[13px] font-semibold">{de.import.columnsTitle}</h3>
+          <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
+            {p.columns.map((c) => (
+              <li key={c.field}>
+                {de.import.columnFields[c.field]} <span className="text-muted">← {c.column}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1 text-[13px] text-muted">{de.import.columnsHint}</p>
         </div>
       ) : null}
 

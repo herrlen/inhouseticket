@@ -78,3 +78,32 @@ test("import a ClickUp CSV", async ({ page }) => {
   await page.getByRole("button", { name: "1 Tickets importieren" }).click();
   await expect(page.getByText("1 Tickets in KAM importiert.")).toBeVisible();
 });
+
+test("import Notion and monday.com CSVs; the preview lists the detected columns", async ({ page }) => {
+  const path = await createWorkspace(page, `ina@${uniqueDomain("notion")}`, "Notiz GmbH");
+  await page.goto(`${path}/settings/data/import`);
+  const select = page.getByLabel("Altes Tool");
+  await waitForHydration(select);
+
+  await select.selectOption("notion");
+  const notion = ["Aufgabe,Status,Zuständig,Fällig", 'Website relaunchen,In Bearbeitung,Ina,"October 15, 2026"', "Flyer drucken,Erledigt,,"].join("\n");
+  await page.getByLabel("Export-Datei (CSV)").setInputFiles({ name: "Aufgaben 0123456789abcdef0123456789abcdef_all.csv", mimeType: "text/csv", buffer: Buffer.from(notion) });
+  await page.getByRole("button", { name: "Vorschau anzeigen" }).click();
+  const preview = page.getByRole("region", { name: "Vorschau" });
+  await expect(preview).toContainText("Erkannte Spalten");
+  await expect(preview).toContainText("Titel ← Aufgabe");
+  await expect(preview).toContainText("Fällig ← Fällig");
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue("Aufgaben");
+  await page.getByRole("button", { name: "2 Tickets importieren" }).click();
+  await expect(page.getByText("2 Tickets in AUF importiert.")).toBeVisible();
+
+  await page.getByRole("button", { name: "Weitere Datei importieren" }).click();
+  await select.selectOption("monday");
+  const monday = ["Kampagnen-Board,,,", "Diese Woche,,,", "Name,Person,Status,Date", "Anzeige buchen,Ina,Working on it,2026-10-20"].join("\n");
+  await page.getByLabel("Export-Datei (CSV)").setInputFiles({ name: "board.csv", mimeType: "text/csv", buffer: Buffer.from(monday) });
+  await page.getByRole("button", { name: "Vorschau anzeigen" }).click();
+  await expect(page.getByRole("region", { name: "Vorschau" })).toContainText("1 Tickets, 0 Unteraufgaben, 0 Kommentare, 1 Labels");
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue("Kampagnen-Board");
+  await page.getByRole("button", { name: "1 Tickets importieren" }).click();
+  await expect(page.getByText(/1 Tickets in \w+ importiert\./)).toBeVisible();
+});

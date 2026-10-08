@@ -2,9 +2,9 @@
 // (priority words, status categories, date formats). Source readers (jira.ts, …) produce
 // a SourceFile; plan.ts turns it into what gets written.
 
-export type SourceId = "jira" | "clickup";
+export type SourceId = "jira" | "clickup" | "notion" | "monday";
 
-export const SOURCE_NAMES: Record<SourceId, string> = { jira: "Jira", clickup: "ClickUp" };
+export const SOURCE_NAMES: Record<SourceId, string> = { jira: "Jira", clickup: "ClickUp", notion: "Notion", monday: "monday.com" };
 export const SOURCE_IDS = Object.keys(SOURCE_NAMES) as [SourceId, ...SourceId[]];
 
 export type Category = "open" | "active" | "done";
@@ -38,7 +38,11 @@ export type SourceFile = {
   /** Distinct projects in the file – more than one is imported into one project for now. */
   projectCount: number;
   tickets: SourceTicket[];
+  /** For tools with free column names: which column was used for what (shown in the preview). */
+  columns?: Array<{ field: ColumnField; column: string }>;
 };
+
+export type ColumnField = "title" | "status" | "priority" | "assignee" | "due" | "labels" | "description" | "created" | "parent" | "subtasks" | "done";
 
 export type SourceError = "empty" | "too_many_rows" | "not_this_tool" | "too_many_tickets";
 
@@ -73,7 +77,7 @@ export function mapCategoryWord(value: string): Category | null {
 export function guessCategory(statusName: string): Category {
   const v = statusName.trim().toLowerCase();
   if (/(done|closed|resolved|complete|fertig|erledigt|geschlossen|gelöst|abgeschlossen|won't|wont|cancel|abgebrochen|verworfen)/.test(v)) return "done";
-  if (/(progress|doing|review|test|qa|arbeit|bearbeitung|prüf|pruef|freigabe|blocked|blockiert|warte)/.test(v)) return "active";
+  if (/(progress|doing|working|review|test|qa|arbeit|bearbeitung|prüf|pruef|freigabe|blocked|blockiert|stuck|hängt|haengt|warte)/.test(v)) return "active";
   return "open";
 }
 
@@ -81,6 +85,7 @@ const MONTHS: Record<string, number> = {
   jan: 1, feb: 2, mar: 3, mär: 3, mrz: 3, apr: 4, may: 5, mai: 5, jun: 6, jul: 7, aug: 8,
   sep: 9, oct: 10, okt: 10, nov: 11, dec: 12, dez: 12,
 };
+const month = (name: string) => MONTHS[name.slice(0, 3).toLowerCase()];
 
 function year(y: string): number {
   const n = Number(y);
@@ -90,7 +95,8 @@ function year(y: string): number {
 /**
  * Parses the date formats the supported tools export, as UTC:
  * ISO "2026-10-08[ 12:33]", Jira "08/Oct/26 12:33 PM", German "08.10.2026[ 12:33]",
- * US "10/08/2026" (ClickUp). Returns null for anything else.
+ * US "10/08/2026" or "10/8/26" (ClickUp, Excel), Notion "October 8, 2026 2:33 PM" and
+ * "8. Oktober 2026". Returns null for anything else.
  */
 export function parseDate(value: string): Date | null {
   const v = value.trim();
@@ -99,11 +105,16 @@ export function parseDate(value: string): Date | null {
   let m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v);
   if (m) [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
   else if ((m = /^(\d{1,2})[/ -]([A-Za-zäÄ]{3})[a-zä]*\.?[/ -](\d{2}|\d{4})\b/.exec(v))) {
-    const month = MONTHS[m[2]!.toLowerCase()];
-    if (!month) return null;
-    [y, mo, d] = [year(m[3]!), month, Number(m[1])];
+    if (!month(m[2]!)) return null;
+    [y, mo, d] = [year(m[3]!), month(m[2]!)!, Number(m[1])];
+  } else if ((m = /^(\d{1,2})\.\s?([A-Za-zäÄ]{3,})\.?\s(\d{4})\b/.exec(v))) {
+    if (!month(m[2]!)) return null;
+    [y, mo, d] = [Number(m[3]), month(m[2]!)!, Number(m[1])];
+  } else if ((m = /^([A-Za-zäÄ]{3,})\.?\s(\d{1,2}),?\s(\d{4})\b/.exec(v))) {
+    if (!month(m[1]!)) return null;
+    [y, mo, d] = [Number(m[3]), month(m[1]!)!, Number(m[2])];
   } else if ((m = /^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})\b/.exec(v))) [y, mo, d] = [year(m[3]!), Number(m[2]), Number(m[1])];
-  else if ((m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})\b/.exec(v))) [y, mo, d] = [Number(m[3]), Number(m[1]), Number(m[2])];
+  else if ((m = /^(\d{1,2})\/(\d{1,2})\/(\d{4}|\d{2})\b/.exec(v))) [y, mo, d] = [year(m[3]!), Number(m[1]), Number(m[2])];
   else return null;
 
   let h = 0;

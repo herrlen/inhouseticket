@@ -70,7 +70,9 @@ export async function POST(request: Request, { params }: Ctx) {
   const plan = buildPlan(read.file, await listImportMembers(ws), SOURCE_NAMES[source]);
 
   if (mode === "preview") {
-    const name = (read.file.projectName || file.name.replace(/\.[^.]+$/, "")).slice(0, 100).trim() || "Import";
+    // Notion names files "Tasks 1a2b…(32 hex)[_all].csv".
+    const fromFile = file.name.replace(/\.[^.]+$/, "").replace(/(\s[0-9a-f]{32})?(_all)?$/i, "");
+    const name = (read.file.projectName || fromFile).slice(0, 100).trim() || "Import";
     return json({ preview: plan.preview, suggestion: { name, key: await freeKey(ws, read.file.projectKey, name), color: PALETTE.indigo } });
   }
 

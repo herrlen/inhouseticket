@@ -138,15 +138,18 @@ ohne API-Zugang, nur mit der Export-Datei des alten Tools.
 - [x] P1 Seite „Import“ unter Einstellungen (`/settings/data/import`, verlinkt aus „Daten & Workspace“ und der Befehlspalette), nur Admins/Owner
 - [x] P1 Ablauf in drei Schritten: Datei hochladen → Vorschau mit Zuordnung → Import bestätigen. Nichts wird
   geschrieben, bevor die Vorschau bestätigt ist; Import in einer Transaktion (ganz oder gar nicht)
-- [ ] P1 Formate – **nur CSV** (entschieden 2026-10-08); Exportwege noch mit echten Beispieldateien prüfen:
+- [x] P1 Formate – **nur CSV** (entschieden 2026-10-08). Offen: alle vier mit echten Exportdateien prüfen –
+  die Formate sind nach Dokumentation nachgebaut:
   - [x] **Jira** (2026-10-08, `src/lib/import/jira.ts`; englische und deutsche Spaltennamen): CSV-Export einer Filteransicht („Alle Felder“) – Summary, Issue key, Status, Priority, Assignee,
     Due date, Labels, Description, Parent/Sub-tasks, Kommentar-Spalten
   - [x] **ClickUp** (2026-10-08, `src/lib/import/clickup.ts`; Datum als Zeitstempel oder Text, Kommentare/Checklisten
     als JSON, Unteraufgaben jeder Tiefe unter die oberste Aufgabe, bei mehreren Zuständigen die erste Person): CSV-Export des Workspace/einer Liste – Task Name, Status, Priority, Assignees, Due Date,
     Tags, Parent ID, Task Content
-  - [ ] **Notion:** nur die CSV-Datei aus dem Export „Markdown & CSV“ (ZIP vorher entpacken; Seiteninhalte
-    gehen dabei verloren); Spalten frei benannt → Zuordnung in der Vorschau
-  - [ ] **monday.com:** Board-Export als Excel, in Excel „Speichern unter → CSV“; Gruppen, Subitems in eigenen Zeilen
+  - [x] **Notion** (2026-10-08, `notion.ts`): nur die CSV-Datei aus dem Export „Markdown & CSV“ (ZIP vorher entpacken;
+    Seiteninhalte gehen dabei verloren). Spalten frei benannt → übliche deutsche/englische Namen werden erkannt
+    (`columns.ts`), die Vorschau zeigt „Erkannte Spalten“; Unterelemente über „Parent item“/„Sub-items“
+  - [x] **monday.com** (2026-10-08, `monday.ts`): Board-Export als Excel, in Excel „Speichern unter → CSV UTF-8“;
+    Board-Name → Projektname, Gruppen → Labels, Subitem-Zeilen → Unteraufgaben; Updates nicht
 - [x] P1 Zuordnung in der Vorschau (Personen per E-Mail **oder Name**, Jira exportiert nur Namen): Status → Projektstatus (nach Kategorie offen/in Arbeit/erledigt),
   Priorität → 4 Stufen, Personen per E-Mail auf Mitglieder (unbekannte bleiben unzugewiesen und werden
   aufgelistet), Labels/Tags → Labels, Fälligkeit, Unteraufgaben, optional Kommentare
@@ -157,6 +160,7 @@ ohne API-Zugang, nur mit der Export-Datei des alten Tools.
   Workspace (60 Vorschauen, 10 Importe pro Stunde), Workspace-Scope wie überall; keine ZIP-Dateien
 - [ ] P2 Import-Protokoll: Anzahl übernommen/gekürzt/übersprungen, Download als CSV (Aktivitätslog
   „importiert aus Jira“ am Ticket ist erledigt)
+- [ ] P2 Eigene Spaltenzuordnung in der Vorschau (Notion/monday), falls die automatische Erkennung nicht reicht
 - [ ] P2 Mehrere Projekte aus einer Datei (Jira-Projekte, ClickUp-Listen, monday-Gruppen) → je ein Projekt
 - [ ] P3 Rückgängig: kompletten Import innerhalb von 24 h wieder entfernen
 - Entschieden 2026-10-08 (Len): **nur CSV**, keine Abhängigkeit für `.xlsx`/ZIP. monday: „Als CSV speichern“
