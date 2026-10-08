@@ -129,6 +129,47 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [ ] P1 Zum Launch: `SITE_INDEXABLE=true`, Beta-Liste leeren (Registrierung öffnen), AGB/AVV verlinken, externer Uptime-Check
 - [ ] P3 Launch: Product Hunt, LinkedIn, t3n/Gründerszene-Pitch, OMR Reviews (Produktprofil anlegen, erste Bewertungen von Beta-Firmen)
 
+
+## Sprint 10 – Import aus anderen Tools (aufgenommen 2026-10-08)
+**Ziel:** Teams ziehen mit ihren Projekten kostenlos aus ClickUp, Jira, Notion und monday.com um –
+ohne API-Zugang, nur mit der Export-Datei des alten Tools.
+
+### Backend – Import im Workspace-Bereich
+- [ ] P1 Seite „Import“ unter Einstellungen (neben „Daten & Workspace“), nur Admins/Owner
+- [ ] P1 Ablauf in drei Schritten: Datei hochladen → Vorschau mit Zuordnung → Import bestätigen. Nichts wird
+  geschrieben, bevor die Vorschau bestätigt ist; Import in einer Transaktion (ganz oder gar nicht)
+- [ ] P1 Formate (Exportwege vor der Umsetzung mit echten Beispieldateien prüfen):
+  - **Jira:** CSV-Export einer Filteransicht („Alle Felder“) – Summary, Issue key, Status, Priority, Assignee,
+    Due date, Labels, Description, Parent/Sub-tasks, Kommentar-Spalten
+  - **ClickUp:** CSV-Export des Workspace/einer Liste – Task Name, Status, Priority, Assignees, Due Date,
+    Tags, Parent ID, Task Content
+  - **Notion:** Datenbank-Export „Markdown & CSV“ (ZIP: CSV der Datenbank + eine Markdown-Seite pro Eintrag);
+    Spalten frei benannt → Zuordnung in der Vorschau
+  - **monday.com:** Board-Export als Excel (`.xlsx`); Gruppen, Subitems in eigenen Zeilen
+- [ ] P1 Zuordnung in der Vorschau: Status → Projektstatus (nach Kategorie offen/in Arbeit/erledigt),
+  Priorität → 4 Stufen, Personen per E-Mail auf Mitglieder (unbekannte bleiben unzugewiesen und werden
+  aufgelistet), Labels/Tags → Labels, Fälligkeit, Unteraufgaben, optional Kommentare
+- [ ] P1 Limits aus `limits.ts` gelten auch beim Import und werden in der Vorschau angezeigt: Titel > 500 und
+  Beschreibung > 5000 Zeichen werden gekürzt (markiert), Unteraufgaben max. 5 und eine Ebene (Rest als
+  Checkliste in die Beschreibung), Anhänge werden nicht übernommen (100-KB-Grenze, ADR 002) – Hinweis im Ergebnis
+- [ ] P1 Sicherheit: Upload max. 5 MB, ZIP mit Größen- und Dateizahl-Grenze (Zip-Bomben), Parsing nur
+  serverseitig, max. 5.000 Tickets pro Import, Rate-Limit pro Workspace, Workspace-Scope wie überall
+- [ ] P2 Import-Protokoll: Anzahl übernommen/gekürzt/übersprungen, Download als CSV; Aktivitätslog
+  „importiert aus Jira“ am Ticket
+- [ ] P2 Mehrere Projekte aus einer Datei (Jira-Projekte, ClickUp-Listen, monday-Gruppen) → je ein Projekt
+- [ ] P3 Rückgängig: kompletten Import innerhalb von 24 h wieder entfernen
+- `TODO(entscheidung)`: `.xlsx` (monday) und ZIP (Notion) brauchen einen Parser – kleine Abhängigkeit oder
+  Bordmittel? Alternative: nur CSV annehmen und für monday „Als CSV speichern“ erklären
+- `TODO(entscheidung)`: neue Tabelle für Import-Läufe (Protokoll, Rückgängig) → ADR
+
+### Frontend – Landingpage und Einstieg
+- [ ] P1 Abschnitt auf der Landingpage „Kostenlos umziehen“: Projekte aus ClickUp, Jira, Notion und monday.com
+  in wenigen Minuten importieren – erst live schalten, wenn der Import funktioniert
+- [ ] P1 Kurzanleitung je Tool (wo finde ich den Export?) – auf der Import-Seite und als Hilfeseite
+- [ ] P2 Einstieg „Projekte importieren“ im Onboarding und im leeren Zustand eines neuen Workspace
+- [ ] P2 FAQ-Eintrag „Kann ich meine Daten mitnehmen?“ (Import und Export)
+- Hinweis: Tool-Namen dürfen genannt werden; Logos nur gemäß den Markenrichtlinien der Anbieter
+
 ---
 
 ## Backlog (nach MVP)
