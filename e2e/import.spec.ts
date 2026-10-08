@@ -22,7 +22,7 @@ test("import a Jira CSV: preview, then a new project with the tickets", async ({
   // Wrong tool → clear message, nothing imported.
   await file.setInputFiles({ name: "clickup.csv", mimeType: "text/csv", buffer: Buffer.from("Task Name,Status\nx,open\n") });
   await page.getByRole("button", { name: "Vorschau anzeigen" }).click();
-  await expect(page.getByText("Das sieht nicht nach einem Jira-Export aus.", { exact: false })).toBeVisible();
+  await expect(page.getByText("Das sieht nicht nach einem Jira-Export aus", { exact: false })).toBeVisible();
 
   await file.setInputFiles({ name: "jira.csv", mimeType: "text/csv", buffer: Buffer.from(csv(`ina@${domain}`)) });
   await page.getByRole("button", { name: "Vorschau anzeigen" }).click();
