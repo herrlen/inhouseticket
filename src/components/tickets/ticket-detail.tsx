@@ -288,6 +288,7 @@ function describe(a: ActivityRow): string {
     case "subtask_removed": return de.activity.subtask_removed(str(p.title));
     case "attachment_added": return de.activity.attachment_added(str(p.fileName));
     case "attachment_removed": return de.activity.attachment_removed(str(p.fileName));
+    case "imported": return de.import.activity(str(p.source), p.ref ? String(p.ref) : "");
     default: return a.type;
   }
 }

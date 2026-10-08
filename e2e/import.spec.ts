@@ -1,0 +1,59 @@
+import { expect, test } from "@playwright/test";
+import { createWorkspace, uniqueDomain } from "./helpers/auth";
+import { waitForHydration } from "./helpers/hydration";
+
+const csv = (assignee: string) =>
+  [
+    "Summary,Issue key,Issue id,Issue Type,Status,Status Category,Project key,Project name,Priority,Assignee,Created,Labels,Parent id,Comment",
+    `Login überarbeiten,WEB-1,10001,Story,In Progress,In Progress,WEB,Website,High,${assignee},01/Sep/26 9:15 AM,ux,,"02/Sep/26 10:00 AM;abc;Bitte bis Freitag"`,
+    "Formular prüfen,WEB-2,10002,Sub-task,Done,Done,WEB,Website,,,02/Sep/26 9:00 AM,,10001,",
+    "Bug im Footer,WEB-3,10003,Bug,To Do,To Do,WEB,Website,Highest,Tom Fremd,03/Sep/26 11:00 AM,,,",
+  ].join("\n");
+
+test("import a Jira CSV: preview, then a new project with the tickets", async ({ page, browser }) => {
+  const domain = uniqueDomain("import");
+  const path = await createWorkspace(page, `ina@${domain}`, "Umzug GmbH");
+  await page.goto(`${path}/settings/data`);
+  await page.getByRole("link", { name: "Import öffnen" }).click();
+  await expect(page.getByRole("heading", { name: "Projekte importieren" })).toBeVisible();
+
+  const file = page.getByLabel("Export-Datei (CSV)");
+  await waitForHydration(file);
+  // Wrong tool → clear message, nothing imported.
+  await file.setInputFiles({ name: "clickup.csv", mimeType: "text/csv", buffer: Buffer.from("Task Name,Status\nx,open\n") });
+  await page.getByRole("button", { name: "Vorschau anzeigen" }).click();
+  await expect(page.getByText("Das sieht nicht nach einem Jira-Export aus.", { exact: false })).toBeVisible();
+
+  await file.setInputFiles({ name: "jira.csv", mimeType: "text/csv", buffer: Buffer.from(csv(`ina@${domain}`)) });
+  await page.getByRole("button", { name: "Vorschau anzeigen" }).click();
+  const preview = page.getByRole("region", { name: "Vorschau" });
+  await expect(preview).toContainText("2 Tickets, 1 Unteraufgaben, 1 Kommentare, 1 Labels");
+  await expect(preview).toContainText("kein Mitglied – bleibt unzugewiesen");
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue("Website");
+  // MKT is the onboarding project's key; WEB from the file is free.
+  await expect(page.getByLabel("Kürzel")).toHaveValue("WEB");
+
+  await page.getByRole("button", { name: "2 Tickets importieren" }).click();
+  await expect(page.getByText("2 Tickets in WEB importiert.")).toBeVisible();
+  await page.getByRole("link", { name: "Zum Projekt" }).click();
+  await expect(page).toHaveURL(new RegExp(`${path}/p/WEB`));
+  await expect(page.getByText("Login überarbeiten")).toBeVisible();
+  await expect(page.getByText("Bug im Footer")).toBeVisible();
+
+  // Same key again is refused.
+  await page.goto(`${path}/settings/data/import`);
+  await waitForHydration(page.getByLabel("Export-Datei (CSV)"));
+  await page.getByLabel("Export-Datei (CSV)").setInputFiles({ name: "jira.csv", mimeType: "text/csv", buffer: Buffer.from(csv("")) });
+  await page.getByRole("button", { name: "Vorschau anzeigen" }).click();
+  await expect(page.getByLabel("Kürzel")).toHaveValue("WEB2");
+
+  // Other workspaces cannot import here.
+  const stranger = await browser.newPage();
+  await createWorkspace(stranger, `tom@${uniqueDomain("import2")}`, "Fremd GmbH");
+  const url = await page.evaluate(() => (performance.getEntriesByType("resource") as PerformanceResourceTiming[]).map((e) => e.name).find((n) => n.includes("/import"))!);
+  const res = await stranger.request.post(url, {
+    headers: { origin: new URL(url).origin },
+    multipart: { source: "jira", mode: "preview", file: { name: "x.csv", mimeType: "text/csv", buffer: Buffer.from(csv("")) } },
+  });
+  expect(res.status()).toBe(404);
+});

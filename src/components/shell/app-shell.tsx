@@ -175,7 +175,7 @@ function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: 
     { href: home, label: de.shell.overview, icon: <Home />, active: pathname === home },
     ...(shell.canAdmin ? [{ href: members, label: de.members.title, icon: <Users />, active: pathname.startsWith(members) }] : []),
     { href: claude, label: de.claude.navLabel, icon: <Sparkle />, active: pathname === claude },
-    ...(shell.canAdmin ? [{ href: data, label: de.data.navLabel, icon: <Archive />, active: pathname === data }] : []),
+    ...(shell.canAdmin ? [{ href: data, label: de.data.navLabel, icon: <Archive />, active: pathname.startsWith(data) }] : []),
   ];
 
   return (

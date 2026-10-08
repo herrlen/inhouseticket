@@ -135,37 +135,38 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 ohne API-Zugang, nur mit der Export-Datei des alten Tools.
 
 ### Backend – Import im Workspace-Bereich
-- [ ] P1 Seite „Import“ unter Einstellungen (neben „Daten & Workspace“), nur Admins/Owner
-- [ ] P1 Ablauf in drei Schritten: Datei hochladen → Vorschau mit Zuordnung → Import bestätigen. Nichts wird
+- [x] P1 Seite „Import“ unter Einstellungen (`/settings/data/import`, verlinkt aus „Daten & Workspace“ und der Befehlspalette), nur Admins/Owner
+- [x] P1 Ablauf in drei Schritten: Datei hochladen → Vorschau mit Zuordnung → Import bestätigen. Nichts wird
   geschrieben, bevor die Vorschau bestätigt ist; Import in einer Transaktion (ganz oder gar nicht)
-- [ ] P1 Formate (Exportwege vor der Umsetzung mit echten Beispieldateien prüfen):
-  - **Jira:** CSV-Export einer Filteransicht („Alle Felder“) – Summary, Issue key, Status, Priority, Assignee,
+- [ ] P1 Formate – **nur CSV** (entschieden 2026-10-08); Exportwege noch mit echten Beispieldateien prüfen:
+  - [x] **Jira** (2026-10-08, `src/lib/import/jira.ts`; englische und deutsche Spaltennamen): CSV-Export einer Filteransicht („Alle Felder“) – Summary, Issue key, Status, Priority, Assignee,
     Due date, Labels, Description, Parent/Sub-tasks, Kommentar-Spalten
-  - **ClickUp:** CSV-Export des Workspace/einer Liste – Task Name, Status, Priority, Assignees, Due Date,
+  - [ ] **ClickUp:** CSV-Export des Workspace/einer Liste – Task Name, Status, Priority, Assignees, Due Date,
     Tags, Parent ID, Task Content
-  - **Notion:** Datenbank-Export „Markdown & CSV“ (ZIP: CSV der Datenbank + eine Markdown-Seite pro Eintrag);
-    Spalten frei benannt → Zuordnung in der Vorschau
-  - **monday.com:** Board-Export als Excel (`.xlsx`); Gruppen, Subitems in eigenen Zeilen
-- [ ] P1 Zuordnung in der Vorschau: Status → Projektstatus (nach Kategorie offen/in Arbeit/erledigt),
+  - [ ] **Notion:** nur die CSV-Datei aus dem Export „Markdown & CSV“ (ZIP vorher entpacken; Seiteninhalte
+    gehen dabei verloren); Spalten frei benannt → Zuordnung in der Vorschau
+  - [ ] **monday.com:** Board-Export als Excel, in Excel „Speichern unter → CSV“; Gruppen, Subitems in eigenen Zeilen
+- [x] P1 Zuordnung in der Vorschau (Personen per E-Mail **oder Name**, Jira exportiert nur Namen): Status → Projektstatus (nach Kategorie offen/in Arbeit/erledigt),
   Priorität → 4 Stufen, Personen per E-Mail auf Mitglieder (unbekannte bleiben unzugewiesen und werden
   aufgelistet), Labels/Tags → Labels, Fälligkeit, Unteraufgaben, optional Kommentare
-- [ ] P1 Limits aus `limits.ts` gelten auch beim Import und werden in der Vorschau angezeigt: Titel > 500 und
+- [x] P1 Limits aus `limits.ts` gelten auch beim Import und werden in der Vorschau angezeigt: Titel > 500 und
   Beschreibung > 5000 Zeichen werden gekürzt (markiert), Unteraufgaben max. 5 und eine Ebene (Rest als
   Checkliste in die Beschreibung), Anhänge werden nicht übernommen (100-KB-Grenze, ADR 002) – Hinweis im Ergebnis
-- [ ] P1 Sicherheit: Upload max. 5 MB, ZIP mit Größen- und Dateizahl-Grenze (Zip-Bomben), Parsing nur
-  serverseitig, max. 5.000 Tickets pro Import, Rate-Limit pro Workspace, Workspace-Scope wie überall
-- [ ] P2 Import-Protokoll: Anzahl übernommen/gekürzt/übersprungen, Download als CSV; Aktivitätslog
-  „importiert aus Jira“ am Ticket
+- [x] P1 Sicherheit: Upload max. 5 MB, Parsing nur serverseitig, max. 5.000 Tickets pro Import, Rate-Limit pro
+  Workspace (60 Vorschauen, 10 Importe pro Stunde), Workspace-Scope wie überall; keine ZIP-Dateien
+- [ ] P2 Import-Protokoll: Anzahl übernommen/gekürzt/übersprungen, Download als CSV (Aktivitätslog
+  „importiert aus Jira“ am Ticket ist erledigt)
 - [ ] P2 Mehrere Projekte aus einer Datei (Jira-Projekte, ClickUp-Listen, monday-Gruppen) → je ein Projekt
 - [ ] P3 Rückgängig: kompletten Import innerhalb von 24 h wieder entfernen
-- `TODO(entscheidung)`: `.xlsx` (monday) und ZIP (Notion) brauchen einen Parser – kleine Abhängigkeit oder
-  Bordmittel? Alternative: nur CSV annehmen und für monday „Als CSV speichern“ erklären
-- `TODO(entscheidung)`: neue Tabelle für Import-Läufe (Protokoll, Rückgängig) → ADR
+- Entschieden 2026-10-08 (Len): **nur CSV**, keine Abhängigkeit für `.xlsx`/ZIP. monday: „Als CSV speichern“
+  erklären; Notion: CSV aus dem ZIP nehmen. Erst nachrüsten, wenn Nutzer danach fragen
+- Entschieden 2026-10-08 (Len): Tabelle für Import-Läufe samt ADR erst mit „Rückgängig“ (P3). Bis dahin
+  markiert ein Aktivitätseintrag `imported` jedes Ticket („aus Jira importiert (WEB-12)“)
 
 ### Frontend – Landingpage und Einstieg
 - [ ] P1 Abschnitt auf der Landingpage „Kostenlos umziehen“: Projekte aus ClickUp, Jira, Notion und monday.com
   in wenigen Minuten importieren – erst live schalten, wenn der Import funktioniert
-- [ ] P1 Kurzanleitung je Tool (wo finde ich den Export?) – auf der Import-Seite und als Hilfeseite
+- [ ] P1 Kurzanleitung je Tool (wo finde ich den Export?) – auf der Import-Seite (Jira steht) und als Hilfeseite
 - [ ] P2 Einstieg „Projekte importieren“ im Onboarding und im leeren Zustand eines neuen Workspace
 - [ ] P2 FAQ-Eintrag „Kann ich meine Daten mitnehmen?“ (Import und Export)
 - Hinweis: Tool-Namen dürfen genannt werden; Logos nur gemäß den Markenrichtlinien der Anbieter

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { requireRole } from "@/lib/authz";
 import { de } from "@/lib/i18n/de";
 import { DeleteWorkspaceForm } from "./delete-form";
@@ -32,6 +33,16 @@ export default async function DataPage({ params }: Props) {
             {de.data.exportCsv}
           </a>
         </div>
+      </section>
+
+      <section aria-labelledby="import-heading" className="rounded-[var(--radius-card)] border border-border bg-surface p-4">
+        <h2 id="import-heading" className="mb-1 font-semibold">
+          {de.data.importTitle}
+        </h2>
+        <p className="mb-3 text-[13px] text-muted">{de.data.importText}</p>
+        <Link href={`/${ctx.workspace.slug}/settings/data/import`} className={linkButton}>
+          {de.data.importLink}
+        </Link>
       </section>
 
       <section aria-labelledby="delete-heading" className="rounded-[var(--radius-card)] border border-prio-urgent-ink p-4">
