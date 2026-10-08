@@ -141,7 +141,8 @@ ohne API-Zugang, nur mit der Export-Datei des alten Tools.
 - [ ] P1 Formate – **nur CSV** (entschieden 2026-10-08); Exportwege noch mit echten Beispieldateien prüfen:
   - [x] **Jira** (2026-10-08, `src/lib/import/jira.ts`; englische und deutsche Spaltennamen): CSV-Export einer Filteransicht („Alle Felder“) – Summary, Issue key, Status, Priority, Assignee,
     Due date, Labels, Description, Parent/Sub-tasks, Kommentar-Spalten
-  - [ ] **ClickUp:** CSV-Export des Workspace/einer Liste – Task Name, Status, Priority, Assignees, Due Date,
+  - [x] **ClickUp** (2026-10-08, `src/lib/import/clickup.ts`; Datum als Zeitstempel oder Text, Kommentare/Checklisten
+    als JSON, Unteraufgaben jeder Tiefe unter die oberste Aufgabe, bei mehreren Zuständigen die erste Person): CSV-Export des Workspace/einer Liste – Task Name, Status, Priority, Assignees, Due Date,
     Tags, Parent ID, Task Content
   - [ ] **Notion:** nur die CSV-Datei aus dem Export „Markdown & CSV“ (ZIP vorher entpacken; Seiteninhalte
     gehen dabei verloren); Spalten frei benannt → Zuordnung in der Vorschau

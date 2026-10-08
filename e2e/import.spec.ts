@@ -57,3 +57,24 @@ test("import a Jira CSV: preview, then a new project with the tickets", async ({
   });
   expect(res.status()).toBe(404);
 });
+
+test("import a ClickUp CSV", async ({ page }) => {
+  const path = await createWorkspace(page, `ina@${uniqueDomain("clickup")}`, "Klick GmbH");
+  await page.goto(`${path}/settings/data/import`);
+  const select = page.getByLabel("Altes Tool");
+  await waitForHydration(select);
+  await select.selectOption("clickup");
+  await expect(page.getByText("Einstellungen → Import/Export → Exportieren")).toBeVisible();
+  const file = [
+    "Task ID,Task Name,Task Content,Status,Date Created,Parent ID,Assignees,Tags,Priority,List Name",
+    "a1,Newsletter planen,,in progress,1756717200000,,[],[mail],2,Kampagnen",
+    "a2,Texte schreiben,,complete,1756717300000,a1,[],[],,Kampagnen",
+  ].join("\n");
+  await page.getByLabel("Export-Datei (CSV)").setInputFiles({ name: "clickup.csv", mimeType: "text/csv", buffer: Buffer.from(file) });
+  await page.getByRole("button", { name: "Vorschau anzeigen" }).click();
+  await expect(page.getByRole("region", { name: "Vorschau" })).toContainText("1 Tickets, 1 Unteraufgaben, 0 Kommentare, 1 Labels");
+  await expect(page.getByLabel("Name", { exact: true })).toHaveValue("Kampagnen");
+  await expect(page.getByLabel("Kürzel")).toHaveValue("KAM");
+  await page.getByRole("button", { name: "1 Tickets importieren" }).click();
+  await expect(page.getByText("1 Tickets in KAM importiert.")).toBeVisible();
+});

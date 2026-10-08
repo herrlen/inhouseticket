@@ -1,4 +1,5 @@
 import { decodeText, parseCsv } from "./csv-parse";
+import { readClickUp } from "./clickup";
 import { readJira } from "./jira";
 import { MAX_IMPORT_TICKETS } from "./plan";
 import type { SourceError, SourceFile, SourceId } from "./source";
@@ -11,7 +12,7 @@ export function readImportFile(source: SourceId, bytes: Uint8Array): { ok: true;
   const csv = parseCsv(decodeText(bytes), MAX_ROWS + 1);
   if (!csv.ok) return csv;
   if (csv.rows.length < 2) return { ok: false, error: "empty" };
-  const result = source === "jira" ? readJira(csv.rows) : ({ ok: false, error: "not_this_tool" } as const);
+  const result = source === "jira" ? readJira(csv.rows) : readClickUp(csv.rows);
   if (!result.ok) return result;
   if (result.file.tickets.length > MAX_IMPORT_TICKETS) return { ok: false, error: "too_many_tickets" };
   if (result.file.tickets.length === 0) return { ok: false, error: "empty" };

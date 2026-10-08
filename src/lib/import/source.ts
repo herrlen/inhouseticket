@@ -2,9 +2,10 @@
 // (priority words, status categories, date formats). Source readers (jira.ts, …) produce
 // a SourceFile; plan.ts turns it into what gets written.
 
-export type SourceId = "jira";
+export type SourceId = "jira" | "clickup";
 
-export const SOURCE_NAMES: Record<SourceId, string> = { jira: "Jira" };
+export const SOURCE_NAMES: Record<SourceId, string> = { jira: "Jira", clickup: "ClickUp" };
+export const SOURCE_IDS = Object.keys(SOURCE_NAMES) as [SourceId, ...SourceId[]];
 
 export type Category = "open" | "active" | "done";
 

@@ -7,7 +7,7 @@ import { readBodyLimited } from "@/lib/body";
 import { de } from "@/lib/i18n/de";
 import { buildPlan, MAX_IMPORT_BYTES } from "@/lib/import/plan";
 import { readImportFile } from "@/lib/import/read";
-import { SOURCE_NAMES } from "@/lib/import/source";
+import { SOURCE_IDS, SOURCE_NAMES } from "@/lib/import/source";
 import { PALETTE } from "@/lib/palette";
 import { suggestProjectKey } from "@/lib/project-key";
 import { rateLimit } from "@/lib/rate-limit";
@@ -19,7 +19,7 @@ const IMPORTS_PER_HOUR = 10;
 type Ctx = { params: Promise<{ workspaceId: string }> };
 
 const fields = z.object({
-  source: z.enum(["jira"]),
+  source: z.enum(SOURCE_IDS),
   mode: z.enum(["preview", "import"]),
 });
 const target = z.object({ name: projectNameSchema, key: projectKeySchema, color: projectColorSchema });
@@ -29,6 +29,7 @@ async function freeKey(workspaceId: string, fromFile: string, name: string): Pro
   const file = projectKeySchema.safeParse(fromFile);
   if (file.success && !(await projectKeyTaken(workspaceId, file.data))) return file.data;
   const base = (file.success ? file.data : suggestProjectKey(name || "Import")).slice(0, 8);
+  if (!file.success && !(await projectKeyTaken(workspaceId, base))) return base;
   for (let n = 2; n < 100; n++) {
     const key = `${base}${n}`;
     if (!(await projectKeyTaken(workspaceId, key))) return key;
