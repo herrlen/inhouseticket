@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/env", async () => {
   const actual = await vi.importActual<typeof import("@/lib/env")>("@/lib/env");
-  return { env: { ...actual.env, BETA_ALLOWED_DOMAINS: ["studioluy.de"] } };
+  return { env: { ...actual.env, BETA_ALLOWED_DOMAINS: ["studioluy.de"], TESTER_EMAILS: ["tester@hotmail.com"], SUPERADMIN_EMAILS: [] } };
 });
 
 const { db } = await import("@/db/client");
@@ -47,5 +47,14 @@ describe("mayEnterBeta", () => {
   it("admits existing users and people with an open invitation", async () => {
     expect(await mayEnterBeta(`alt@bestand-${run}.de`)).toBe(true);
     expect(await mayEnterBeta(`freelancer@agentur-${run}.de`)).toBe(true);
+  });
+
+  it("admits listed testers, also with a freemail address – without operator rights", async () => {
+    const { isExemptEmail, isSuperadminEmail } = await import("@/lib/superadmin");
+    expect(await mayEnterBeta("Tester@Hotmail.com ")).toBe(true);
+    expect(isExemptEmail("tester@hotmail.com")).toBe(true);
+    expect(isSuperadminEmail("tester@hotmail.com")).toBe(false);
+    expect(await mayEnterBeta("someone-else@hotmail.com")).toBe(false);
+    expect(isExemptEmail("someone-else@hotmail.com")).toBe(false);
   });
 });

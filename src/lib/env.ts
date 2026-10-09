@@ -27,6 +27,11 @@ const envSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v ?? "").split(",").map((d) => d.trim().toLowerCase()).filter(Boolean)),
+  /** Individual testers (comma-separated e-mails): may sign in despite freemail block and closed beta. No admin rights. */
+  TESTER_EMAILS: z
+    .string()
+    .optional()
+    .transform((v) => (v ?? "").split(",").map((d) => d.trim().toLowerCase()).filter(Boolean)),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -54,5 +59,6 @@ export const env: Env = parsed.success
       MAIL_FROM: "build@localhost",
       BETA_ALLOWED_DOMAINS: [],
       SUPERADMIN_EMAILS: [],
+      TESTER_EMAILS: [],
       SITE_INDEXABLE: false,
     } satisfies Env);

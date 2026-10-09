@@ -10,7 +10,7 @@ import * as schema from "@/db/schema";
 import { env } from "@/lib/env";
 import { mayEnterBeta } from "@/lib/beta";
 import { isCompanyEmail } from "@/lib/freemail";
-import { isSuperadminEmail } from "@/lib/superadmin";
+import { isExemptEmail } from "@/lib/superadmin";
 import { de } from "@/lib/i18n/de";
 import { buttonMail, sendMail } from "@/lib/mail";
 import { nameFromEmail } from "@/lib/names";
@@ -44,7 +44,7 @@ export const auth = betterAuth({
     before: createAuthMiddleware(async (ctx) => {
       if (ctx.path !== "/sign-in/magic-link") return;
       const email: unknown = ctx.body?.email;
-      if (typeof email !== "string" || !(isCompanyEmail(email) || isSuperadminEmail(email))) {
+      if (typeof email !== "string" || !(isCompanyEmail(email) || isExemptEmail(email))) {
         throw new APIError("BAD_REQUEST", { code: "FREEMAIL_NOT_ALLOWED", message: de.auth.freemail });
       }
       if (!(await mayEnterBeta(email))) {
@@ -63,7 +63,7 @@ export const auth = betterAuth({
       create: {
         // Hard guard for every sign-up path.
         before: async (user) => {
-          if (!isCompanyEmail(user.email) && !isSuperadminEmail(user.email)) return false;
+          if (!isCompanyEmail(user.email) && !isExemptEmail(user.email)) return false;
           const name = (user.name || nameFromEmail(user.email)).trim().slice(0, MAX_NAME);
           return { data: { ...user, email: user.email.toLowerCase(), name } };
         },

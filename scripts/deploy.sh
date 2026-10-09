@@ -8,7 +8,8 @@
 # deleted afterwards; nothing is printed. On the very first deploy POSTGRES_PASSWORD and
 # BETTER_AUTH_SECRET are generated once; afterwards they always come from the running stack.
 # SMTP_PASSWORD and BETA_ALLOWED_DOMAINS keep their deployed values unless set in the environment
-# (BETA_ALLOWED_DOMAINS=studioluy.de,firma.de scripts/deploy.sh). Same for SUPERADMIN_EMAILS (/admin).
+# (BETA_ALLOWED_DOMAINS=studioluy.de,firma.de scripts/deploy.sh). Same for SUPERADMIN_EMAILS (/admin)
+# and TESTER_EMAILS (single testers allowed despite freemail block and beta; TESTER_EMAILS=" " empties it).
 #
 # Needs: gh, mw, jq, curl, openssl.
 set -euo pipefail
@@ -62,11 +63,14 @@ fi
 SMTP="${SMTP_PASSWORD:-$(env_of app SMTP_PASSWORD)}"
 BETA="${BETA_ALLOWED_DOMAINS:-$(env_of app BETA_ALLOWED_DOMAINS)}"
 SUPER="${SUPERADMIN_EMAILS:-$(env_of app SUPERADMIN_EMAILS)}"
+TESTERS="${TESTER_EMAILS:-$(env_of app TESTER_EMAILS)}"
+TESTERS="${TESTERS// /}"
 INDEX="${SITE_INDEXABLE:-$(env_of app SITE_INDEXABLE)}"
 [[ -n "$SMTP" ]] || echo "Hinweis: SMTP_PASSWORD fehlt – Anmeldelinks können nicht verschickt werden. Setzen mit: scripts/set-smtp-password.sh"
 [[ -n "$BETA" ]] && echo "Beta-Domains: $BETA" || echo "Hinweis: BETA_ALLOWED_DOMAINS leer – Registrierung ist OFFEN."
 [[ "$INDEX" == "true" ]] && echo "Suchmaschinen: Indexierung AN" || echo "Suchmaschinen: noindex (Beta)"
 [[ -n "$SUPER" ]] && echo "Superadmins: $(echo "$SUPER" | tr ',' '\n' | grep -c .)" || echo "Hinweis: kein Superadmin (SUPERADMIN_EMAILS leer)."
+[[ -z "$TESTERS" ]] || echo "Tester (Freemail-Ausnahme): $(echo "$TESTERS" | tr ',' '\n' | grep -c .)"
 
 {
   printf 'IMAGE_TAG=%s\n' "$TAG"
@@ -77,6 +81,7 @@ INDEX="${SITE_INDEXABLE:-$(env_of app SITE_INDEXABLE)}"
   printf 'SMTP_PASSWORD=%s\n' "$SMTP"
   printf 'BETA_ALLOWED_DOMAINS=%s\n' "$BETA"
   printf 'SUPERADMIN_EMAILS=%s\n' "$SUPER"
+  printf 'TESTER_EMAILS=%s\n' "$TESTERS"
   printf 'SITE_INDEXABLE=%s\n' "$INDEX"
 } >"$ENVFILE"
 

@@ -64,7 +64,7 @@ docs/
    - `MAX_SUBTASKS = 5` (nur eine Ebene)
    - `MAX_ATTACHMENT_BYTES = 100 * 1024`, `MAX_ATTACHMENTS_PER_TICKET = 20`
    - `ALLOWED_MIME = ['image/webp','image/jpeg','image/png']` → serverseitig per Magic-Bytes prüfen, nicht nur MIME-Header
-3. **Firmen-E-Mail:** Registrierung mit Freemail-Domain (gmail, gmx, web.de, t-online, outlook, hotmail, yahoo, icloud, proton …) wird abgelehnt. Liste in `src/lib/freemail.ts`, erweiterbar. Ausnahme nur für Adressen in `SUPERADMIN_EMAILS` (Env, nie im Code); deren Workspace hängt an der vollen Adresse statt an der Domain (`src/lib/workspace-domain.ts`), Beitritt per Domain ist dort ausgeschlossen.
+3. **Firmen-E-Mail:** Registrierung mit Freemail-Domain (gmail, gmx, web.de, t-online, outlook, hotmail, yahoo, icloud, proton …) wird abgelehnt. Liste in `src/lib/freemail.ts`, erweiterbar. Ausnahme nur für Adressen in `SUPERADMIN_EMAILS` oder `TESTER_EMAILS` (Env, nie im Code; Tester ohne Admin-Rechte, `isExemptEmail()` in `src/lib/superadmin.ts`); deren Workspace hängt an der vollen Adresse statt an der Domain (`src/lib/workspace-domain.ts`), Beitritt per Domain ist dort ausgeschlossen.
 4. **Speed:** JS ≤ 200 KB gzip pro Seite (eigener Code ≤ 50 KB über Next.js/React); Client-Komponenten importieren nie Zod/Validierung/DB (Test `client-imports.test.ts`). Optimistic Updates für Status, Priorität, Zuweisung, Drag & Drop. Keine Spinner bei Inline-Edits. Keine schweren Libraries (kein Moment.js, kein Lodash komplett, keine UI-Kits mit großem Runtime).
 5. **Barrierefreiheit:** Alle Aktionen per Tastatur, Fokus-Ringe sichtbar, Kontrast WCAG AA – auch bei den bunten Farben.
 6. **Sprache:** UI Deutsch (i18n-fähig vorbereitet), Code/Kommentare Englisch.

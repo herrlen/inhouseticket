@@ -4,7 +4,7 @@ import { db } from "@/db/client";
 import { invitation, user } from "@/db/schema";
 import { env } from "@/lib/env";
 import { getEmailDomain } from "@/lib/freemail";
-import { isSuperadminEmail } from "@/lib/superadmin";
+import { isExemptEmail } from "@/lib/superadmin";
 
 export const betaClosed = () => env.BETA_ALLOWED_DOMAINS.length > 0;
 
@@ -15,7 +15,7 @@ export const betaClosed = () => env.BETA_ALLOWED_DOMAINS.length > 0;
 export async function mayEnterBeta(email: string): Promise<boolean> {
   if (!betaClosed()) return true;
   const normalized = email.trim().toLowerCase();
-  if (isSuperadminEmail(normalized)) return true;
+  if (isExemptEmail(normalized)) return true;
   const domain = getEmailDomain(normalized);
   if (domain && env.BETA_ALLOWED_DOMAINS.includes(domain)) return true;
   const [existing] = await db.select({ id: user.id }).from(user).where(eq(user.email, normalized)).limit(1);
