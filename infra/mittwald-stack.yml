@@ -46,6 +46,9 @@ services:
       SUPERADMIN_EMAILS: ${SUPERADMIN_EMAILS}
       TESTER_EMAILS: ${TESTER_EMAILS}
       SITE_INDEXABLE: ${SITE_INDEXABLE}
+      MATOMO_URL: https://analytics.klatxt.de
+      MATOMO_SITE_ID: ${MATOMO_SITE_ID}
+      MATOMO_TOKEN: ${MATOMO_TOKEN}
     ports:
       - "3000:3000/tcp"
     restartPolicy: unless-stopped

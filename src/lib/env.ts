@@ -32,6 +32,19 @@ const envSchema = z.object({
     .string()
     .optional()
     .transform((v) => (v ?? "").split(",").map((d) => d.trim().toLowerCase()).filter(Boolean)),
+  /** Self-hosted Matomo behind /stat (src/lib/matomo.ts). All three needed, otherwise off. */
+  MATOMO_URL: z
+    .union([z.literal(""), z.url()])
+    .optional()
+    .transform((v) => v?.replace(/\/+$/, "") || undefined),
+  MATOMO_SITE_ID: z
+    .union([z.literal(""), z.string().regex(/^\d+$/)])
+    .optional()
+    .transform((v) => v || undefined),
+  MATOMO_TOKEN: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() || undefined),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -61,4 +74,7 @@ export const env: Env = parsed.success
       SUPERADMIN_EMAILS: [],
       TESTER_EMAILS: [],
       SITE_INDEXABLE: false,
+      MATOMO_URL: undefined,
+      MATOMO_SITE_ID: undefined,
+      MATOMO_TOKEN: undefined,
     } satisfies Env);

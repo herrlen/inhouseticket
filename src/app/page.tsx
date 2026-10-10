@@ -5,6 +5,7 @@ import { LegalLinks } from "@/components/legal-links";
 import { OPERATOR } from "@/lib/legal";
 import { de } from "@/lib/i18n/de";
 import { getSession } from "@/lib/session";
+import { MatomoTracker } from "@/components/matomo-tracker";
 
 export const metadata: Metadata = {
   title: { absolute: "inhouseticket – Tickets für dein Team" },
@@ -161,6 +162,7 @@ export default async function Home() {
         <span>© 2026 {OPERATOR.name}</span>
         <LegalLinks />
       </footer>
+      <MatomoTracker />
     </div>
   );
 }

@@ -24,7 +24,7 @@ TLS: Let's Encrypt über mittwald, automatisch.
 ## Geheimnisse
 
 Nur in der Stack-Konfiguration bei mittwald, keine lokale Kopie: `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`
-(beim ersten Deploy erzeugt), `SMTP_PASSWORD` (setzt Len mit `scripts/set-smtp-password.sh`).
+(beim ersten Deploy erzeugt), `SMTP_PASSWORD` (setzt Len mit `scripts/set-smtp-password.sh`), `MATOMO_TOKEN`.
 `scripts/deploy.sh` liest sie aus dem laufenden Stack und gibt sie nie aus.
 
 ## Ausrollen
@@ -35,10 +35,11 @@ BETA_ALLOWED_DOMAINS=studioluy.de,firma.de scripts/deploy.sh   # Beta-Liste änd
 SUPERADMIN_EMAILS=a@x.de,b@y.de scripts/deploy.sh             # Betreiber-Zugang /admin ändern
 TESTER_EMAILS=a@gmail.com,b@web.de scripts/deploy.sh          # einzelne Tester trotz Freemail/Beta zulassen (ohne /admin); " " leert die Liste
 SITE_INDEXABLE=true scripts/deploy.sh                          # zum Launch: Suchmaschinen zulassen (Sitemap, robots)
+MATOMO_SITE_ID=4 MATOMO_TOKEN=… scripts/deploy.sh             # Matomo einschalten; MATOMO_TOKEN=" " schaltet aus
 scripts/set-smtp-password.sh                        # SMTP-Passwort setzen (fragt verdeckt, nur Len)
 ```
 
-Beta-Domains (Stand 2026-10-04): `studioluy.de`, `ursalz.com`.
+Seit 2026-10-10 ist die Beta-Liste leer (Registrierung offen) und `SITE_INDEXABLE=true`.
 
 Migrationen laufen beim Start des App-Containers. Prüfung: `https://inhouseticket.com/api/health` meldet
 `status`, `database` und `version` (= `sha-<commit>`).
@@ -86,6 +87,22 @@ Liegt der benötigte Dump nicht mehr im Volume: in mStudio das Projekt-Backup de
   Nach einigen Wochen ohne Auffälligkeiten auf `p=quarantine` anheben.
 - **Restore-Probe** 2026-10-07: Dump von 03:30 in eine temporäre Datenbank im Postgres-Container zurückgespielt,
   30 Tabellen, Zeilenzahlen wie live (bis auf ein später angelegtes Ticket); Probe-Datenbank danach gelöscht.
+
+## Matomo
+
+Reichweite der öffentlichen Seiten (Startseite, Rechtstexte – nie Workspaces, nie Login) zusätzlich zur
+eigenen Zählung in `/admin`. Matomo läuft unter `analytics.klatxt.de` (Projekt `p-mdg6ae`, wie bei
+websecureaudit). Der Browser spricht nur mit `/stat` und `/stat.js` auf inhouseticket.com; `src/lib/matomo.ts`
+reicht weiter, kürzt die IP vorher (IPv4 /16, IPv6 /48) und setzt `idsite` selbst. Ohne Cookies, mit Do-Not-Track.
+Ohne `MATOMO_SITE_ID` und `MATOMO_TOKEN` ist alles aus (kein Schnipsel, `/stat` antwortet 404).
+
+Einrichten in Matomo (Superuser):
+1. Website anlegen: `inhouseticket.com`, Zeitzone Europe/Berlin, eigene IP ausschließen.
+2. Eigenen Benutzer für den Proxy anlegen (z. B. `iht-proxy`), **kein** Superuser, Recht **Schreiben** nur auf
+   diese Site; für ihn ein Token erzeugen (nur HTTPS-POST erlauben).
+3. `MATOMO_SITE_ID=<id> MATOMO_TOKEN=<token> scripts/deploy.sh`.
+4. Löschung nach 12 Monaten (Zusage in der Datenschutzerklärung) nur für diese Site, wie `cron-wsa-bereinigen.sh`
+   (`core:delete-logs-data --idsite=<id>`), nicht über die globale Einstellung.
 
 ## Deploys
 

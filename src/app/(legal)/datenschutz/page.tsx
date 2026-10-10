@@ -3,12 +3,13 @@ import { OPERATOR } from "@/lib/legal";
 
 export const metadata: Metadata = { title: "Datenschutz" };
 
-// Describes what the app actually does; reviewed by a lawyer (2026-10-10). Keep in sync with new features.
+// Describes what the app actually does; reviewed by a lawyer (2026-10-10), section 5 (Matomo) added afterwards and not yet reviewed.
+// Keep in sync with new features.
 export default function DatenschutzPage() {
   return (
     <>
       <h1>Datenschutzerklärung</h1>
-      <p className="text-[13px] text-muted">Stand: 6. Oktober 2026 · geschlossene Beta</p>
+      <p className="text-[13px] text-muted">Stand: 10. Oktober 2026</p>
 
       <h2>1. Verantwortlicher</h2>
       <p>
@@ -51,6 +52,15 @@ export default function DatenschutzPage() {
         ohne dessen Namen, z. B. „/[workspace]/p/[key]“) und der Domain der verweisenden Website (z. B. „linkedin.com“). Wir speichern dabei
         weder IP-Adresse noch Browser-Kennung, setzen keine Cookies und können Aufrufe keiner Person zuordnen. Die Zählung findet auf unserem
         eigenen Server statt; Drittanbieter sind nicht beteiligt.
+      </p>
+      <p>
+        Auf den öffentlichen Seiten (Startseite und Rechtstexte, nicht in Workspaces) messen wir die Reichweite zusätzlich mit Matomo, einer
+        Open-Source-Software, die wir selbst bei Mittwald in Deutschland betreiben. Matomo läuft ohne Cookies und speichert nichts auf deinem
+        Gerät. Dein Browser spricht dabei nur mit inhouseticket.com; unser Server kürzt deine IP-Adresse (IPv4 auf die ersten zwei, IPv6 auf die
+        ersten sechs Bytes), bevor er den Aufruf an Matomo weitergibt. Erfasst werden die aufgerufene Seite, die verweisende Website, Uhrzeit,
+        Browser, Betriebssystem, Bildschirmgröße, Sprache und das grob aus der gekürzten Adresse abgeleitete Land. Ist in deinem Browser „Do
+        Not Track“ aktiviert, messen wir nicht. Rechtsgrundlage ist unser berechtigtes Interesse, das Angebot zu verbessern (Art. 6 Abs. 1
+        lit. f DSGVO). Die Messdaten löschen wir nach 12 Monaten.
       </p>
 
       <h2>6. Verbindung mit KI-Assistenten (z. B. Claude)</h2>

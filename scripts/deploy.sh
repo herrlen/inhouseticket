@@ -9,7 +9,8 @@
 # BETTER_AUTH_SECRET are generated once; afterwards they always come from the running stack.
 # SMTP_PASSWORD and BETA_ALLOWED_DOMAINS keep their deployed values unless set in the environment
 # (BETA_ALLOWED_DOMAINS=studioluy.de,firma.de scripts/deploy.sh; BETA_ALLOWED_DOMAINS=" " opens registration). Same for SUPERADMIN_EMAILS (/admin)
-# and TESTER_EMAILS (single testers allowed despite freemail block and beta; TESTER_EMAILS=" " empties it).
+# and TESTER_EMAILS (single testers allowed despite freemail block and beta; TESTER_EMAILS=" " empties it),
+# MATOMO_SITE_ID and MATOMO_TOKEN (Matomo on public pages; both needed, MATOMO_TOKEN=" " switches it off).
 #
 # Needs: gh, mw, jq, curl, openssl.
 set -euo pipefail
@@ -67,11 +68,15 @@ SUPER="${SUPERADMIN_EMAILS:-$(env_of app SUPERADMIN_EMAILS)}"
 TESTERS="${TESTER_EMAILS:-$(env_of app TESTER_EMAILS)}"
 TESTERS="${TESTERS// /}"
 INDEX="${SITE_INDEXABLE:-$(env_of app SITE_INDEXABLE)}"
+MSITE="${MATOMO_SITE_ID:-$(env_of app MATOMO_SITE_ID)}"
+MTOKEN="${MATOMO_TOKEN:-$(env_of app MATOMO_TOKEN)}"
+MTOKEN="${MTOKEN// /}"
 [[ -n "$SMTP" ]] || echo "Hinweis: SMTP_PASSWORD fehlt – Anmeldelinks können nicht verschickt werden. Setzen mit: scripts/set-smtp-password.sh"
 [[ -n "$BETA" ]] && echo "Beta-Domains: $BETA" || echo "Hinweis: BETA_ALLOWED_DOMAINS leer – Registrierung ist OFFEN."
 [[ "$INDEX" == "true" ]] && echo "Suchmaschinen: Indexierung AN" || echo "Suchmaschinen: noindex (Beta)"
 [[ -n "$SUPER" ]] && echo "Superadmins: $(echo "$SUPER" | tr ',' '\n' | grep -c .)" || echo "Hinweis: kein Superadmin (SUPERADMIN_EMAILS leer)."
 [[ -z "$TESTERS" ]] || echo "Tester (Freemail-Ausnahme): $(echo "$TESTERS" | tr ',' '\n' | grep -c .)"
+[[ -n "$MSITE" && -n "$MTOKEN" ]] && echo "Matomo: an (Site $MSITE)" || echo "Matomo: aus"
 
 {
   printf 'IMAGE_TAG=%s\n' "$TAG"
@@ -84,6 +89,8 @@ INDEX="${SITE_INDEXABLE:-$(env_of app SITE_INDEXABLE)}"
   printf 'SUPERADMIN_EMAILS=%s\n' "$SUPER"
   printf 'TESTER_EMAILS=%s\n' "$TESTERS"
   printf 'SITE_INDEXABLE=%s\n' "$INDEX"
+  printf 'MATOMO_SITE_ID=%s\n' "$MSITE"
+  printf 'MATOMO_TOKEN=%s\n' "$MTOKEN"
 } >"$ENVFILE"
 
 schritt "Ausrollen ($TAG)"
