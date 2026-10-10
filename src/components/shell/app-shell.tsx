@@ -347,6 +347,8 @@ function Topbar({
           { label: de.common.signOut, onSelect: () => void signOut() },
           { label: "Impressum", onSelect: () => router.push("/impressum") },
           { label: "Datenschutz", onSelect: () => router.push("/datenschutz") },
+          { label: "AGB", onSelect: () => router.push("/agb") },
+          { label: "AVV", onSelect: () => router.push("/avv") },
         ]}
       />
     </header>

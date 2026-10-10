@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { ColorPicker } from "@/components/ui/color-picker";
@@ -64,6 +65,13 @@ export function OnboardingForm({ suggestedName }: { suggestedName: string }) {
       <Button type="submit" variant="primary" disabled={pending}>
         {pending ? de.onboarding.creating : de.onboarding.submit}
       </Button>
+      <p className="text-xs text-muted">
+        {de.onboarding.termsBefore}
+        <Link href="/agb" target="_blank" className="text-accent underline">AGB</Link>
+        {de.onboarding.termsBetween}
+        <Link href="/avv" target="_blank" className="text-accent underline">{de.onboarding.termsAvv}</Link>
+        {de.onboarding.termsAfter}
+      </p>
     </form>
   );
 }

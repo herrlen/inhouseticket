@@ -1,18 +1,16 @@
 import type { Metadata } from "next";
-import { DraftNotice } from "@/components/draft-notice";
 import { OPERATOR } from "@/lib/legal";
 import { PrintButton } from "./print-button";
 
-export const metadata: Metadata = { title: "Auftragsverarbeitungsvertrag", robots: { index: false } };
+export const metadata: Metadata = { title: "Auftragsverarbeitungsvertrag", };
 
-// Draft data processing agreement (Art. 28 GDPR). The technical measures describe what the code and
-// operations actually do (docs/security-review.md, docs/betrieb.md). Review by a lawyer before use.
+// Data processing agreement (Art. 28 GDPR), reviewed by a lawyer (2026-10-10). The technical measures describe
+// what the code and operations actually do (docs/security-review.md, docs/betrieb.md).
 export default function AvvPage() {
   return (
     <>
       <h1>Auftragsverarbeitungsvertrag (AVV)</h1>
       <p className="text-[13px] text-muted">nach Art. 28 DSGVO · Stand: Oktober 2026</p>
-      <DraftNotice />
       <PrintButton />
 
       <p>

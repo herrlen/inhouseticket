@@ -8,7 +8,7 @@
 # deleted afterwards; nothing is printed. On the very first deploy POSTGRES_PASSWORD and
 # BETTER_AUTH_SECRET are generated once; afterwards they always come from the running stack.
 # SMTP_PASSWORD and BETA_ALLOWED_DOMAINS keep their deployed values unless set in the environment
-# (BETA_ALLOWED_DOMAINS=studioluy.de,firma.de scripts/deploy.sh). Same for SUPERADMIN_EMAILS (/admin)
+# (BETA_ALLOWED_DOMAINS=studioluy.de,firma.de scripts/deploy.sh; BETA_ALLOWED_DOMAINS=" " opens registration). Same for SUPERADMIN_EMAILS (/admin)
 # and TESTER_EMAILS (single testers allowed despite freemail block and beta; TESTER_EMAILS=" " empties it).
 #
 # Needs: gh, mw, jq, curl, openssl.
@@ -62,6 +62,7 @@ if [[ -z "$PG" || -z "$AUTH" ]]; then
 fi
 SMTP="${SMTP_PASSWORD:-$(env_of app SMTP_PASSWORD)}"
 BETA="${BETA_ALLOWED_DOMAINS:-$(env_of app BETA_ALLOWED_DOMAINS)}"
+BETA="${BETA// /}"
 SUPER="${SUPERADMIN_EMAILS:-$(env_of app SUPERADMIN_EMAILS)}"
 TESTERS="${TESTER_EMAILS:-$(env_of app TESTER_EMAILS)}"
 TESTERS="${TESTERS// /}"

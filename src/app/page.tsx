@@ -60,7 +60,7 @@ export default async function Home() {
             </a>
           </div>
           <p className="mt-4 text-[13px] text-muted">
-            {t.beta}{" "}
+            {t.devNote}{" "}
             <a href={`mailto:${OPERATOR.email}`} className="text-accent underline">
               {OPERATOR.email}
             </a>
@@ -120,14 +120,40 @@ export default async function Home() {
           </div>
         </section>
 
-        <section aria-labelledby="price-heading" className="mx-auto max-w-6xl px-4 py-16 text-center">
-          <h2 id="price-heading" className="text-2xl font-semibold tracking-tight md:text-3xl">
+        <section aria-labelledby="price-heading" className="mx-auto max-w-6xl px-4 py-16">
+          <h2 id="price-heading" className="text-center text-2xl font-semibold tracking-tight md:text-3xl">
             {t.priceTitle}
           </h2>
-          <p className="mt-3 text-muted">{t.priceText}</p>
-          <Link href="/login" className="mt-6 inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:opacity-90">
-            {t.start}
-          </Link>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-muted">{t.priceText}</p>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {t.included.map((g, i) => (
+              <section key={g.title} aria-labelledby={`included-${i}`} className="rounded-[var(--radius-card)] border border-border bg-surface p-5">
+                <h3 id={`included-${i}`} className="flex items-center gap-2 font-semibold">
+                  <span aria-hidden className={`size-2 rounded-full ${DOTS[i % DOTS.length]}`} />
+                  {g.title}
+                </h3>
+                <ul className="mt-3 flex flex-col gap-2 text-[14px] leading-snug">
+                  {g.items.map((item) => (
+                    <li key={item} className="flex gap-2">
+                      <span aria-hidden className="text-accent">✓</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+          <div className="mt-10 text-center">
+            <Link href="/login" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:opacity-90">
+              {t.start}
+            </Link>
+            <p className="mt-4 text-[13px] text-muted">
+              {t.devNote}{" "}
+              <a href={`mailto:${OPERATOR.email}`} className="text-accent underline">
+                {OPERATOR.email}
+              </a>
+            </p>
+          </div>
         </section>
       </main>
 

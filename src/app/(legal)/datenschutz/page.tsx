@@ -3,7 +3,7 @@ import { OPERATOR } from "@/lib/legal";
 
 export const metadata: Metadata = { title: "Datenschutz" };
 
-// Draft for the closed beta – describes what the app actually does. Review before public launch.
+// Describes what the app actually does; reviewed by a lawyer (2026-10-10). Keep in sync with new features.
 export default function DatenschutzPage() {
   return (
     <>

@@ -40,7 +40,7 @@ export const de = {
     start: "Kostenlos starten",
     login: "Anmelden",
     claudeLink: "Mit Claude arbeiten",
-    beta: "Geschlossene Beta: Zugang für freigeschaltete Firmen. Interesse?",
+    devNote: "Noch in Entwicklung – jede Woche kommt etwas dazu. Ideen und Wünsche gern an",
     heroAlt: "Listenansicht eines Projekts in inhouseticket: Tickets gruppiert nach Status mit Priorität, Person und Fälligkeit",
     featuresTitle: "Alles, was ein Team braucht. Nichts, was es aufhält.",
     features: [
@@ -65,8 +65,70 @@ export const de = {
       "Wer im Team ist gerade überlastet?",
       "Setz WEB-6 auf Erledigt und schreib dazu, dass die Freigabe da ist.",
     ],
-    priceTitle: "Kostenlos. Wirklich.",
-    priceText: "Bis 100 Personen pro Workspace, alle Funktionen, keine Kreditkarte.",
+    priceTitle: "Kostenlos. Wirklich. Und alles drin.",
+    priceText: "Keine Testphase, keine Pro-Stufe, keine Kreditkarte. Das bekommt jeder Workspace mit bis zu 100 Personen:",
+    included: [
+      {
+        title: "Tickets",
+        items: [
+          "Titel und Beschreibung mit leichtem Markdown",
+          "Status, Priorität, Person, Fälligkeit und Labels",
+          "Bis zu 5 Unteraufgaben mit Fortschritt",
+          "Bilder anhängen – werden automatisch verkleinert",
+          "Kommentare mit @Erwähnung",
+          "Verlauf jeder Änderung",
+          "Mehrfachauswahl und Bulk-Aktionen",
+        ],
+      },
+      {
+        title: "Projekte",
+        items: [
+          "Eigene Farbe, Kürzel (z. B. WEB-12) und Status pro Projekt",
+          "Ordner, Favoriten und Archiv in der Seitenleiste",
+          "Liste und Kanban-Board mit WIP-Limits",
+          "Filter, gespeicherte Ansichten und Volltextsuche",
+          "„Meine Aufgaben“ über alle Projekte",
+        ],
+      },
+      {
+        title: "Team und Überblick",
+        items: [
+          "Einladen per E-Mail, Rollen Owner, Admin und Mitglied",
+          "Dashboard: Auslastung, Überfälliges, Projekt-Gesundheit, Durchsatz",
+          "Benachrichtigungen in der App und täglicher E-Mail-Überblick",
+          "Befehlspalette ⌘K und Tastenkürzel für alles",
+          "Hell und dunkel, auch am Handy",
+        ],
+      },
+      {
+        title: "Claude und MCP",
+        items: [
+          "MCP-Server inklusive – für claude.ai, Claude Code und Claude Desktop",
+          "Claude sucht, legt an, ändert, kommentiert und hakt ab",
+          "Claude arbeitet mit deinen Rechten, jede Änderung „via Claude“ im Verlauf",
+          "Persönliche API-Tokens, jederzeit widerrufbar",
+        ],
+      },
+      {
+        title: "Daten und Sicherheit",
+        items: [
+          "Gehostet in Deutschland, AVV nach DSGVO inklusive",
+          "Anmeldung per Link mit Firmen-E-Mail, ohne Passwort",
+          "Kein Tracking, keine Werbung",
+          "Export als CSV oder JSON, Workspace jederzeit löschen",
+          "Tägliche Backups",
+        ],
+      },
+      {
+        title: "Schnell",
+        items: [
+          "Änderungen sofort sichtbar, ohne Ladekreisel",
+          "Neue Tickets in einer Zeile: @Person !Priorität ^Termin",
+          "Schlanke Seiten, die auch im Zug-WLAN laden",
+          "Komplett per Tastatur bedienbar",
+        ],
+      },
+    ],
   },
   login: {
     title: "Anmelden",
@@ -120,6 +182,10 @@ export const de = {
     invitesHint: "Firmen-E-Mails, durch Komma getrennt.",
     submit: "Workspace anlegen",
     creating: "Wird angelegt …",
+    termsBefore: "Mit dem Anlegen gelten die ",
+    termsBetween: " und der ",
+    termsAvv: "Auftragsverarbeitungsvertrag (AVV)",
+    termsAfter: " für deinen Workspace.",
   },
   workspace: {
     welcome: (name: string) => `Willkommen bei ${name}`,

@@ -31,7 +31,7 @@ Nur in der Stack-Konfiguration bei mittwald, keine lokale Kopie: `POSTGRES_PASSW
 
 ```sh
 scripts/deploy.sh                                   # HEAD von main, CI muss grün sein
-BETA_ALLOWED_DOMAINS=studioluy.de,firma.de scripts/deploy.sh   # Beta-Liste ändern
+BETA_ALLOWED_DOMAINS=studioluy.de,firma.de scripts/deploy.sh   # Beta-Liste ändern; " " leert sie (Registrierung offen)
 SUPERADMIN_EMAILS=a@x.de,b@y.de scripts/deploy.sh             # Betreiber-Zugang /admin ändern
 TESTER_EMAILS=a@gmail.com,b@web.de scripts/deploy.sh          # einzelne Tester trotz Freemail/Beta zulassen (ohne /admin); " " leert die Liste
 SITE_INDEXABLE=true scripts/deploy.sh                          # zum Launch: Suchmaschinen zulassen (Sitemap, robots)

@@ -173,12 +173,11 @@ test("legal pages are public and linked from the login page", async ({ page }) =
   await expect(page.getByRole("heading", { name: "Datenschutzerklärung" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "5. Anonyme Nutzungsstatistik" })).toBeVisible();
 
-  // AGB and AVV are drafts: reachable, clearly marked, not linked yet.
-  for (const [path, heading] of [["/agb", "Allgemeine Geschäftsbedingungen"], ["/avv", "Auftragsverarbeitungsvertrag (AVV)"]] as const) {
-    await page.goto(path);
+  // AGB and AVV are reviewed (2026-10-10): linked in the footer, no draft notice.
+  for (const [link, heading] of [["AGB", "Allgemeine Geschäftsbedingungen"], ["AVV", "Auftragsverarbeitungsvertrag (AVV)"]] as const) {
+    await page.goto("/login");
+    await page.getByRole("link", { name: link, exact: true }).click();
     await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
-    await expect(page.getByRole("note")).toContainText("Entwurf");
+    await expect(page.getByText("Entwurf")).toHaveCount(0);
   }
-  await page.goto("/login");
-  await expect(page.getByRole("link", { name: /AGB|AVV/ })).toHaveCount(0);
 });

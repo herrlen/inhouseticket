@@ -114,9 +114,9 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [ ] P1 Impressum, Datenschutz, AGB, AVV
   - [x] Impressum, Datenschutz (aktualisiert 2026-10-06: Statistik, KI-Assistenten, Backups, Export)
   - [x] Entwürfe AGB (`/agb`) und AVV (`/avv`, druckbar als PDF) – als Entwurf markiert, nicht verlinkt
-  - [ ] Rechtliche Prüfung durch Len/Kanzlei, danach in Footer und Onboarding verlinken
+  - [x] Rechtliche Prüfung durch Kanzlei (2026-10-10), verlinkt im Footer, im Menü der App und im Onboarding; Entwurfshinweis entfernt, AGB/AVV in der Sitemap
 - [x] P1 Deployment EU (Container + managed Postgres + Backups), Domain, SSL – live auf mittwald; Backups: Projekt-Backup täglich + nächtlicher `pg_dump` (docs/betrieb.md) – neues mittwald-Projekt auf dem bestehenden Space-Server, Stack mit App- und Postgres-Container, vHost `inhouseticket.com` → App, SMTP-Zugang no-reply@ in die Umgebung des App-Containers, RAM messen
-- [ ] P1 Landingpage (Claim, Screenshots, „Kostenlos bis 100 User“, MCP-Highlight)
+- [x] P1 Landingpage (Claim, Screenshots, „Kostenlos bis 100 User“, MCP-Highlight) – 2026-10-10: Abschnitt „Kostenlos. Wirklich. Und alles drin.“ mit allem, was jeder Workspace bekommt; Hinweis „Noch in Entwicklung – Ideen an hello@“ statt Beta-Hinweis
 - [x] P2 Datenexport CSV/JSON, Workspace löschen – Seite „Daten & Workspace“ (Export für Admins, Löschen nur Owner mit Kürzel-Bestätigung)
 - [ ] P2 Mobile-Feinschliff, Dark Mode, Accessibility-Audit
   - [x] Automatischer Audit (axe, WCAG 2.1 A/AA) auf 12 Seiten, hell und dunkel – in CI (`e2e/a11y.spec.ts`); einziger Befund: Diagramm-Balken/-Zellen mit `aria-label` ohne Rolle → `role="img"`
@@ -127,7 +127,7 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [x] P2 Cookieless Analytics – selbst gezählt (Len, 2026-10-06): Seitenaufrufe pro Tag/Pfad/Herkunft in Postgres, ohne IP und Cookies, App-Pfade ohne Workspace-Namen, Bots ausgefiltert; Anzeige in `/admin`
 - [x] P1 Vor dem Launch (2026-10-07): DMARC (`p=none`), Health-Check alle 5 Min. mit Mail-Alarm, Restore-Probe des nächtlichen Dumps, SEO-Schalter `SITE_INDEXABLE` (robots, Sitemap, Vorschaubild, Metadaten; bis zum Launch aus)
 - [ ] P1 Zum Launch: `SITE_INDEXABLE=true`, Beta-Liste leeren (Registrierung öffnen), AGB/AVV verlinken, externer Uptime-Check
-- [ ] P3 Launch: Product Hunt, LinkedIn, t3n/Gründerszene-Pitch, OMR Reviews (Produktprofil anlegen, erste Bewertungen von Beta-Firmen)
+- [ ] P3 Launch: Product Hunt, LinkedIn, t3n/Gründerszene-Pitch, OMR Reviews (Produktprofil anlegen, erste Bewertungen von Beta-Firmen) – alle Texte und Eckdaten in `docs/launch-kit.md`
 
 
 ## Sprint 10 – Import aus anderen Tools (aufgenommen 2026-10-08)

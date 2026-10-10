@@ -1,18 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { DraftNotice } from "@/components/draft-notice";
 import { OPERATOR } from "@/lib/legal";
 import { MAX_USERS_PER_WORKSPACE } from "@/lib/limits";
 
-export const metadata: Metadata = { title: "AGB", robots: { index: false } };
+export const metadata: Metadata = { title: "AGB" };
 
-// Draft terms for a free B2B service. Must be reviewed by a lawyer before they are linked or agreed to.
+// Terms for a free B2B service, reviewed by a lawyer (2026-10-10). Changes need another review.
 export default function AgbPage() {
   return (
     <>
       <h1>Allgemeine Geschäftsbedingungen</h1>
       <p className="text-[13px] text-muted">Stand: Oktober 2026</p>
-      <DraftNotice />
 
       <h2>1. Anbieter und Geltungsbereich</h2>
       <p>
