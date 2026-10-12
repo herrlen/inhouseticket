@@ -14,7 +14,7 @@ export default function AvvPage() {
       <PrintButton />
 
       <p>
-        zwischen dem Kunden, der einen Workspace auf inhouseticket.com nutzt („Verantwortlicher“), und der {OPERATOR.name}, {OPERATOR.street},{" "}
+        zwischen dem Kunden, der einen Workspace auf inhouseticket.com nutzt („Verantwortlicher“), und {OPERATOR.name}, Inhaber {OPERATOR.owner}, {OPERATOR.street},{" "}
         {OPERATOR.city} („Auftragsverarbeiter“). Der Vertrag gilt mit dem Anlegen eines Workspace als geschlossen und endet mit dessen Löschung.
       </p>
 

@@ -14,8 +14,10 @@ export default function ImpressumPage() {
         {OPERATOR.street}
         <br />
         {OPERATOR.city}
+        <br />
+        {OPERATOR.country}
       </p>
-      <p>Vertretungsberechtigte Geschäftsführerin: {OPERATOR.managingDirector}</p>
+      <p>Inhaber: {OPERATOR.owner}</p>
 
       <h2>Kontakt</h2>
       <p>
@@ -30,12 +32,15 @@ export default function ImpressumPage() {
       </p>
 
       <h2>Umsatzsteuer-Identifikationsnummer</h2>
-      <p>Umsatzsteuer-Identifikationsnummer gemäß § 27 a Umsatzsteuergesetz: {OPERATOR.vatId}</p>
+      <p>USt-IdNr. gemäß § 27a UStG: {OPERATOR.vatId}</p>
+
+      <h2>Verantwortlich nach § 18 Abs. 2 MStV</h2>
+      <p>{OPERATOR.editorial}, Anschrift wie oben</p>
 
       {/* No EU-OS-platform notice: the platform was shut down on 2025-07-20 (Regulation (EU) 524/2013
           repealed); a link to it can be misleading. Do not re-add. */}
       <h2>Verbraucherstreitbeilegung / Universalschlichtungsstelle</h2>
-      <p>Zur Teilnahme an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle sind wir nicht verpflichtet und nicht bereit.</p>
+      <p>Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
     </>
   );
 }

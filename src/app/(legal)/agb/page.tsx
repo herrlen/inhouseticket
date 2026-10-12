@@ -14,7 +14,7 @@ export default function AgbPage() {
 
       <h2>1. Anbieter und Geltungsbereich</h2>
       <p>
-        Anbieter von inhouseticket ist die {OPERATOR.name}, {OPERATOR.street}, {OPERATOR.city} („wir“). Diese Bedingungen gelten für die
+        Anbieter von inhouseticket ist {OPERATOR.name}, Inhaber {OPERATOR.owner}, {OPERATOR.street}, {OPERATOR.city}, {OPERATOR.country} („wir“). Diese Bedingungen gelten für die
         Nutzung von inhouseticket.com durch Unternehmen, Selbstständige und öffentliche Stellen („Kunde“). inhouseticket richtet sich nicht an
         Verbraucher im Sinne von § 13 BGB. Abweichende Bedingungen des Kunden gelten nur, wenn wir ihnen ausdrücklich zustimmen.
       </p>

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { env } from "@/lib/env";
 import { requireUser } from "@/lib/session";
 
-// Platform operator (Studio Luy). Configured per deployment via SUPERADMIN_EMAILS, never in code.
+// Platform operator (Len Messerschmidt e.K.). Configured per deployment via SUPERADMIN_EMAILS, never in code.
 // Sees workspace metadata on /admin – never ticket content.
 
 export function isSuperadminEmail(email: string): boolean {
