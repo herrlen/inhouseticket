@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createWorkspace, uniqueDomain } from "./helpers/auth";
+import { createWorkspace, signIn, uniqueDomain } from "./helpers/auth";
 import { waitForHydration } from "./helpers/hydration";
 
 const csv = (assignee: string) =>
@@ -106,4 +106,33 @@ test("import Notion and monday.com CSVs; the preview lists the detected columns"
   await expect(page.getByLabel("Name", { exact: true })).toHaveValue("Kampagnen-Board");
   await page.getByRole("button", { name: "1 Tickets importieren" }).click();
   await expect(page.getByText(/1 Tickets in \w+ importiert\./)).toBeVisible();
+});
+
+test("ways in: landing section, help page, onboarding and the new workspace", async ({ page }) => {
+  await page.goto("/");
+  const migrate = page.getByRole("region", { name: "Kostenlos umziehen" });
+  await expect(migrate.getByRole("list", { name: "Unterstützte Tools" }).getByRole("listitem")).toHaveCount(4);
+  await migrate.getByRole("link", { name: "So geht der Umzug" }).click();
+  await expect(page).toHaveURL(/\/umziehen$/);
+  await expect(page.getByRole("heading", { level: 1, name: /umziehen/ })).toBeVisible();
+  for (const tool of ["Jira", "ClickUp", "Notion", "monday.com"]) {
+    await expect(page.getByRole("heading", { name: `Export aus ${tool}` })).toBeVisible();
+  }
+
+  // Ticking the box in onboarding continues on the import page.
+  const domain = uniqueDomain("umzug");
+  await signIn(page, `ina@${domain}`);
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await page.getByRole("textbox", { name: "Name des Workspace" }).fill("Umzug AG");
+  await page.getByRole("checkbox", { name: /Danach Projekte aus Jira/ }).check();
+  await page.getByRole("button", { name: "Workspace anlegen" }).click();
+  await expect(page.getByRole("heading", { name: "Projekte importieren" })).toBeVisible();
+  await expect(page).toHaveURL(/\/settings\/data\/import$/);
+
+  // The new workspace (only the example project) offers the import.
+  const path = new URL(page.url()).pathname.replace(/\/settings\/data\/import$/, "");
+  await page.goto(path);
+  const offer = page.getByRole("region", { name: "Projekte aus einem anderen Tool mitnehmen" });
+  await offer.getByRole("link", { name: "Projekte importieren" }).click();
+  await expect(page).toHaveURL(new RegExp(`${path}/settings/data/import$`));
 });

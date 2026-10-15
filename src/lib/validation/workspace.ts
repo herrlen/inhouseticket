@@ -47,6 +47,8 @@ export const onboardingSchema = z.object({
   template: z.enum(TEMPLATE_IDS, "Bitte eine Vorlage wählen."),
   // prefault: the default goes through the transform, so the output is always string[].
   invites: emailListSchema.prefault(""),
+  // Checkbox: present only when ticked → continue on the import page.
+  thenImport: z.literal("on").optional(),
 });
 
 export const inviteSchema = z.object({

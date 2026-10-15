@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { LegalLinks } from "@/components/legal-links";
 import { OPERATOR } from "@/lib/legal";
 import { de } from "@/lib/i18n/de";
+import { SOURCE_IDS, SOURCE_NAMES } from "@/lib/import/source";
 import { getSession } from "@/lib/session";
 import { MatomoTracker } from "@/components/matomo-tracker";
 
@@ -101,6 +102,37 @@ export default async function Home() {
               </figcaption>
             </figure>
           ))}
+        </section>
+
+        <section aria-labelledby="migrate-heading" className="mx-auto max-w-6xl px-4 py-16">
+          <div className="grid gap-8 md:grid-cols-2 md:items-center">
+            <div>
+              <h2 id="migrate-heading" className="text-2xl font-semibold tracking-tight md:text-3xl">
+                {t.migrateTitle}
+              </h2>
+              <p className="mt-3 leading-relaxed text-muted">{t.migrateText}</p>
+              <ul aria-label={t.migrateTools} className="mt-5 flex flex-wrap gap-2">
+                {SOURCE_IDS.map((id) => (
+                  <li key={id}>
+                    <Link href={`/umziehen#${id}`} className="inline-flex h-8 items-center rounded-full border border-border bg-surface px-3 text-[13px] font-medium hover:bg-bg">
+                      {SOURCE_NAMES[id]}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/umziehen" className="mt-6 inline-flex h-10 items-center rounded-[var(--radius-badge)] border border-border bg-surface px-4 font-medium hover:bg-bg">
+                {t.migrateLink} →
+              </Link>
+            </div>
+            <ul className="flex flex-col gap-2">
+              {t.migrateItems.map((item) => (
+                <li key={item} className="flex gap-2 rounded-[var(--radius-badge)] border border-border bg-surface px-4 py-3 text-[14px]">
+                  <span aria-hidden className="text-accent">✓</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
 
         <section id="claude" aria-labelledby="claude-heading" className="mx-auto max-w-6xl scroll-mt-8 px-4 py-16">

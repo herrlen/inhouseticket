@@ -6,6 +6,7 @@ describe("normalizePath", () => {
     expect(normalizePath("/")).toBe("/");
     expect(normalizePath("/login/")).toBe("/login");
     expect(normalizePath("/impressum")).toBe("/impressum");
+    expect(normalizePath("/umziehen")).toBe("/umziehen");
   });
 
   it("never stores workspace slugs, keys or tokens", () => {

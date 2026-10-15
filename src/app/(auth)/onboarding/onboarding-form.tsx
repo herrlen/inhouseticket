@@ -37,6 +37,10 @@ export function OnboardingForm({ suggestedName }: { suggestedName: string }) {
           })}
         </div>
         <p className="mt-1 text-xs text-muted">{de.onboarding.templateHint}</p>
+        <label className="mt-3 flex items-start gap-2 text-[13px]">
+          <input type="checkbox" name="thenImport" value="on" className="mt-0.5 size-4 accent-[var(--accent)]" />
+          <span>{de.onboarding.thenImport}</span>
+        </label>
       </fieldset>
 
       <div className="flex flex-col gap-1">

@@ -56,5 +56,5 @@ export async function createWorkspaceAction(_: OnboardingState, formData: FormDa
   }
 
   if (mails.length > 0) await sendInvitationMails(mails, user.name, input.name);
-  redirect(`/${slug}`);
+  redirect(input.thenImport ? `/${slug}/settings/data/import` : `/${slug}`);
 }

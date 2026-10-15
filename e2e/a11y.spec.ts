@@ -16,7 +16,7 @@ for (const scheme of ["light", "dark"] as const) {
     const page = await (await browser.newContext({ colorScheme: scheme })).newPage();
     const path = await createWorkspace(page, `axe@${uniqueDomain(`axe${scheme}`)}`, "Axe GmbH");
     const report: string[] = [];
-    for (const sub of ["/", "/login", "/impressum", "/datenschutz", "/agb", "/avv", ...PAGES.map((p) => path + p)]) {
+    for (const sub of ["/", "/login", "/impressum", "/datenschutz", "/agb", "/avv", "/umziehen", ...PAGES.map((p) => path + p)]) {
       await page.goto(sub);
       if (sub.startsWith(path)) await waitForHydration(page.getByRole("button", { name: /^Konto von/ }));
       const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();

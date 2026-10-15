@@ -19,7 +19,12 @@ export default async function ImportPage({ params }: Props) {
           ← {de.import.back}
         </Link>
         <h1 className="text-xl font-semibold">{de.import.title}</h1>
-        <p className="text-[13px] text-muted">{de.import.intro}</p>
+        <p className="text-[13px] text-muted">
+          {de.import.intro}{" "}
+          <Link href="/umziehen" className="text-accent underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+            {de.import.helpLink}
+          </Link>
+        </p>
       </div>
       <ImportForm workspaceId={ctx.workspace.id} />
     </div>
