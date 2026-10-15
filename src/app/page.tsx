@@ -188,6 +188,29 @@ export default async function Home() {
             </p>
           </div>
         </section>
+        <section aria-labelledby="faq-heading" className="mx-auto max-w-3xl px-4 py-16">
+          <h2 id="faq-heading" className="text-center text-2xl font-semibold tracking-tight md:text-3xl">
+            {t.faqTitle}
+          </h2>
+          <div className="mt-8 flex flex-col gap-2">
+            {t.faq.map((f) => (
+              <details key={f.q} className="group rounded-[var(--radius-card)] border border-border bg-surface">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-[var(--radius-card)] px-5 py-4 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent [&::-webkit-details-marker]:hidden">
+                  {f.q}
+                  <span aria-hidden className="text-muted transition-transform group-open:rotate-45">+</span>
+                </summary>
+                <div className="px-5 pb-4 text-[14px] leading-relaxed text-muted">
+                  <p>{f.a}</p>
+                  {"link" in f && f.link ? (
+                    <Link href={f.link.href} className="mt-2 inline-block text-accent underline">
+                      {f.link.text}
+                    </Link>
+                  ) : null}
+                </div>
+              </details>
+            ))}
+          </div>
+        </section>
       </main>
 
       <footer className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 border-t border-border px-4 py-8 text-xs text-muted">
