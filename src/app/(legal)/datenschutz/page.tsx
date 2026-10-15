@@ -9,11 +9,11 @@ export default function DatenschutzPage() {
   return (
     <>
       <h1>Datenschutzerklärung</h1>
-      <p className="text-[13px] text-muted">Stand: 10. Oktober 2026</p>
+      <p className="text-[13px] text-muted">Stand: 15. Oktober 2026</p>
 
       <h2>1. Verantwortlicher</h2>
       <p>
-        {OPERATOR.name}, {OPERATOR.street}, {OPERATOR.city}, {OPERATOR.country}. Vertreten durch die Geschäftsführerin {OPERATOR.managingDirector}.
+        {OPERATOR.name}, {OPERATOR.street}, {OPERATOR.city}, {OPERATOR.country}. Inhaber: {OPERATOR.owner}.
         E-Mail: <a className="text-accent underline" href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>
       </p>
 

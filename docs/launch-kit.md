@@ -16,7 +16,7 @@ wird. Stand 2026-10-10. Texte sind fertig zum Kopieren; Längenangaben beziehen 
 | Kategorie | Projektmanagement / Aufgabenverwaltung / Ticketsystem |
 | Sprache | Deutsch (Englisch geplant) |
 | Hosting | Deutschland (mittwald), DSGVO, AVV inklusive |
-| Anbieter | Studio Luy UG (haftungsbeschränkt), Norderreihe 21, 22767 Hamburg |
+| Anbieter | Len Messerschmidt e.K., Norderreihe 21, 22767 Hamburg |
 | Kontakt | hello@inhouseticket.com |
 | Status | Live, in aktiver Entwicklung – Feedback ausdrücklich erwünscht |
 
@@ -141,7 +141,7 @@ wird. Stand 2026-10-10. Texte sind fertig zum Kopieren; Längenangaben beziehen 
 > – Anmeldung nur mit Firmen-E-Mail, Daten in Deutschland, AVV inklusive, kein Tracking
 > – kostenlos bis 100 Personen pro Workspace, alle Funktionen
 >
-> Hinter inhouseticket steht die Studio Luy UG aus Hamburg. Gern schicke ich Screenshots, einen Testzugang oder
+> Hinter inhouseticket steht Len Messerschmidt e.K. aus Hamburg. Gern schicke ich Screenshots, einen Testzugang oder
 > stehe für ein kurzes Gespräch bereit.
 >
 > Viele Grüße
