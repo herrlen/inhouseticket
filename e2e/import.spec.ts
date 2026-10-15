@@ -112,6 +112,10 @@ test("ways in: landing section, help page, onboarding and the new workspace", as
   await page.goto("/");
   const migrate = page.getByRole("region", { name: "Kostenlos umziehen" });
   await expect(migrate.getByRole("list", { name: "Unterstützte Tools" }).getByRole("listitem")).toHaveCount(4);
+  // FAQ answers open without JavaScript (<details>) and point to the help page.
+  const faq = page.getByRole("region", { name: "Häufige Fragen" });
+  await faq.getByText("Kann ich meine Daten mitnehmen?").click();
+  await expect(faq.getByRole("link", { name: "So geht der Umzug" })).toBeVisible();
   await migrate.getByRole("link", { name: "So geht der Umzug" }).click();
   await expect(page).toHaveURL(/\/umziehen$/);
   await expect(page.getByRole("heading", { level: 1, name: /umziehen/ })).toBeVisible();

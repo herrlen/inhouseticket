@@ -178,7 +178,8 @@ ohne API-Zugang, nur mit der Export-Datei des alten Tools.
 - [x] P2 Einstieg „Projekte importieren“ im Onboarding und im leeren Zustand eines neuen Workspace (2026-10-15:
   Häkchen im Onboarding führt nach dem Anlegen auf die Import-Seite; die Übersicht zeigt Admins den Import,
   solange nur das Beispielprojekt existiert)
-- [ ] P2 FAQ-Eintrag „Kann ich meine Daten mitnehmen?“ (Import und Export)
+- [x] P2 FAQ-Eintrag „Kann ich meine Daten mitnehmen?“ (Import und Export) – 2026-10-15: Block „Häufige Fragen“
+  am Ende der Landingpage (`<details>`, ohne JavaScript), dazu Kosten, Datenstandort, Anmeldung, Claude
 - Hinweis: Tool-Namen dürfen genannt werden; Logos nur gemäß den Markenrichtlinien der Anbieter
 
 ---

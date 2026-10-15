@@ -138,6 +138,31 @@ export const de = {
       "Labels, Unteraufgaben und Kommentare",
       "Erst eine Vorschau, dann wird importiert – ganz oder gar nicht",
     ],
+    faqTitle: "Häufige Fragen",
+    faq: [
+      {
+        q: "Kann ich meine Daten mitnehmen?",
+        a: "In beide Richtungen. Projekte aus Jira, ClickUp, Notion und monday.com importierst du per CSV-Datei, nach einer Vorschau. Und alles, was in inhouseticket liegt, exportierst du jederzeit als CSV oder JSON – ohne Anfrage, direkt unter Daten & Workspace.",
+        link: { href: "/umziehen", text: "So geht der Umzug" },
+      },
+      {
+        q: "Was kostet inhouseticket?",
+        a: "Nichts. Jeder Workspace mit bis zu 100 Personen bekommt alle Funktionen – ohne Testphase, ohne Pro-Stufe, ohne Kreditkarte.",
+      },
+      {
+        q: "Wo liegen unsere Daten?",
+        a: "In Deutschland, mit täglichen Backups. Einen Auftragsverarbeitungsvertrag nach DSGVO bekommt jeder Workspace automatisch.",
+        link: { href: "/avv", text: "Zum AVV" },
+      },
+      {
+        q: "Wer kann sich anmelden?",
+        a: "Alle mit einer Firmen-E-Mail. Die Anmeldung läuft über einen Link per Mail, ohne Passwort. Kollegen mit derselben Domain lädst du ein – jeder Workspace ist strikt von den anderen getrennt.",
+      },
+      {
+        q: "Brauche ich Claude?",
+        a: "Nein. inhouseticket funktioniert komplett ohne. Wer Claude nutzt, kann es zusätzlich verbinden und Tickets in Sätzen statt Klicks bearbeiten.",
+      },
+    ],
     migrateTools: "Unterstützte Tools",
     migrateLink: "So geht der Umzug",
   },
