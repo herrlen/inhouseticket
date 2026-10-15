@@ -24,6 +24,11 @@ describe("onboardingSchema", () => {
     expect(onboardingSchema.parse(base)).toEqual({ ...base, invites: [] });
   });
 
+  it("carries the import checkbox only when ticked", () => {
+    expect(onboardingSchema.parse({ ...base, thenImport: "on" }).thenImport).toBe("on");
+    expect(onboardingSchema.parse(base).thenImport).toBeUndefined();
+  });
+
   it("rejects colors outside the palette", () => {
     expect(onboardingSchema.safeParse({ ...base, color: "#000000" }).success).toBe(false);
   });

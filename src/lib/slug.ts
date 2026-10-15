@@ -2,7 +2,7 @@
 export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
   "api", "app", "auth", "login", "logout", "start", "onboarding", "invite", "dev",
   "settings", "admin", "mcp", "docs", "help", "static", "public", "_next",
-  "impressum", "datenschutz", "agb", "avv",
+  "impressum", "datenschutz", "agb", "avv", "umziehen",
 ]);
 
 const MAX_SLUG = 63;

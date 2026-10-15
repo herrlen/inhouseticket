@@ -169,10 +169,15 @@ ohne API-Zugang, nur mit der Export-Datei des alten Tools.
   markiert ein Aktivitätseintrag `imported` jedes Ticket („aus Jira importiert (WEB-12)“)
 
 ### Frontend – Landingpage und Einstieg
-- [ ] P1 Abschnitt auf der Landingpage „Kostenlos umziehen“: Projekte aus ClickUp, Jira, Notion und monday.com
-  in wenigen Minuten importieren – erst live schalten, wenn der Import funktioniert
-- [ ] P1 Kurzanleitung je Tool (wo finde ich den Export?) – auf der Import-Seite (Jira steht) und als Hilfeseite
-- [ ] P2 Einstieg „Projekte importieren“ im Onboarding und im leeren Zustand eines neuen Workspace
+- [x] P1 Abschnitt auf der Landingpage „Kostenlos umziehen“: Projekte aus ClickUp, Jira, Notion und monday.com
+  in wenigen Minuten importieren – erst live schalten, wenn der Import funktioniert (2026-10-15: Tool-Namen als
+  Sprungmarken auf die Hilfeseite, „Import aus …“ auch in der Liste „Alles drin“)
+- [x] P1 Kurzanleitung je Tool (wo finde ich den Export?) – auf der Import-Seite und als öffentliche Hilfeseite
+  `/umziehen` (2026-10-15; dieselben Texte aus `de.import.howTo`, dazu Ablauf, was übernommen wird und Grenzen
+  aus `limits.ts`/`plan.ts`; in Sitemap und axe-Audit)
+- [x] P2 Einstieg „Projekte importieren“ im Onboarding und im leeren Zustand eines neuen Workspace (2026-10-15:
+  Häkchen im Onboarding führt nach dem Anlegen auf die Import-Seite; die Übersicht zeigt Admins den Import,
+  solange nur das Beispielprojekt existiert)
 - [ ] P2 FAQ-Eintrag „Kann ich meine Daten mitnehmen?“ (Import und Export)
 - Hinweis: Tool-Namen dürfen genannt werden; Logos nur gemäß den Markenrichtlinien der Anbieter
 

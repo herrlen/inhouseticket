@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { listArchivedProjects, listProjectsWithTickets } from "@/db/queries/projects";
 import { hasRole, requireMember } from "@/lib/authz";
 import { de } from "@/lib/i18n/de";
+import { PROJECT_TEMPLATES, TEMPLATE_IDS } from "@/lib/project-templates";
 import { setProjectArchivedAction } from "./actions";
 
 type Props = { params: Promise<{ workspace: string }> };
@@ -13,6 +15,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: ctx.workspace.name };
 }
 
+// A workspace still holding at most the onboarding example counts as new: admins get the import offer.
+const EXAMPLE_TICKETS = Math.max(...TEMPLATE_IDS.map((id) => PROJECT_TEMPLATES[id].tickets.length));
+
 // Placeholder overview until lists and boards arrive (Sprints 2–4).
 export default async function WorkspacePage({ params }: Props) {
   const { workspace: slug } = await params;
@@ -22,10 +27,28 @@ export default async function WorkspacePage({ params }: Props) {
     listProjectsWithTickets(ctx.workspace.id),
     isAdmin ? listArchivedProjects(ctx.workspace.id) : Promise.resolve([]),
   ]);
+  const isNew = isAdmin && projects.length <= 1 && projects.every((p) => p.tickets.length <= EXAMPLE_TICKETS);
 
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-6">
       <h1 className="mb-6 text-xl font-semibold">{de.workspace.welcome(ctx.workspace.name)}</h1>
+      {isNew ? (
+        <section aria-labelledby="import-heading" className="mb-6 rounded-[var(--radius-card)] border border-border bg-surface p-4">
+          <h2 id="import-heading" className="font-semibold">{de.workspace.importTitle}</h2>
+          <p className="mt-1 text-[13px] text-muted">{de.workspace.importText}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <Link
+              href={`/${slug}/settings/data/import`}
+              className="inline-flex h-9 items-center rounded-[var(--radius-badge)] bg-accent px-3.5 text-sm font-medium text-accent-contrast hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              {de.workspace.importButton}
+            </Link>
+            <Link href="/umziehen" className="text-[13px] text-accent underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+              {de.workspace.importHelp}
+            </Link>
+          </div>
+        </section>
+      ) : null}
       {projects.map((p) => (
         <section key={p.id} className="mb-6 rounded-[var(--radius-card)] border border-border bg-surface">
           <h2 className="flex items-center gap-2 border-b border-border px-4 py-2 font-semibold">

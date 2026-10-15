@@ -9,6 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const url = (path: string) => new URL(path, env.APP_URL).toString();
   return [
     { url: url("/"), changeFrequency: "weekly", priority: 1 },
+    { url: url("/umziehen"), changeFrequency: "monthly", priority: 0.6 },
     { url: url("/impressum"), changeFrequency: "yearly", priority: 0.2 },
     { url: url("/datenschutz"), changeFrequency: "monthly", priority: 0.2 },
     { url: url("/agb"), changeFrequency: "yearly", priority: 0.2 },
