@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { readBodyLimited } from "@/lib/body";
 import { env } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
+import { hasPassword } from "@/lib/session";
 
 /** Per signed-in user across all /api/w routes – generous for a fast UI, stops scripted floods. */
 const API_REQUESTS_PER_MINUTE = 300;
@@ -14,6 +15,8 @@ const MAX_JSON_BYTES = 64 * 1024;
 export async function requireApiMember(workspaceId: string) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) return { error: jsonError(401, "unauthorized", "Nicht angemeldet.") } as const;
+  // Same gate as the pages: a person who signed in by link must set a password first.
+  if (!(await hasPassword(session.user.id))) return { error: jsonError(403, "password_required", "Bitte zuerst ein Passwort festlegen.") } as const;
   const limited = tooManyRequests(rateLimit(`api:${session.user.id}`, API_REQUESTS_PER_MINUTE, 60_000));
   if (limited) return { error: limited } as const;
   if (!/^[0-9a-f-]{36}$/i.test(workspaceId)) return { error: jsonError(404, "not_found", "Nicht gefunden.") } as const;

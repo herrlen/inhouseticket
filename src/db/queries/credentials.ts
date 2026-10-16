@@ -1,0 +1,17 @@
+import "server-only";
+import { and, eq, isNotNull } from "drizzle-orm";
+import { db } from "@/db/client";
+import { account } from "@/db/schema";
+
+// Password state of a person. Auth tables belong to the person, not a workspace, so there is no
+// workspace scope here (same as Better Auth's own session lookups).
+
+/** True once the person has set a password (Better Auth's "credential" account with a hash). */
+export async function userHasPassword(userId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ id: account.id })
+    .from(account)
+    .where(and(eq(account.userId, userId), eq(account.providerId, "credential"), isNotNull(account.password)))
+    .limit(1);
+  return Boolean(row);
+}

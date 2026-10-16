@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { findInvitationByToken } from "@/db/queries/invitations";
 import { getT } from "@/lib/i18n/server";
-import { getSession } from "@/lib/session";
+import { redirect } from "next/navigation";
+import { setPasswordUrl } from "@/lib/password-gate";
+import { getSession, hasPassword } from "@/lib/session";
 import { SignOutButton } from "@/components/sign-out-button";
 import { JoinButton } from "../../start/join-button";
 
@@ -29,6 +31,9 @@ export default async function InvitePage({ params }: Props) {
       </>
     );
   }
+
+  // Signed in by link but no password yet: set it first, then come back to accept.
+  if (session && !(await hasPassword(session.user.id))) redirect(setPasswordUrl(`/invite/${encodeURIComponent(token)}`));
 
   return (
     <>

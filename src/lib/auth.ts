@@ -1,16 +1,19 @@
 import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { magicLink } from "better-auth/plugins/magic-link";
 import { oauthProvider } from "@better-auth/oauth-provider";
 import { db } from "@/db/client";
+import { userHasPassword } from "@/db/queries/credentials";
 import * as schema from "@/db/schema";
 import { env } from "@/lib/env";
 import { mayEnterBeta } from "@/lib/beta";
 import { isCompanyEmail } from "@/lib/freemail";
 import { isExemptEmail } from "@/lib/superadmin";
+import { MAX_PASSWORD, MIN_PASSWORD } from "@/lib/limits";
+import { setPasswordUrl } from "@/lib/password-gate";
 import { getTOrDefault } from "@/lib/i18n/server";
 import { buttonMail, sendMail } from "@/lib/mail";
 import { nameFromEmail } from "@/lib/names";
@@ -25,6 +28,19 @@ const MAGIC_LINK_TTL_SECONDS = 15 * 60;
 const MAGIC_LINKS_PER_EMAIL = 5;
 const MAGIC_LINK_EMAIL_WINDOW_MS = 15 * 60_000;
 const MAX_NAME = 100;
+/** Password reset links: short-lived and single-use (the token is consumed on use). */
+const RESET_LINK_TTL_SECONDS = 30 * 60;
+/** Password sign-ins per address – slows guessing even from many IPs. */
+const SIGN_INS_PER_EMAIL = 10;
+/** Reset mails per address (forgot-password form and settings button together). */
+const RESETS_PER_EMAIL = 3;
+const PER_EMAIL_WINDOW_MS = 15 * 60_000;
+
+/** Per-address limit in production (local and E2E runs reuse addresses in quick succession). */
+function tooManyForEmail(prefix: string, email: unknown, limit: number): boolean {
+  if (env.NODE_ENV !== "production" || typeof email !== "string") return false;
+  return !rateLimit(`${prefix}:${email.trim().toLowerCase()}`, limit, PER_EMAIL_WINDOW_MS).ok;
+}
 
 export const auth = betterAuth({
   baseURL: env.APP_URL,
@@ -37,11 +53,54 @@ export const auth = betterAuth({
   },
   // Per-IP limits in production only; local and E2E runs share one IP.
   rateLimit: { enabled: env.NODE_ENV === "production", window: 60, max: 100 },
+  // Every account has a password (Len, 2026-10-16). Accounts are only created by the magic link
+  // (company address, closed beta, verified inbox) – a password sign-up would skip all three.
+  emailAndPassword: {
+    enabled: true,
+    disableSignUp: true,
+    minPasswordLength: MIN_PASSWORD,
+    maxPasswordLength: MAX_PASSWORD,
+    resetPasswordTokenExpiresIn: RESET_LINK_TTL_SECONDS,
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, url }) => {
+      // The link carries the token: never log it. Language of the person who asked for it.
+      const t = await getTOrDefault();
+      const m = t.password.mail;
+      await sendMail({
+        to: user.email,
+        subject: m.subject,
+        text: `${m.intro}\n\n${url}\n\n${m.outro}`,
+        html: buttonMail({ heading: m.heading, intro: m.intro, button: m.button, url, outro: m.outro, lang: t.common.langTag, fallback: t.common.mailFallback }),
+      });
+    },
+  },
+  // Reset tokens are stored as SHA-256 only (magic-link tokens hash themselves, see below).
+  verification: { storeIdentifier: { default: "plain", overrides: { "reset-password:": "hashed" } } },
   // Profile changes are not offered; the endpoint would accept any avatar URL and unbounded names.
   disabledPaths: ["/update-user"],
   hooks: {
     // Friendly, early rejection before a mail is sent (CLAUDE.md rule 3).
     before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === "/sign-in/email") {
+        if (tooManyForEmail("sign-in", ctx.body?.email, SIGN_INS_PER_EMAIL)) {
+          throw new APIError("TOO_MANY_REQUESTS", { code: "TOO_MANY_ATTEMPTS", message: (await getTOrDefault()).login.tooMany });
+        }
+        return;
+      }
+      if (ctx.path === "/request-password-reset") {
+        // Same answer as a sent mail: the response never reveals whether the address exists.
+        if (tooManyForEmail("reset", ctx.body?.email, RESETS_PER_EMAIL)) return ctx.json({ status: true });
+        return;
+      }
+      if (ctx.path === "/oauth2/authorize" && ctx.request) {
+        // A connector login is a sign-in too: no tokens for a person without a password.
+        const session = await getSessionFromCtx(ctx);
+        if (session && !(await userHasPassword(session.user.id))) {
+          const url = new URL(ctx.request.url);
+          throw ctx.redirect(setPasswordUrl(`${url.pathname}${url.search}`));
+        }
+        return;
+      }
       if (ctx.path !== "/sign-in/magic-link") return;
       const t = await getTOrDefault();
       const email: unknown = ctx.body?.email;

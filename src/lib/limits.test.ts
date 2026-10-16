@@ -11,6 +11,11 @@ describe("limits", () => {
     expect(limits.ALLOWED_MIME).toEqual(["image/webp", "image/jpeg", "image/png"]);
   });
 
+  it("passwords: at least 10, at most 128 characters", () => {
+    expect(limits.MIN_PASSWORD).toBe(10);
+    expect(limits.MAX_PASSWORD).toBe(128);
+  });
+
   it("warns before the user limit is reached", () => {
     expect(limits.USER_WARNING_THRESHOLD).toBeLessThan(limits.MAX_USERS_PER_WORKSPACE);
   });

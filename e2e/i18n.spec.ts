@@ -38,9 +38,15 @@ test("the app works in English", async ({ page, context }) => {
   const since = new Date(Date.now() - 1000);
   await page.goto("/login");
   await page.getByRole("textbox", { name: "Company email" }).fill(email);
-  await page.getByRole("button", { name: "Send sign-in link" }).click();
+  await page.getByRole("button", { name: "Send sign-in link by email" }).click();
   await expect(page.getByRole("heading", { name: "Check your inbox" })).toBeVisible();
   await page.goto(await linkFromMail(email, MAGIC_LINK, since));
+
+  // First sign-in by link: set a password (in English, too).
+  await expect(page.getByRole("heading", { name: "Set a password" })).toBeVisible();
+  await page.getByLabel("New password").fill("english-password-1");
+  await page.getByLabel("Repeat password").fill("english-password-1");
+  await page.getByRole("button", { name: "Save password and continue" }).click();
 
   await expect(page).toHaveURL(/\/onboarding$/);
   await page.getByRole("textbox", { name: "Workspace name" }).fill("English Ltd");

@@ -1,9 +1,9 @@
 // Turns a request path into a pattern that carries no customer data (workspace slugs, ticket keys,
 // invitation tokens). Pure, so it is unit-tested.
 
-const PUBLIC = new Set(["/", "/login", "/impressum", "/datenschutz", "/agb", "/avv", "/umziehen", "/start", "/onboarding", "/oauth/consent", "/admin"]);
+const PUBLIC = new Set(["/", "/login", "/impressum", "/datenschutz", "/agb", "/avv", "/umziehen", "/start", "/onboarding", "/oauth/consent", "/admin", "/set-password", "/forgot-password", "/reset-password"]);
 const APP_PAGES = new Set(["me", "inbox", "dashboard"]);
-const SETTINGS = new Set(["members", "claude", "data"]);
+const SETTINGS = new Set(["members", "claude", "data", "account"]);
 
 export function normalizePath(pathname: string): string {
   const path = pathname.replace(/\/+$/, "") || "/";

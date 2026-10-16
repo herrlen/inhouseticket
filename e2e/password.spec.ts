@@ -1,0 +1,161 @@
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test, type Page } from "@playwright/test";
+import {
+  createWorkspace,
+  E2E_PASSWORD,
+  linkFromMail,
+  RESET_LINK,
+  requestMagicLink,
+  setPassword,
+  signInWithPassword,
+  uniqueDomain,
+} from "./helpers/auth";
+
+const INVALID = "E-Mail-Adresse oder Passwort stimmt nicht.";
+
+/** Session state straight from the database, past Better Auth's 5-minute cookie cache. */
+async function hasLiveSession(page: Page): Promise<boolean> {
+  const res = await page.context().request.get("/api/auth/get-session?disableCookieCache=true");
+  return (await res.json()) !== null;
+}
+
+test("link sign-in without a password: set it first, no way around", async ({ page }) => {
+  const email = `nora@${uniqueDomain("setpw")}`;
+  await page.goto(await requestMagicLink(page, email));
+  await expect(page).toHaveURL(/\/set-password$/);
+
+  // Every other page and the API send the person back.
+  await page.goto("/start");
+  await expect(page).toHaveURL(/\/set-password$/);
+  await page.goto("/onboarding");
+  await expect(page).toHaveURL(/\/set-password\?next=%2Fonboarding$/);
+  const api = await page.context().request.get("/api/w/00000000-0000-4000-8000-000000000000/search?q=x");
+  expect(api.status()).toBe(403);
+
+  // Checks in the browser, keyboard only.
+  await page.getByLabel("Neues Passwort").fill("zu-kurz");
+  await page.getByLabel("Passwort wiederholen").fill("zu-kurz");
+  await page.getByLabel("Passwort wiederholen").press("Enter");
+  await expect(page.getByText("Mindestens 10 Zeichen.", { exact: true }).last()).toBeVisible();
+  await page.getByLabel("Neues Passwort").fill("lang-genug-123");
+  await page.getByLabel("Passwort wiederholen").fill("lang-genug-456");
+  await page.getByLabel("Passwort wiederholen").press("Enter");
+  await expect(page.getByText("Die Passwörter stimmen nicht überein.")).toBeVisible();
+
+  // WCAG A/AA on the page nobody gets around, light and dark.
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+    expect(violations.map((v) => `${colorScheme}: ${v.id}`)).toEqual([]);
+  }
+
+  // Show/hide toggle.
+  const field = page.getByLabel("Neues Passwort");
+  await expect(field).toHaveAttribute("type", "password");
+  await expect(field).toHaveAttribute("autocomplete", "new-password");
+  await page.getByRole("button", { name: "Passwort anzeigen" }).first().click();
+  await expect(field).toHaveAttribute("type", "text");
+
+  await setPassword(page);
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await page.goto("/set-password");
+  await expect(page).toHaveURL(/\/onboarding$/);
+});
+
+test("password sign-in: right password gets in, wrong ones and unknown addresses get the same answer", async ({ page, browser }) => {
+  const domain = uniqueDomain("pwlogin");
+  const path = await createWorkspace(page, `lars@${domain}`, "Login KG");
+
+  const other = await (await browser.newContext()).newPage();
+  await signInWithPassword(other, `lars@${domain}`, "falsches-passwort");
+  await expect(other.getByText(INVALID)).toBeVisible();
+  await signInWithPassword(other, `niemand@${domain}`, "irgendein-passwort");
+  await expect(other.getByText(INVALID)).toBeVisible();
+
+  await signInWithPassword(other, `lars@${domain}`, E2E_PASSWORD);
+  await expect(other).toHaveURL(new RegExp(`${path}$`));
+  await expect(other.getByRole("heading", { name: "Willkommen bei Login KG" })).toBeVisible();
+});
+
+test("change password in the settings ends other sessions", async ({ page, browser }) => {
+  const email = `clara@${uniqueDomain("changepw")}`;
+  const path = await createWorkspace(page, email, "Wechsel AG");
+  const laptop = await (await browser.newContext()).newPage();
+  await signInWithPassword(laptop, email);
+  await expect(laptop).toHaveURL(new RegExp(`${path}$`));
+
+  await page.getByRole("button", { name: /Konto von/ }).click();
+  await page.getByRole("menuitem", { name: "Konto" }).click();
+  await expect(page.getByRole("heading", { name: "Konto", level: 1 })).toBeVisible();
+  await expect(page.getByLabel("Aktuelles Passwort")).toHaveAttribute("autocomplete", "current-password");
+
+  await page.getByLabel("Aktuelles Passwort").fill("nicht-das-richtige");
+  await page.getByLabel("Neues Passwort").fill("neues-passwort-42");
+  await page.getByLabel("Passwort wiederholen").fill("neues-passwort-42");
+  await page.getByRole("button", { name: "Passwort ändern" }).click();
+  await expect(page.getByText("Das aktuelle Passwort stimmt nicht.")).toBeVisible();
+
+  await page.getByLabel("Aktuelles Passwort").fill(E2E_PASSWORD);
+  await page.getByLabel("Neues Passwort").fill("neues-passwort-42");
+  await page.getByLabel("Passwort wiederholen").fill("neues-passwort-42");
+  await page.getByRole("button", { name: "Passwort ändern" }).click();
+  await expect(page.getByText("Passwort geändert. Andere Geräte wurden abgemeldet.")).toBeVisible();
+
+  expect(await hasLiveSession(page)).toBe(true);
+  expect(await hasLiveSession(laptop)).toBe(false);
+
+  const fresh = await (await browser.newContext()).newPage();
+  await signInWithPassword(fresh, email, E2E_PASSWORD);
+  await expect(fresh.getByText(INVALID)).toBeVisible();
+  await signInWithPassword(fresh, email, "neues-passwort-42");
+  await expect(fresh).toHaveURL(new RegExp(`${path}$`));
+});
+
+test("forgot password: reset link by mail, single use, then sign in with the new one", async ({ page, browser }) => {
+  const domain = uniqueDomain("resetpw");
+  const email = `rita@${domain}`;
+  const path = await createWorkspace(page, email, "Reset GmbH");
+
+  const other = await (await browser.newContext()).newPage();
+  await other.goto("/login");
+  await other.getByRole("link", { name: "Passwort vergessen?" }).click();
+  await expect(other.getByRole("heading", { name: "Passwort vergessen" })).toBeVisible();
+
+  // Unknown address: the same answer, and no mail.
+  await other.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(`unbekannt@${domain}`);
+  await other.getByRole("button", { name: "Link zum Zurücksetzen senden" }).click();
+  await expect(other.getByText(/Falls es für unbekannt@/)).toBeVisible();
+
+  await other.goto("/forgot-password");
+  const since = new Date(Date.now() - 1000);
+  await other.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(email);
+  await other.getByRole("button", { name: "Link zum Zurücksetzen senden" }).click();
+  await expect(other.getByText(/Falls es für rita@/)).toBeVisible();
+  const link = await linkFromMail(email, RESET_LINK, since);
+
+  await other.goto(link);
+  await expect(other.getByRole("heading", { name: "Neues Passwort festlegen" })).toBeVisible();
+  await expect(other).toHaveURL(/\/reset-password$/); // token is dropped from the address bar
+  await other.getByLabel("Neues Passwort").fill("frisch-gesetzt-77");
+  await other.getByLabel("Passwort wiederholen").fill("frisch-gesetzt-77");
+  await other.getByRole("button", { name: "Passwort speichern" }).click();
+  await expect(other.getByText(/Dein Passwort ist gespeichert/)).toBeVisible();
+
+  // All sessions ended, the link works once.
+  expect(await hasLiveSession(page)).toBe(false);
+  await other.goto(link);
+  await expect(other.getByText(/abgelaufen oder wurde schon benutzt/)).toBeVisible();
+
+  await signInWithPassword(other, email, "frisch-gesetzt-77");
+  await expect(other).toHaveURL(new RegExp(`${path}$`));
+});
+
+test("settings: 'Passwort zurücksetzen' mails a link to the own address", async ({ page }) => {
+  const email = `sven@${uniqueDomain("settingsreset")}`;
+  const path = await createWorkspace(page, email, "Knopf GmbH");
+  await page.goto(`${path}/settings/account`);
+  const since = new Date(Date.now() - 1000);
+  await page.getByRole("button", { name: "Passwort zurücksetzen" }).click();
+  await expect(page.getByText(`Link an ${email} geschickt. Er ist 30 Minuten gültig.`)).toBeVisible();
+  expect(await linkFromMail(email, RESET_LINK, since)).toContain("callbackURL=%2Freset-password");
+});

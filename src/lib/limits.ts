@@ -21,3 +21,7 @@ export type AllowedMime = (typeof ALLOWED_MIME)[number];
 
 export const MAX_PROJECT_KEY = 10;
 export const PROJECT_KEY_PATTERN = /^[A-Z][A-Z0-9]{1,9}$/;
+
+/** Password length (Better Auth enforces the same values, see src/lib/auth.ts). Set 2026-10-16. */
+export const MIN_PASSWORD = 10;
+export const MAX_PASSWORD = 128;

@@ -51,3 +51,5 @@ export const Paperclip = (p: IconProps) => <Svg {...p}><path d="M10.5 5l-4.6 4.6
 export const InboxIcon = (p: IconProps) => <Svg {...p}><path d="M2.5 9.5l1.6-5.2A1 1 0 015 3.5h6a1 1 0 01.9.8l1.6 5.2v3a1 1 0 01-1 1h-9a1 1 0 01-1-1z" /><path d="M2.5 9.5h3l1 1.5h3l1-1.5h3" /></Svg>;
 export const Sparkle = (p: IconProps) => <Svg {...p}><path d="M8 2v3M8 11v3M2 8h3M11 8h3M4.2 4.2l1.6 1.6M10.2 10.2l1.6 1.6M4.2 11.8l1.6-1.6M10.2 5.8l1.6-1.6" /></Svg>;
 export const Chart = (p: IconProps) => <Svg {...p}><path d="M2.5 13.5h11M4.5 11V8M8 11V4.5M11.5 11V7" /></Svg>;
+export const Eye = (p: IconProps) => <Svg {...p}><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z" /><circle cx="8" cy="8" r="2" /></Svg>;
+export const EyeOff = (p: IconProps) => <Svg {...p}><path d="M6.6 3.7A6.3 6.3 0 018 3.5C12 3.5 14.5 8 14.5 8a11 11 0 01-1.7 2.3M10 10.6A2.8 2.8 0 016.2 6.4M4.1 4.9A11 11 0 001.5 8S4 12.5 8 12.5a6 6 0 002.9-.8M2 2l12 12" /></Svg>;

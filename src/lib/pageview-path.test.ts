@@ -7,6 +7,8 @@ describe("normalizePath", () => {
     expect(normalizePath("/login/")).toBe("/login");
     expect(normalizePath("/impressum")).toBe("/impressum");
     expect(normalizePath("/umziehen")).toBe("/umziehen");
+    expect(normalizePath("/set-password")).toBe("/set-password");
+    expect(normalizePath("/reset-password")).toBe("/reset-password");
   });
 
   it("never stores workspace slugs, keys or tokens", () => {
@@ -15,6 +17,7 @@ describe("normalizePath", () => {
     expect(normalizePath("/mueller-gmbh/p/MKT")).toBe("/[workspace]/p/[key]");
     expect(normalizePath("/mueller-gmbh/p/MKT/settings")).toBe("/[workspace]/p/[key]/settings");
     expect(normalizePath("/mueller-gmbh/settings/claude")).toBe("/[workspace]/settings/claude");
+    expect(normalizePath("/mueller-gmbh/settings/account")).toBe("/[workspace]/settings/account");
     expect(normalizePath("/invite/abc123secret")).toBe("/invite/[token]");
     expect(normalizePath("/mueller-gmbh/geheim/tief")).toBe("/[workspace]/…");
   });

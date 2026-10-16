@@ -4,7 +4,7 @@ import { createWorkspace, INVITE_LINK, linkFromMail, signIn, uniqueDomain } from
 test("freemail addresses are rejected with a friendly message", async ({ page }) => {
   await page.goto("/login");
   await page.getByRole("textbox", { name: "Firmen-E-Mail" }).fill("max@gmail.com");
-  await page.getByRole("button", { name: "Anmeldelink senden" }).click();
+  await page.getByRole("button", { name: "Anmeldelink per E-Mail senden" }).click();
   await expect(page.getByText(/Bitte nutze deine Firmen-E-Mail-Adresse/)).toBeVisible();
 });
 

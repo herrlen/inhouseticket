@@ -25,7 +25,7 @@ test("operator signs in with freemail, others with the same provider stay out", 
   const other = await browser.newPage();
   await other.goto("/login");
   await other.getByRole("textbox", { name: "Firmen-E-Mail" }).fill("someone-else@gmail.com");
-  await other.getByRole("button", { name: "Anmeldelink senden" }).click();
+  await other.getByRole("button", { name: "Anmeldelink per E-Mail senden" }).click();
   await expect(other.getByText(/Firmen-E-Mail/).last()).toBeVisible();
   await expect(other.getByRole("heading", { name: "Schau in dein Postfach" })).toHaveCount(0);
 });

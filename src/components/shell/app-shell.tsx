@@ -347,6 +347,7 @@ function Topbar({
         items={[
           ...(shell.canAdmin ? [{ label: t.members.title, onSelect: () => router.push(`/${shell.slug}/settings/members`) }] : []),
           ...(shell.isSuperadmin ? [{ label: t.admin.title, onSelect: () => router.push("/admin") }] : []),
+          { label: t.account.title, onSelect: () => router.push(`/${shell.slug}/settings/account`) },
           { label: t.claude.title, onSelect: () => router.push(`/${shell.slug}/settings/claude`) },
           { label: t.shell.switchWorkspace, onSelect: () => router.push("/start") },
           { label: confetti ? t.shell.confettiOff : t.shell.confettiOn, onSelect: onToggleConfetti },
@@ -386,6 +387,8 @@ function useBreadcrumb(explorer: ExplorerData): Crumb[] {
     crumbs.push({ label: t.dashboard.title });
   } else if (rest[0] === "settings" && rest[1] === "members") {
     crumbs.push({ label: t.members.title });
+  } else if (rest[0] === "settings" && rest[1] === "account") {
+    crumbs.push({ label: t.account.title });
   } else if (rest.length === 0) {
     crumbs.push({ label: t.shell.overview });
   }

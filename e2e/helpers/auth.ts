@@ -28,16 +28,44 @@ export function uniqueDomain(label: string): string {
   return `${label}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}.de`;
 }
 
-/** Signs in through the real magic-link flow. */
-export async function signIn(page: Page, email: string, next?: string) {
+export const RESET_LINK = /http:\/\/localhost:3100\/api\/auth\/reset-password\/\S+/;
+
+/** Password the helpers give every new test account. */
+export const E2E_PASSWORD = "e2e-Passwort-2026";
+
+/** Asks for a magic link on the login page and returns it from the mail. */
+export async function requestMagicLink(page: Page, email: string, next?: string): Promise<string> {
   const since = new Date(Date.now() - 1000);
   await page.goto(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
   await page.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(email);
-  await page.getByRole("button", { name: "Anmeldelink senden" }).click();
+  await page.getByRole("button", { name: "Anmeldelink per E-Mail senden" }).click();
   await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
-  const link = await linkFromMail(email, MAGIC_LINK, since);
+  return linkFromMail(email, MAGIC_LINK, since);
+}
+
+/** Fills the forced set-password page (first sign-in by link) and continues. */
+export async function setPassword(page: Page, password = E2E_PASSWORD) {
+  await expect(page.getByRole("heading", { name: "Passwort festlegen" })).toBeVisible();
+  await page.getByLabel("Neues Passwort").fill(password);
+  await page.getByLabel("Passwort wiederholen").fill(password);
+  await page.getByRole("button", { name: "Passwort speichern und weiter" }).click();
+  await expect(page).not.toHaveURL(/\/set-password/);
+}
+
+/** Signs in through the real magic-link flow; a new account sets its password on the way. */
+export async function signIn(page: Page, email: string, next?: string) {
+  const link = await requestMagicLink(page, email, next);
   await page.goto(link);
+  if (new URL(page.url()).pathname === "/set-password") await setPassword(page);
   return link;
+}
+
+/** Signs in with email and password on the login page. */
+export async function signInWithPassword(page: Page, email: string, password = E2E_PASSWORD, next?: string) {
+  await page.goto(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
+  await page.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(email);
+  await page.getByLabel("Passwort", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Anmelden", exact: true }).click();
 }
 
 /** Signs in a new user and creates a workspace via onboarding; returns the workspace URL path. */
