@@ -79,6 +79,10 @@ und Scope, `docs/KONZEPT.md` Produkt, Design und Datenmodell.
 - Keine Secrets im Repo; `.env` ist ignoriert, `.env.example` gepflegt.
 - API-/MCP-Tokens nur gehasht speichern; Klartext genau einmal anzeigen.
 - Rate-Limits für Login, API und MCP – pro User **und** pro IP bzw. Token.
+- Passwörter nur über Better Auth (`emailAndPassword`, eigenes Hashing verboten); Länge aus `limits.ts`
+  (`MIN_PASSWORD`/`MAX_PASSWORD`). Antworten verraten nie, ob es ein Konto gibt („E-Mail-Adresse oder
+  Passwort stimmt nicht“, „Falls es ein Konto gibt …“). Reset-Links nie loggen. Neue Seiten mit Nutzerdaten
+  laufen über `requireUser()`/`requireMember()` – dort sitzt die Passwort-Pflicht (ADR 003).
 - Nutzerinhalte (Titel, Beschreibung, Kommentare) nie per `dangerouslySetInnerHTML`; Markdown nur
   über einen Renderer mit Allowlist, Links mit `rel="noopener noreferrer"`.
 - Uploads: Magic-Bytes prüfen, nicht dem MIME-Header oder der Endung vertrauen.
@@ -86,7 +90,7 @@ und Scope, `docs/KONZEPT.md` Produkt, Design und Datenmodell.
 ## 8. Tests & Gates
 
 - **Unit (Vitest):** Limits, Freemail-Prüfung, Quick-Add-Parser, Fractional Indexing,
-  Auslastungsberechnung, Magic-Byte-Prüfung.
+  Auslastungsberechnung, Magic-Byte-Prüfung, Passwort-Validierung und Passwort-Pflicht.
 - **E2E (Playwright):** Happy Path je Sprint. **Ab Sprint 1 und nie übersprungen:** zwei
   Workspaces sehen ihre Daten getrennt.
 - **Pre-Commit:** lint + typecheck (+ betroffene Tests). **CI:** lint, typecheck, test, build.
