@@ -43,10 +43,14 @@ test("link sign-in without a password: set it first, no way around", async ({ pa
   await page.getByLabel("Passwort wiederholen").press("Enter");
   await expect(page.getByText("Die Passwörter stimmen nicht überein.")).toBeVisible();
 
-  // WCAG A/AA on the page nobody gets around, light and dark.
+  // WCAG A/AA on the page nobody gets around, light and dark. Reduced motion switches transitions
+  // off, so axe never measures a button halfway between its light and dark colors.
   for (const colorScheme of ["light", "dark"] as const) {
-    await page.emulateMedia({ colorScheme });
-    const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+    await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
+    const { violations } = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+      .exclude("nextjs-portal") // dev badge
+      .analyze();
     expect(violations.map((v) => `${colorScheme}: ${v.id}`)).toEqual([]);
   }
 

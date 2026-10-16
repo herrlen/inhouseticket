@@ -6,7 +6,8 @@ const OPERATOR = "e2e-operator@gmail.com";
 
 async function signInOperator(page: Page) {
   await signIn(page, OPERATOR);
-  await page.waitForURL(/\/(onboarding|[a-z0-9-]+)$/);
+  // /start only redirects onward (to onboarding or the workspace); don't mistake it for a slug.
+  await page.waitForURL((url) => /^\/(onboarding|[a-z0-9-]+)$/.test(url.pathname) && url.pathname !== "/start");
   if (page.url().endsWith("/onboarding")) {
     await expect(page.getByText(/Persönlicher Workspace/)).toBeVisible();
     await page.getByRole("textbox", { name: "Name des Workspace" }).fill("Operator");
