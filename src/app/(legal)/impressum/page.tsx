@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { GermanOnly } from "@/components/german-only";
 import { OPERATOR } from "@/lib/legal";
 
 export const metadata: Metadata = { title: "Impressum" };
 
 export default function ImpressumPage() {
   return (
-    <>
+    <GermanOnly>
       <h1>Impressum</h1>
       <h2>Angaben gemäß § 5 DDG</h2>
       <p>
@@ -41,6 +42,6 @@ export default function ImpressumPage() {
           repealed); a link to it can be misleading. Do not re-add. */}
       <h2>Verbraucherstreitbeilegung / Universalschlichtungsstelle</h2>
       <p>Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
-    </>
+    </GermanOnly>
   );
 }

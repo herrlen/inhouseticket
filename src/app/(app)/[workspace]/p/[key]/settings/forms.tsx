@@ -14,7 +14,7 @@ import { ColorPicker } from "@/components/ui/color-picker";
 import { ChevronDown, ChevronRight } from "@/components/ui/icons";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
 import { PALETTE } from "@/lib/palette";
 import { DEFAULT_STATUSES } from "@/lib/project-templates";
 
@@ -22,7 +22,8 @@ import { DEFAULT_STATUSES } from "@/lib/project-templates";
 const STATUS_COLORS = [...new Set([...DEFAULT_STATUSES.map((s) => s.color as string), ...Object.values(PALETTE)])];
 
 function Feedback({ state }: { state: FormState }) {
-  const message = state.error ?? (state.ok ? de.common.saved : "");
+  const t = useT();
+  const message = state.error ?? (state.ok ? t.common.saved : "");
   return (
     <p role={state.error ? "alert" : "status"} className={cn("min-h-4 text-xs", state.error ? "text-prio-urgent-ink" : "text-status-done-ink")}>
       {message}
@@ -31,18 +32,19 @@ function Feedback({ state }: { state: FormState }) {
 }
 
 export function ProjectForm({ workspaceId, project }: { workspaceId: string; project: { id: string; name: string; key: string; color: string; icon: string | null } }) {
+  const t = useT();
   const [state, action, pending] = useActionState<FormState, FormData>(updateProjectAction, {});
   const e = state.fieldErrors ?? {};
   return (
     <form action={action} className="flex flex-col gap-4">
       <input type="hidden" name="workspaceId" value={workspaceId} />
       <input type="hidden" name="projectId" value={project.id} />
-      <Input name="name" label={de.projectForm.name} defaultValue={project.name} maxLength={100} required error={e.name} />
-      <Input label={de.projectForm.key} value={project.key} readOnly hint={de.projectSettings.keyFixed} inputClassName="font-mono" />
-      <ColorPicker name="color" legend={de.projectForm.color} defaultValue={project.color} error={e.color} />
-      <Input name="icon" label={de.projectForm.icon} defaultValue={project.icon ?? ""} maxLength={16} hint={de.projectForm.iconHint} error={e.icon} />
+      <Input name="name" label={t.projectForm.name} defaultValue={project.name} maxLength={100} required error={e.name} />
+      <Input label={t.projectForm.key} value={project.key} readOnly hint={t.projectSettings.keyFixed} inputClassName="font-mono" />
+      <ColorPicker name="color" legend={t.projectForm.color} defaultValue={project.color} error={e.color} />
+      <Input name="icon" label={t.projectForm.icon} defaultValue={project.icon ?? ""} maxLength={16} hint={t.projectForm.iconHint} error={e.icon} />
       <div className="flex items-center gap-3">
-        <Button type="submit" variant="primary" disabled={pending}>{de.common.save}</Button>
+        <Button type="submit" variant="primary" disabled={pending}>{t.common.save}</Button>
         <Feedback state={state} />
       </div>
     </form>
@@ -63,26 +65,27 @@ function Hidden({ workspaceId, projectKey, statusId }: StatusRef & { statusId?: 
 }
 
 function StatusFields({ status, idPrefix }: { status?: StatusData; idPrefix: string }) {
+  const t = useT();
   return (
     <>
       <div className="flex min-w-40 flex-1 flex-col gap-1">
-        <label htmlFor={`${idPrefix}-name`} className="sr-only">{de.projectSettings.statusName}</label>
-        <input id={`${idPrefix}-name`} name="name" defaultValue={status?.name} maxLength={50} required placeholder={de.projectSettings.statusName}
+        <label htmlFor={`${idPrefix}-name`} className="sr-only">{t.projectSettings.statusName}</label>
+        <input id={`${idPrefix}-name`} name="name" defaultValue={status?.name} maxLength={50} required placeholder={t.projectSettings.statusName}
           className="h-8 rounded-[var(--radius-badge)] border border-border bg-surface px-2 text-sm" />
       </div>
-      <label htmlFor={`${idPrefix}-color`} className="sr-only">{de.projectSettings.statusColor}</label>
+      <label htmlFor={`${idPrefix}-color`} className="sr-only">{t.projectSettings.statusColor}</label>
       <select id={`${idPrefix}-color`} name="color" defaultValue={status?.color ?? "#3B82F6"} className="h-8 rounded-[var(--radius-badge)] border border-border bg-surface px-2 text-sm">
         {STATUS_COLORS.map((c) => (
-          <option key={c} value={c}>{de.projectSettings.colorName(c)}</option>
+          <option key={c} value={c}>{t.projectSettings.colorName(c)}</option>
         ))}
       </select>
-      <label htmlFor={`${idPrefix}-category`} className="sr-only">{de.projectSettings.category}</label>
+      <label htmlFor={`${idPrefix}-category`} className="sr-only">{t.projectSettings.category}</label>
       <select id={`${idPrefix}-category`} name="category" defaultValue={status?.category ?? "active"} className="h-8 rounded-[var(--radius-badge)] border border-border bg-surface px-2 text-sm">
-        <option value="open">{de.projectSettings.categories.open}</option>
-        <option value="active">{de.projectSettings.categories.active}</option>
-        <option value="done">{de.projectSettings.categories.done}</option>
+        <option value="open">{t.projectSettings.categories.open}</option>
+        <option value="active">{t.projectSettings.categories.active}</option>
+        <option value="done">{t.projectSettings.categories.done}</option>
       </select>
-      <label htmlFor={`${idPrefix}-wip`} className="sr-only">{de.projectSettings.wipLimit}</label>
+      <label htmlFor={`${idPrefix}-wip`} className="sr-only">{t.projectSettings.wipLimit}</label>
       <input
         id={`${idPrefix}-wip`}
         name="wipLimit"
@@ -90,8 +93,8 @@ function StatusFields({ status, idPrefix }: { status?: StatusData; idPrefix: str
         min={1}
         max={999}
         defaultValue={status?.wipLimit ?? ""}
-        placeholder={de.projectSettings.wipPlaceholder}
-        title={de.projectSettings.wipLimit}
+        placeholder={t.projectSettings.wipPlaceholder}
+        title={t.projectSettings.wipLimit}
         className="h-8 w-20 rounded-[var(--radius-badge)] border border-border bg-surface px-2 text-sm placeholder:text-muted"
       />
     </>
@@ -99,6 +102,7 @@ function StatusFields({ status, idPrefix }: { status?: StatusData; idPrefix: str
 }
 
 export function StatusRow({ status, isFirst, isLast, others, ...ref }: StatusRef & { status: StatusData; isFirst: boolean; isLast: boolean; others: Array<{ id: string; name: string }> }) {
+  const t = useT();
   const [state, action, pending] = useActionState<FormState, FormData>(updateStatusAction, {});
   const [delState, delAction, deleting] = useActionState<FormState, FormData>(deleteStatusAction, {});
   const idPrefix = `status-${status.id}`;
@@ -110,15 +114,15 @@ export function StatusRow({ status, isFirst, isLast, others, ...ref }: StatusRef
         <form action={action} className="flex flex-1 flex-wrap items-center gap-2">
           <Hidden {...ref} statusId={status.id} />
           <StatusFields status={status} idPrefix={idPrefix} />
-          <Button type="submit" size="sm" disabled={pending}>{de.common.save}</Button>
+          <Button type="submit" size="sm" disabled={pending}>{t.common.save}</Button>
         </form>
         <form action={moveStatusAction} className="flex">
           <Hidden {...ref} statusId={status.id} />
-          <button type="submit" name="direction" value="up" disabled={isFirst} aria-label={de.projectSettings.moveUp(status.name)}
+          <button type="submit" name="direction" value="up" disabled={isFirst} aria-label={t.projectSettings.moveUp(status.name)}
             className="flex size-8 items-center justify-center rounded text-muted hover:bg-bg disabled:opacity-30">
             <ChevronRight className="-rotate-90" />
           </button>
-          <button type="submit" name="direction" value="down" disabled={isLast} aria-label={de.projectSettings.moveDown(status.name)}
+          <button type="submit" name="direction" value="down" disabled={isLast} aria-label={t.projectSettings.moveDown(status.name)}
             className="flex size-8 items-center justify-center rounded text-muted hover:bg-bg disabled:opacity-30">
             <ChevronDown />
           </button>
@@ -126,10 +130,10 @@ export function StatusRow({ status, isFirst, isLast, others, ...ref }: StatusRef
       </div>
       <form action={delAction} className="mt-2 flex flex-wrap items-center gap-2 pl-4 text-xs text-muted">
         <Hidden {...ref} statusId={status.id} />
-        <span>{de.projectSettings.ticketCount(status.ticketCount)}</span>
+        <span>{t.projectSettings.ticketCount(status.ticketCount)}</span>
         {status.ticketCount > 0 ? (
           <>
-            <label htmlFor={`${idPrefix}-target`}>{de.projectSettings.moveTicketsTo}</label>
+            <label htmlFor={`${idPrefix}-target`}>{t.projectSettings.moveTicketsTo}</label>
             <select id={`${idPrefix}-target`} name="targetStatusId" className="h-7 rounded-[var(--radius-badge)] border border-border bg-surface px-1">
               {others.map((o) => (
                 <option key={o.id} value={o.id}>{o.name}</option>
@@ -137,8 +141,8 @@ export function StatusRow({ status, isFirst, isLast, others, ...ref }: StatusRef
             </select>
           </>
         ) : null}
-        <Button type="submit" variant="ghost" size="sm" disabled={deleting} aria-label={de.projectSettings.deleteStatus(status.name)}>
-          {de.common.delete}
+        <Button type="submit" variant="ghost" size="sm" disabled={deleting} aria-label={t.projectSettings.deleteStatus(status.name)}>
+          {t.common.delete}
         </Button>
       </form>
       <div className="pl-4">
@@ -149,6 +153,7 @@ export function StatusRow({ status, isFirst, isLast, others, ...ref }: StatusRef
 }
 
 export function NewStatusForm(ref: StatusRef) {
+  const t = useT();
   const [state, action, pending] = useActionState<FormState, FormData>(createStatusAction, {});
   const form = useRef<HTMLFormElement>(null);
   useEffect(() => {
@@ -158,7 +163,7 @@ export function NewStatusForm(ref: StatusRef) {
     <form ref={form} action={action} className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
       <Hidden {...ref} />
       <StatusFields idPrefix="new-status" />
-      <Button type="submit" size="sm" variant="primary" disabled={pending}>{de.projectSettings.addStatus}</Button>
+      <Button type="submit" size="sm" variant="primary" disabled={pending}>{t.projectSettings.addStatus}</Button>
       <div className="w-full">
         <Feedback state={state.fieldErrors?.name ? { error: state.fieldErrors.name } : state} />
       </div>

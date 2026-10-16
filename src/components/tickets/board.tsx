@@ -21,7 +21,7 @@ import type { TicketRow } from "@/db/queries/tickets";
 import { Avatar } from "@/components/ui/avatar";
 import { Plus } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { useLocale, useT } from "@/lib/i18n/client";
 import { MAX_TITLE } from "@/lib/limits";
 import { cardDndId, columnCards, columnDndId, computeCardMove, orderedStatuses, parseBoardId, wipState, type CardMove } from "./board-model";
 import { useProjectInfo } from "./context";
@@ -61,6 +61,7 @@ type Props = {
 };
 
 export function Board({ tickets, today, onOpen, onMove, onCreate }: Props) {
+  const t = useT();
   const { statuses, project } = useProjectInfo();
   const dndId = useId();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -80,14 +81,14 @@ export function Board({ tickets, today, onOpen, onMove, onCreate }: Props) {
   const describe = (dndId: string | number) => {
     const ref = parseBoardId(String(dndId));
     if (!ref) return "";
-    if (ref.kind === "column") return de.board.column(statuses.find((s) => s.id === ref.id)?.name ?? "");
+    if (ref.kind === "column") return t.board.column(statuses.find((s) => s.id === ref.id)?.name ?? "");
     return keyOf(ref.id);
   };
   const announcements: Announcements = {
-    onDragStart: ({ active }) => de.board.dnd.start(describe(active.id)),
-    onDragOver: ({ active, over }) => (over ? de.board.dnd.over(describe(active.id), describe(over.id)) : de.board.dnd.outside(describe(active.id))),
-    onDragEnd: ({ active, over }) => (over ? de.board.dnd.end(describe(active.id), describe(over.id)) : de.board.dnd.cancel(describe(active.id))),
-    onDragCancel: ({ active }) => de.board.dnd.cancel(describe(active.id)),
+    onDragStart: ({ active }) => t.board.dnd.start(describe(active.id)),
+    onDragOver: ({ active, over }) => (over ? t.board.dnd.over(describe(active.id), describe(over.id)) : t.board.dnd.outside(describe(active.id))),
+    onDragEnd: ({ active, over }) => (over ? t.board.dnd.end(describe(active.id), describe(over.id)) : t.board.dnd.cancel(describe(active.id))),
+    onDragCancel: ({ active }) => t.board.dnd.cancel(describe(active.id)),
   };
 
   function onDragStart(e: DragStartEvent) {
@@ -113,10 +114,10 @@ export function Board({ tickets, today, onOpen, onMove, onCreate }: Props) {
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onDragCancel={() => setActiveId(null)}
-      accessibility={{ announcements, screenReaderInstructions: { draggable: de.board.dnd.instructions } }}
+      accessibility={{ announcements, screenReaderInstructions: { draggable: t.board.dnd.instructions } }}
     >
       <div className="-mx-4 snap-x snap-proximity scroll-px-4 overflow-x-auto px-4 pb-4 md:-mx-6 md:snap-none md:px-6">
-        <div className="flex min-h-[60vh] gap-3" role="list" aria-label={de.board.label(project.name)}>
+        <div className="flex min-h-[60vh] gap-3" role="list" aria-label={t.board.label(project.name)}>
           {columns.map((s) => (
             <Column key={s.id} status={s} cards={columnCards(cards, s.id)} today={today} onOpen={onOpen} onCreate={(title) => onCreate(title, s.id)} />
           ))}
@@ -142,6 +143,7 @@ function Column({
   onOpen: (id: string) => void;
   onCreate: (title: string) => void;
 }) {
+  const t = useT();
   const { setNodeRef, isOver } = useDroppable({ id: columnDndId(status.id) });
   const wip = wipState(cards.length, status.wipLimit);
   const headingId = `col-${status.id}`;
@@ -162,14 +164,14 @@ function Column({
         <h2 id={headingId} className="text-[13px] font-semibold">{status.name}</h2>
         <span
           className={cn("ml-auto text-xs tabular-nums", wip === "over" ? "font-semibold text-prio-urgent-ink" : wip === "full" ? "text-prio-high-ink" : "text-muted")}
-          aria-label={status.wipLimit ? de.board.wipLabel(cards.length, status.wipLimit) : de.board.countLabel(cards.length)}
+          aria-label={status.wipLimit ? t.board.wipLabel(cards.length, status.wipLimit) : t.board.countLabel(cards.length)}
         >
           {status.wipLimit ? `${cards.length}/${status.wipLimit}` : cards.length}
         </span>
       </header>
       {wip === "over" ? (
         <p role="status" className="mx-3 mb-2 rounded-[var(--radius-badge)] bg-prio-urgent/10 px-2 py-1 text-xs text-prio-urgent-ink">
-          {de.board.wipOver(status.wipLimit!)}
+          {t.board.wipOver(status.wipLimit!)}
         </p>
       ) : null}
       <SortableContext items={cards.map((c) => cardDndId(c.id))} strategy={verticalListSortingStrategy}>
@@ -185,6 +187,7 @@ function Column({
 }
 
 function SortableCard({ ticket, today, onOpen }: { ticket: TicketRow; today: string; onOpen: (id: string) => void }) {
+  const t = useT();
   const pending = ticket.id.startsWith("temp-");
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cardDndId(ticket.id), disabled: pending });
   const { project } = useProjectInfo();
@@ -195,8 +198,8 @@ function SortableCard({ ticket, today, onOpen }: { ticket: TicketRow; today: str
         {...attributes}
         {...listeners}
         role="button"
-        aria-roledescription={de.board.cardRole}
-        aria-label={de.list.open(key, ticket.title)}
+        aria-roledescription={t.board.cardRole}
+        aria-label={t.list.open(key, ticket.title)}
         data-card={ticket.id}
         onClick={() => !pending && onOpen(ticket.id)}
         onKeyDown={(e) => {
@@ -216,6 +219,8 @@ function SortableCard({ ticket, today, onOpen }: { ticket: TicketRow; today: str
 }
 
 function CardBody({ ticket, today, lifted }: { ticket: TicketRow; today: string; lifted?: boolean }) {
+  const t = useT();
+  const locale = useLocale();
   const { project, members, labels, statuses } = useProjectInfo();
   const pending = ticket.id.startsWith("temp-");
   const key = pending ? `${project.key}-…` : `${project.key}-${ticket.number}`;
@@ -227,9 +232,9 @@ function CardBody({ ticket, today, lifted }: { ticket: TicketRow; today: string;
     <div className={cn("flex flex-col gap-2 rounded-[var(--radius-badge)] border border-border bg-surface p-2.5 text-[13px]", lifted && "rotate-1 shadow-float", pending && "opacity-60")}>
       <div className="flex items-center gap-2">
         <span className="font-mono text-[11px] text-muted">{key}</span>
-        <span className="ml-auto" title={de.priority[priorityKey(ticket.priority)]}>
+        <span className="ml-auto" title={t.priority[priorityKey(ticket.priority)]}>
           <PriorityIcon priority={ticket.priority} />
-          <span className="sr-only">{de.priority[priorityKey(ticket.priority)]}</span>
+          <span className="sr-only">{t.priority[priorityKey(ticket.priority)]}</span>
         </span>
       </div>
       <p className={cn("line-clamp-3", done && "text-muted line-through decoration-muted/50")}>{ticket.title}</p>
@@ -248,8 +253,8 @@ function CardBody({ ticket, today, lifted }: { ticket: TicketRow; today: string;
           <TicketMeta subtaskDone={ticket.subtaskDone} subtaskTotal={ticket.subtaskTotal} commentCount={ticket.commentCount} attachmentCount={ticket.attachmentCount} />
           {ticket.dueDate ? (
             <span className={cn(overdue ? "font-medium text-prio-urgent-ink" : "text-muted")}>
-              {formatDue(ticket.dueDate)}
-              {overdue ? <span className="sr-only"> – {de.list.due.overdue}</span> : null}
+              {formatDue(ticket.dueDate, locale)}
+              {overdue ? <span className="sr-only"> – {t.list.due.overdue}</span> : null}
             </span>
           ) : null}
           {assignee ? <Avatar user={assignee} size="sm" className="ml-auto" /> : null}
@@ -260,6 +265,7 @@ function CardBody({ ticket, today, lifted }: { ticket: TicketRow; today: string;
 }
 
 function ColumnQuickAdd({ statusName, onCreate }: { statusName: string; onCreate: (title: string) => void }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   if (!open) {
@@ -268,9 +274,9 @@ function ColumnQuickAdd({ statusName, onCreate }: { statusName: string; onCreate
         type="button"
         onClick={() => setOpen(true)}
         className="mx-2 mb-2 flex h-8 items-center gap-1.5 rounded-[var(--radius-badge)] px-2 text-[13px] text-muted hover:bg-surface hover:text-text"
-        aria-label={de.board.addIn(statusName)}
+        aria-label={t.board.addIn(statusName)}
       >
-        <Plus size={14} /> {de.board.add}
+        <Plus size={14} /> {t.board.add}
       </button>
     );
   }
@@ -284,7 +290,7 @@ function ColumnQuickAdd({ statusName, onCreate }: { statusName: string; onCreate
         setTitle("");
       }}
     >
-      <label className="sr-only" htmlFor={`add-${statusName}`}>{de.board.addIn(statusName)}</label>
+      <label className="sr-only" htmlFor={`add-${statusName}`}>{t.board.addIn(statusName)}</label>
       <textarea
         id={`add-${statusName}`}
         autoFocus
@@ -304,7 +310,7 @@ function ColumnQuickAdd({ statusName, onCreate }: { statusName: string; onCreate
             setOpen(false);
           }
         }}
-        placeholder={de.board.addPlaceholder}
+        placeholder={t.board.addPlaceholder}
         className="w-full resize-none rounded-[var(--radius-badge)] border border-accent bg-surface p-2 text-[13px] placeholder:text-muted"
       />
     </form>

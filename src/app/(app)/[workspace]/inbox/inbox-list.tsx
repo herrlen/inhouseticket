@@ -7,14 +7,17 @@ import type { NotificationRow } from "@/db/queries/notifications";
 import { Button } from "@/components/ui/button";
 import { relativeTime } from "@/lib/relative-time";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { useLocale, useT } from "@/lib/i18n/client";
+import type { Messages } from "@/lib/i18n/de";
 import { describeNotification } from "@/lib/notification-text";
 import { markNotificationsReadAction } from "../actions";
 
-const text = (n: NotificationRow) =>
-  describeNotification({ type: n.type, actor: n.actorName, key: n.ticketKey, title: n.ticketTitle, payload: n.payload });
+const text = (n: NotificationRow, t: Messages) =>
+  describeNotification({ type: n.type, actor: n.actorName, key: n.ticketKey, title: n.ticketTitle, payload: n.payload }, t);
 
 export function InboxList({ workspaceId, slug, items: initial }: { workspaceId: string; slug: string; items: NotificationRow[] }) {
+  const t = useT();
+  const locale = useLocale();
   const router = useRouter();
   const [items, setItems] = useState(initial);
   const [, startTransition] = useTransition();
@@ -29,13 +32,13 @@ export function InboxList({ workspaceId, slug, items: initial }: { workspaceId: 
     });
   };
 
-  if (items.length === 0) return <p className="rounded-[var(--radius-card)] border border-dashed border-border p-8 text-center text-muted">{de.inbox.empty}</p>;
+  if (items.length === 0) return <p className="rounded-[var(--radius-card)] border border-dashed border-border p-8 text-center text-muted">{t.inbox.empty}</p>;
 
   return (
     <div className="flex flex-col gap-2">
       {unread.length > 0 ? (
         <div className="flex justify-end">
-          <Button size="sm" variant="ghost" onClick={() => markRead()}>{de.inbox.markAll}</Button>
+          <Button size="sm" variant="ghost" onClick={() => markRead()}>{t.inbox.markAll}</Button>
         </div>
       ) : null}
       <ul className="rounded-[var(--radius-card)] border border-border bg-surface">
@@ -50,11 +53,11 @@ export function InboxList({ workspaceId, slug, items: initial }: { workspaceId: 
               >
                 <span aria-hidden className={cn("mt-1.5 size-2 shrink-0 rounded-full", n.readAt ? "bg-transparent" : "bg-accent")} />
                 <span className="min-w-0 flex-1">
-                  {text(n)}
-                  {!n.readAt ? <span className="sr-only"> ({de.notifications.unreadSr})</span> : null}
+                  {text(n, t)}
+                  {!n.readAt ? <span className="sr-only"> ({t.notifications.unreadSr})</span> : null}
                 </span>
                 {/* Relative time differs by a few seconds between server render and hydration – expected. */}
-                <time dateTime={n.createdAt} suppressHydrationWarning className="shrink-0 text-xs font-normal text-muted">{relativeTime(n.createdAt)}</time>
+                <time dateTime={n.createdAt} suppressHydrationWarning className="shrink-0 text-xs font-normal text-muted">{relativeTime(n.createdAt, undefined, locale)}</time>
               </Link>
             </li>
           );

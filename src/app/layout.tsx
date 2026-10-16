@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { connection } from "next/server";
 import { env } from "@/lib/env";
-import { de } from "@/lib/i18n/de";
+import { LocaleProvider } from "@/lib/i18n/locale-provider";
+import { getLocale, getT } from "@/lib/i18n/server";
 import "./globals.css";
 
 // next/font self-hosts the files at build time – no requests to Google at runtime.
@@ -15,13 +16,14 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 // Indexing is switched on at launch via SITE_INDEXABLE (env read per request, not at build time).
-export function generateMetadata(): Metadata {
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getT()]);
   return {
     metadataBase: new URL(env.APP_URL),
     title: { default: "inhouseticket", template: "%s · inhouseticket" },
-    description: de.landing.subtitle,
+    description: t.landing.subtitle,
     robots: env.SITE_INDEXABLE ? { index: true, follow: true } : { index: false, follow: false },
-    openGraph: { type: "website", siteName: "inhouseticket", locale: "de_DE", title: de.landing.title, description: de.landing.subtitle },
+    openGraph: { type: "website", siteName: "inhouseticket", locale: locale === "en" ? "en_GB" : "de_DE", title: t.landing.title, description: t.landing.subtitle },
     twitter: { card: "summary_large_image" },
   };
 }
@@ -36,9 +38,12 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   // Every page renders per request: the CSP nonce from src/proxy.ts only reaches dynamic pages.
   await connection();
+  const locale = await getLocale();
   return (
-    <html lang="de" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body>{children}</body>
+    <html lang={locale} className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <body>
+        <LocaleProvider locale={locale}>{children}</LocaleProvider>
+      </body>
     </html>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
 import { Close } from "./icons";
 
 export type DialogProps = {
@@ -22,6 +22,7 @@ export type DialogProps = {
  * browser. Clicking the backdrop closes it as well.
  */
 export function Dialog({ open, onClose, title, hideTitle, children, placement = "center", className }: DialogProps) {
+  const t = useT();
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -57,7 +58,7 @@ export function Dialog({ open, onClose, title, hideTitle, children, placement = 
             <h2 id={titleId} className={cn("font-semibold", hideTitle && "sr-only")}>
               {title}
             </h2>
-            <button type="button" onClick={onClose} aria-label={de.common.close} className="ml-auto rounded-[var(--radius-badge)] p-1 text-muted hover:bg-bg hover:text-text">
+            <button type="button" onClick={onClose} aria-label={t.common.close} className="ml-auto rounded-[var(--radius-badge)] p-1 text-muted hover:bg-bg hover:text-text">
               <Close />
             </button>
           </div>

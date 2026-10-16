@@ -5,9 +5,11 @@ import { PriorityIcon } from "@/components/tickets/pickers";
 import { listAssignableMembers, listMyTasks, type MyTask } from "@/db/queries/tickets";
 import { requireMember } from "@/lib/authz";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { getLocale, getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = { title: "Meine Aufgaben" };
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await getT()).me.title };
+}
 
 type Props = { params: Promise<{ workspace: string }>; searchParams: Promise<{ user?: string; project?: string }> };
 
@@ -15,6 +17,7 @@ const ORDER: DueBucket[] = ["overdue", "today", "week", "later", "none"];
 const PRIORITY_KEYS = ["none", "low", "medium", "high", "urgent"] as const;
 
 export default async function MyTasksPage({ params, searchParams }: Props) {
+  const t = await getT();
   const { workspace: slug } = await params;
   const { user: userParam, project: projectKey } = await searchParams;
   const ctx = await requireMember({ slug });
@@ -28,12 +31,12 @@ export default async function MyTasksPage({ params, searchParams }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-6">
-      <h1 className="mb-1 text-xl font-semibold">{other ? de.me.titleOf(other.name) : de.me.title}</h1>
-      <p className="mb-6 text-muted">{tasks.length === 0 ? (other ? de.me.emptyOther : de.me.empty) : de.me.count(tasks.length)}</p>
+      <h1 className="mb-1 text-xl font-semibold">{other ? t.me.titleOf(other.name) : t.me.title}</h1>
+      <p className="mb-6 text-muted">{tasks.length === 0 ? (other ? t.me.emptyOther : t.me.empty) : t.me.count(tasks.length)}</p>
       {groups.map((g) => (
         <section key={g.bucket} aria-labelledby={`me-${g.bucket}`} className="mb-6">
           <h2 id={`me-${g.bucket}`} className={cn("mb-2 text-[13px] font-semibold", g.bucket === "overdue" && "text-prio-urgent-ink")}>
-            {de.list.due[g.bucket]} <span className="font-normal text-muted">{g.tasks.length}</span>
+            {t.list.due[g.bucket]} <span className="font-normal text-muted">{g.tasks.length}</span>
           </h2>
           <ul className="rounded-[var(--radius-card)] border border-border bg-surface">
             {g.tasks.map((t) => (
@@ -46,8 +49,9 @@ export default async function MyTasksPage({ params, searchParams }: Props) {
   );
 }
 
-function TaskRow({ task, slug, overdue }: { task: MyTask; slug: string; overdue: boolean }) {
-  const prio = de.priority[PRIORITY_KEYS[task.priority] ?? "none"];
+async function TaskRow({ task, slug, overdue }: { task: MyTask; slug: string; overdue: boolean }) {
+  const [t, locale] = await Promise.all([getT(), getLocale()]);
+  const prio = t.priority[PRIORITY_KEYS[task.priority] ?? "none"];
   return (
     <li className="border-b border-border last:border-0">
       <Link href={`/${slug}/p/${task.projectKey}?t=${task.key}`} className="flex items-center gap-3 px-4 py-2 text-[13px] hover:bg-bg">
@@ -63,7 +67,7 @@ function TaskRow({ task, slug, overdue }: { task: MyTask; slug: string; overdue:
         </span>
         <span className="w-24 shrink-0 text-xs text-muted">{task.statusName}</span>
         <span className={cn("w-14 shrink-0 text-right text-xs tabular-nums", overdue ? "font-medium text-prio-urgent-ink" : "text-muted")}>
-          {formatDue(task.dueDate)}
+          {formatDue(task.dueDate, locale)}
         </span>
       </Link>
     </li>

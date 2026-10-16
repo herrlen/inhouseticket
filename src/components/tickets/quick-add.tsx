@@ -2,7 +2,7 @@
 
 import { forwardRef, useState } from "react";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { useLocale, useT } from "@/lib/i18n/client";
 import { MAX_TITLE } from "@/lib/limits";
 import { parseQuickAdd, type QuickAddResult } from "@/lib/quick-add";
 import { useProjectInfo } from "./context";
@@ -10,9 +10,11 @@ import { todayInBerlin } from "./list-model";
 
 /** Single-line ticket creation with @person !prio ^date. Counter n/500 (KONZEPT §5.5). */
 export const QuickAdd = forwardRef<HTMLInputElement, { onCreate: (ticket: QuickAddResult) => void }>(function QuickAdd({ onCreate }, ref) {
+  const t = useT();
+  const locale = useLocale();
   const { members, currentUserId } = useProjectInfo();
   const [text, setText] = useState("");
-  const parsed = parseQuickAdd(text, { members, today: todayInBerlin(), currentUserId });
+  const parsed = parseQuickAdd(text, { members, today: todayInBerlin(), currentUserId, locale });
   const near = text.length > MAX_TITLE * 0.8;
   return (
     <form
@@ -26,7 +28,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, { onCreate: (ticket: QuickA
     >
       <div className="flex items-center gap-2 rounded-[var(--radius-card)] border border-border bg-surface px-3 focus-within:border-accent focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--focus)]">
         <span aria-hidden className="text-muted">+</span>
-        <label htmlFor="quick-add" className="sr-only">{de.list.quickAddLabel}</label>
+        <label htmlFor="quick-add" className="sr-only">{t.list.quickAddLabel}</label>
         <input
           ref={ref}
           id="quick-add"
@@ -39,7 +41,7 @@ export const QuickAdd = forwardRef<HTMLInputElement, { onCreate: (ticket: QuickA
               e.currentTarget.blur();
             }
           }}
-          placeholder={de.list.quickAddPlaceholder}
+          placeholder={t.list.quickAddPlaceholder}
           aria-describedby="quick-add-count quick-add-help"
           className="h-10 min-w-0 flex-1 bg-transparent text-sm placeholder:text-muted focus:outline-none"
         />
@@ -50,13 +52,13 @@ export const QuickAdd = forwardRef<HTMLInputElement, { onCreate: (ticket: QuickA
       </div>
       <p id="quick-add-help" className="flex min-h-5 flex-wrap items-center gap-1.5 px-1 text-xs text-muted" aria-live="polite">
         {parsed.tokens.length > 0 ? (
-          parsed.tokens.map((t) => (
-            <span key={t.kind} className="rounded-full border border-border bg-surface px-2 py-0.5 text-text">
-              {de.quickAdd[t.kind]}: {t.label}
+          parsed.tokens.map((tok) => (
+            <span key={tok.kind} className="rounded-full border border-border bg-surface px-2 py-0.5 text-text">
+              {t.quickAdd[tok.kind]}: {tok.label}
             </span>
           ))
         ) : text ? null : (
-          <span>{de.quickAdd.hint}</span>
+          <span>{t.quickAdd.hint}</span>
         )}
       </p>
     </form>

@@ -12,7 +12,7 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 import { shrinkImage } from "@/lib/compress-image";
 import { relativeTime } from "@/lib/relative-time";
-import { de } from "@/lib/i18n/de";
+import { useLocale, useT } from "@/lib/i18n/client";
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_TICKET, MAX_COMMENT, MAX_DESCRIPTION, MAX_SUBTASKS, MAX_TITLE } from "@/lib/limits";
 import { useProjectInfo } from "./context";
 import { partsKey, type usePartActions } from "./use-parts";
@@ -27,6 +27,7 @@ const kb = (bytes: number) => `${Math.round(bytes / 1024)} KB`;
 // ---------------------------------------------------------------------------
 
 export function DescriptionField({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const commit = () => {
@@ -36,14 +37,14 @@ export function DescriptionField({ value, onSave }: { value: string; onSave: (v:
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between">
-        <span id="desc-label" className="text-[13px] font-medium">{de.detail.description}</span>
+        <span id="desc-label" className="text-[13px] font-medium">{t.detail.description}</span>
         {editing ? <span className={cn("text-xs tabular-nums", draft.length > MAX_DESCRIPTION * 0.9 ? "text-prio-high-ink" : "text-muted")}>{draft.length}/{MAX_DESCRIPTION}</span> : null}
       </div>
       {editing ? (
         <>
           <textarea
             aria-labelledby="desc-label"
-            aria-label={de.detail.description}
+            aria-label={t.detail.description}
             autoFocus
             value={draft}
             maxLength={MAX_DESCRIPTION}
@@ -55,10 +56,10 @@ export function DescriptionField({ value, onSave }: { value: string; onSave: (v:
                 commit();
               }
             }}
-            placeholder={de.detail.descriptionPlaceholder}
+            placeholder={t.detail.descriptionPlaceholder}
             className="field-sizing-content min-h-28 resize-y rounded-[var(--radius-badge)] border border-accent bg-surface p-2 text-sm placeholder:text-muted"
           />
-          <p className="text-xs text-muted">{de.detail.markdownHint}</p>
+          <p className="text-xs text-muted">{t.detail.markdownHint}</p>
         </>
       ) : (
         <button
@@ -67,10 +68,10 @@ export function DescriptionField({ value, onSave }: { value: string; onSave: (v:
             setDraft(value);
             setEditing(true);
           }}
-          aria-label={value ? de.detail.editDescription : de.detail.addDescription}
+          aria-label={value ? t.detail.editDescription : t.detail.addDescription}
           className="min-h-12 rounded-[var(--radius-badge)] border border-transparent p-2 text-left hover:border-border"
         >
-          {value ? <Markdown source={value} /> : <span className="text-sm text-muted">{de.detail.addDescription}</span>}
+          {value ? <Markdown source={value} /> : <span className="text-sm text-muted">{t.detail.addDescription}</span>}
         </button>
       )}
     </div>
@@ -82,14 +83,15 @@ export function DescriptionField({ value, onSave }: { value: string; onSave: (v:
 // ---------------------------------------------------------------------------
 
 export function Subtasks({ subtasks, actions }: { subtasks: Parts["subtasks"]; actions: Actions }) {
+  const t = useT();
   const [title, setTitle] = useState("");
   const full = subtasks.length >= MAX_SUBTASKS;
   const done = subtasks.filter((s) => s.done).length;
   return (
     <section aria-labelledby="subtasks-heading" className="flex flex-col gap-1">
       <div className="flex items-center justify-between">
-        <h3 id="subtasks-heading" className="text-[13px] font-medium">{de.detail.subtasks}</h3>
-        <span className="text-xs text-muted tabular-nums" aria-label={de.detail.subtaskProgress(done, subtasks.length)}>
+        <h3 id="subtasks-heading" className="text-[13px] font-medium">{t.detail.subtasks}</h3>
+        <span className="text-xs text-muted tabular-nums" aria-label={t.detail.subtaskProgress(done, subtasks.length)}>
           {done}/{subtasks.length} · {subtasks.length}/{MAX_SUBTASKS}
         </span>
       </div>
@@ -108,17 +110,17 @@ export function Subtasks({ subtasks, actions }: { subtasks: Parts["subtasks"]; a
           setTitle("");
         }}
       >
-        <label htmlFor="new-subtask" className="sr-only">{de.detail.newSubtask}</label>
+        <label htmlFor="new-subtask" className="sr-only">{t.detail.newSubtask}</label>
         <input
           id="new-subtask"
           value={title}
           maxLength={MAX_TITLE}
           disabled={full}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder={full ? de.detail.subtasksFull : de.detail.newSubtaskPlaceholder}
+          placeholder={full ? t.detail.subtasksFull : t.detail.newSubtaskPlaceholder}
           className="h-8 flex-1 rounded-[var(--radius-badge)] border border-border bg-surface px-2 text-[13px] placeholder:text-muted disabled:opacity-60"
         />
-        <Button type="submit" size="sm" disabled={full || !title.trim()} aria-label={de.detail.newSubtask}>
+        <Button type="submit" size="sm" disabled={full || !title.trim()} aria-label={t.detail.newSubtask}>
           <Plus size={14} />
         </Button>
       </form>
@@ -129,6 +131,7 @@ export function Subtasks({ subtasks, actions }: { subtasks: Parts["subtasks"]; a
 type Parts = import("./use-parts").Parts;
 
 function SubtaskItem({ subtask, actions }: { subtask: Parts["subtasks"][number]; actions: Actions }) {
+  const t = useT();
   const [title, setTitle] = useState(subtask.title);
   // Local echo so the checkbox flips instantly; resyncs when the server state changes.
   const [done, setDone] = useState(subtask.done);
@@ -148,13 +151,13 @@ function SubtaskItem({ subtask, actions }: { subtask: Parts["subtasks"][number];
           setDone(e.target.checked);
           actions.toggleSubtask.mutate({ id: subtask.id, done: e.target.checked });
         }}
-        aria-label={de.detail.subtaskDone(subtask.title)}
+        aria-label={t.detail.subtaskDone(subtask.title)}
         className="size-4 accent-[var(--accent)]"
       />
       <input
         value={title}
         maxLength={MAX_TITLE}
-        aria-label={de.detail.subtaskTitle}
+        aria-label={t.detail.subtaskTitle}
         onChange={(e) => setTitle(e.target.value)}
         onBlur={() => {
           const t = title.trim();
@@ -167,7 +170,7 @@ function SubtaskItem({ subtask, actions }: { subtask: Parts["subtasks"][number];
       <button
         type="button"
         onClick={() => actions.removeSubtask.mutate(subtask.id)}
-        aria-label={de.detail.removeSubtask(subtask.title)}
+        aria-label={t.detail.removeSubtask(subtask.title)}
         className="rounded p-1 text-muted opacity-0 group-hover:opacity-100 hover:text-text focus-visible:opacity-100"
       >
         <Close size={12} />
@@ -181,6 +184,7 @@ function SubtaskItem({ subtask, actions }: { subtask: Parts["subtasks"][number];
 // ---------------------------------------------------------------------------
 
 export function Attachments({ workspaceId, ticketId, attachments, manageAll, actions }: { workspaceId: string; ticketId: string; attachments: AttachmentRow[]; manageAll: boolean; actions: Actions }) {
+  const t = useT();
   const { currentUserId } = useProjectInfo();
   const { project } = useProjectInfo();
   const qc = useQueryClient();
@@ -194,19 +198,19 @@ export function Attachments({ workspaceId, ticketId, attachments, manageAll, act
   async function upload(files: File[]) {
     for (const original of files) {
       if (attachments.length >= MAX_ATTACHMENTS_PER_TICKET) break;
-      setBusy(original.size > MAX_ATTACHMENT_BYTES ? de.detail.shrinking(original.name) : de.detail.uploading(original.name));
+      setBusy(original.size > MAX_ATTACHMENT_BYTES ? t.detail.shrinking(original.name) : t.detail.uploading(original.name));
       const file = await shrinkImage(original, MAX_ATTACHMENT_BYTES);
       if (!file) {
-        toast({ message: de.detail.cannotShrink(original.name), tone: "error" });
+        toast({ message: t.detail.cannotShrink(original.name), tone: "error" });
         continue;
       }
-      setBusy(de.detail.uploading(file.name));
+      setBusy(t.detail.uploading(file.name));
       const body = new FormData();
       body.set("file", file);
       const res = await fetch(`/api/w/${workspaceId}/tickets/${ticketId}/attachments`, { method: "POST", body });
       if (!res.ok) {
         const err = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
-        toast({ message: err?.error?.message ?? de.explorer.saveFailed, tone: "error" });
+        toast({ message: err?.error?.message ?? t.explorer.saveFailed, tone: "error" });
       }
     }
     setBusy(null);
@@ -232,14 +236,14 @@ export function Attachments({ workspaceId, ticketId, attachments, manageAll, act
       }}
     >
       <div className="flex items-center justify-between">
-        <h3 id="attachments-heading" className="text-[13px] font-medium">{de.detail.attachments}</h3>
+        <h3 id="attachments-heading" className="text-[13px] font-medium">{t.detail.attachments}</h3>
         <span className="text-xs text-muted tabular-nums">{attachments.length}/{MAX_ATTACHMENTS_PER_TICKET}</span>
       </div>
       {attachments.length > 0 ? (
         <ul className="grid grid-cols-3 gap-2">
           {attachments.map((a) => (
             <li key={a.id} className="group relative">
-              <button type="button" onClick={() => setPreview(a)} aria-label={de.detail.openImage(a.fileName)} className="block w-full overflow-hidden rounded-[var(--radius-badge)] border border-border bg-bg">
+              <button type="button" onClick={() => setPreview(a)} aria-label={t.detail.openImage(a.fileName)} className="block w-full overflow-hidden rounded-[var(--radius-badge)] border border-border bg-bg">
                 {/* eslint-disable-next-line @next/next/no-img-element -- member-only API route, no optimizer */}
                 <img src={`/api/w/${workspaceId}/attachments/${a.key}`} alt={a.fileName} loading="lazy" width={a.width} height={a.height} className="aspect-square w-full object-cover" />
               </button>
@@ -247,7 +251,7 @@ export function Attachments({ workspaceId, ticketId, attachments, manageAll, act
               <button
                 type="button"
                 onClick={() => actions.removeAttachment.mutate(a.id)}
-                aria-label={de.detail.removeAttachment(a.fileName)}
+                aria-label={t.detail.removeAttachment(a.fileName)}
                 className="absolute top-1 right-1 rounded-full bg-surface/90 p-1 text-muted opacity-0 shadow-float group-hover:opacity-100 hover:text-text focus-visible:opacity-100"
               >
                 <Close size={12} />
@@ -272,9 +276,9 @@ export function Attachments({ workspaceId, ticketId, attachments, manageAll, act
           }}
         />
         <Button size="sm" disabled={full || Boolean(busy)} onClick={() => input.current?.click()}>
-          <Plus size={14} /> {de.detail.addImage}
+          <Plus size={14} /> {t.detail.addImage}
         </Button>
-        <span className="text-xs text-muted" aria-live="polite">{busy ?? de.detail.imageHint}</span>
+        <span className="text-xs text-muted" aria-live="polite">{busy ?? t.detail.imageHint}</span>
       </div>
       <Dialog open={Boolean(preview)} onClose={() => setPreview(null)} title={preview?.fileName ?? ""} className="w-[min(64rem,calc(100vw-2rem))]">
         {preview ? (
@@ -294,10 +298,11 @@ export function Attachments({ workspaceId, ticketId, attachments, manageAll, act
 // ---------------------------------------------------------------------------
 
 export function Comments({ comments, actions }: { comments: CommentRow[]; actions: Actions }) {
+  const t = useT();
   const { currentUserId } = useProjectInfo();
   return (
     <div className="flex flex-col gap-4">
-      {comments.length === 0 ? <p className="text-xs text-muted">{de.detail.noComments}</p> : null}
+      {comments.length === 0 ? <p className="text-xs text-muted">{t.detail.noComments}</p> : null}
       <ol className="flex flex-col gap-4">
         {comments.map((c) => (
           <CommentItem key={c.id} comment={c} mine={c.authorId === currentUserId} actions={actions} />
@@ -309,6 +314,8 @@ export function Comments({ comments, actions }: { comments: CommentRow[]; action
 }
 
 function CommentItem({ comment, mine, actions }: { comment: CommentRow; mine: boolean; actions: Actions }) {
+  const t = useT();
+  const locale = useLocale();
   const [editing, setEditing] = useState(false);
   return (
     <li className="flex gap-2">
@@ -317,14 +324,14 @@ function CommentItem({ comment, mine, actions }: { comment: CommentRow; mine: bo
         <p className="text-xs">
           <span className="font-medium">{comment.authorName}</span>{" "}
           <span className="text-muted">
-            · <time dateTime={comment.createdAt}>{relativeTime(comment.createdAt)}</time>
-            {comment.editedAt ? ` · ${de.detail.edited}` : ""}
+            · <time dateTime={comment.createdAt}>{relativeTime(comment.createdAt, undefined, locale)}</time>
+            {comment.editedAt ? ` · ${t.detail.edited}` : ""}
           </span>
         </p>
         {editing ? (
           <CommentComposer
             initial={comment.body}
-            submitLabel={de.common.save}
+            submitLabel={t.common.save}
             onCancel={() => setEditing(false)}
             onSubmit={(body) => {
               actions.editComment.mutate({ id: comment.id, body });
@@ -336,8 +343,8 @@ function CommentItem({ comment, mine, actions }: { comment: CommentRow; mine: bo
         )}
         {mine && !editing ? (
           <div className="mt-1 flex gap-3 text-xs text-muted">
-            <button type="button" className="hover:text-text hover:underline" onClick={() => setEditing(true)}>{de.detail.edit}</button>
-            <button type="button" className="hover:text-text hover:underline" onClick={() => actions.removeComment.mutate(comment.id)}>{de.common.delete}</button>
+            <button type="button" className="hover:text-text hover:underline" onClick={() => setEditing(true)}>{t.detail.edit}</button>
+            <button type="button" className="hover:text-text hover:underline" onClick={() => actions.removeComment.mutate(comment.id)}>{t.common.delete}</button>
           </div>
         ) : null}
       </div>
@@ -359,6 +366,7 @@ export function CommentComposer({
   submitLabel?: string;
   onCancel?: () => void;
 }) {
+  const t = useT();
   const { members } = useProjectInfo();
   const [body, setBody] = useState(initial);
   const [query, setQuery] = useState<{ start: number; text: string } | null>(null);
@@ -431,7 +439,7 @@ export function CommentComposer({
 
   return (
     <div className="relative flex flex-col gap-1">
-      <label htmlFor={`${listId}-input`} className="sr-only">{de.detail.commentLabel}</label>
+      <label htmlFor={`${listId}-input`} className="sr-only">{t.detail.commentLabel}</label>
       <textarea
         ref={area}
         id={`${listId}-input`}
@@ -443,7 +451,7 @@ export function CommentComposer({
         value={body}
         maxLength={MAX_COMMENT}
         rows={2}
-        placeholder={de.detail.commentPlaceholder}
+        placeholder={t.detail.commentPlaceholder}
         onChange={(e) => {
           setBody(e.target.value);
           detect(e.target.value, e.target.selectionStart);
@@ -453,7 +461,7 @@ export function CommentComposer({
         className="field-sizing-content min-h-16 resize-y rounded-[var(--radius-badge)] border border-border bg-surface p-2 text-sm placeholder:text-muted"
       />
       {open ? (
-        <ul id={listId} role="listbox" aria-label={de.detail.mentionList} className="absolute top-full left-0 z-20 mt-1 w-64 rounded-[var(--radius-card)] border border-border bg-surface p-1 shadow-float">
+        <ul id={listId} role="listbox" aria-label={t.detail.mentionList} className="absolute top-full left-0 z-20 mt-1 w-64 rounded-[var(--radius-card)] border border-border bg-surface p-1 shadow-float">
           {matches.map((m, i) => (
             <li
               key={m.id}
@@ -473,11 +481,11 @@ export function CommentComposer({
         </ul>
       ) : null}
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-muted">{de.detail.commentHint}</span>
+        <span className="text-xs text-muted">{t.detail.commentHint}</span>
         <div className="flex gap-2">
-          {onCancel ? <Button size="sm" variant="ghost" onClick={onCancel}>{de.common.cancel}</Button> : null}
+          {onCancel ? <Button size="sm" variant="ghost" onClick={onCancel}>{t.common.cancel}</Button> : null}
           <Button size="sm" variant="primary" disabled={pending || !body.trim()} onClick={submit}>
-            {submitLabel ?? de.detail.send}
+            {submitLabel ?? t.detail.send}
           </Button>
         </div>
       </div>

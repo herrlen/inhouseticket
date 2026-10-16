@@ -32,10 +32,16 @@ und Scope, `docs/KONZEPT.md` Produkt, Design und Datenmodell.
 - **Server Components sind Standard.** `"use client"` nur wo Interaktion es erzwingt, so tief im
   Baum wie möglich.
 - Keine Geschäftslogik in Komponenten: Komponente rendert, `lib/` rechnet, `db/queries/` holt.
-- Datum/Zahlen nur über `Intl` (Locale `de-DE`), nie handgebaute Strings.
+- Datum/Zahlen nur über `Intl` (Locale `de-DE`, englisch `en-GB` via `intlLocale()`), nie handgebaute Strings.
 - Farben, Radien, Abstände nur über Design-Tokens (CSS-Variablen / Tailwind-Theme), keine Literale.
 - Nutzersichtbare Texte nicht verstreut hartcodieren: gesammelt in `src/lib/i18n/de.ts`
-  (i18n-fähig, CLAUDE.md Regel 6).
+  (CLAUDE.md Regel 6), englisch in `src/lib/i18n/en.ts` – gleiche Schlüssel, der Typ `Messages`
+  und `i18n.test.ts` erzwingen das. Deutsch ist Standard; der Umschalter DE | EN setzt das
+  Cookie `lang` (Server Action, kein Redirect nach `Accept-Language`). Server-Code liest Texte mit
+  `await getT()` (`@/lib/i18n/server`), Client-Komponenten mit `useT()` (`@/lib/i18n/client`);
+  Englisch lädt im Browser als eigener Chunk nach. Datum/Zahl über `intlLocale(locale)`.
+  Rechtstexte bleiben deutsch (mit englischem Hinweis); Zod-Meldungen bleiben deutsch und werden
+  am Server-Rand mit `t.validation()` übersetzt – neue Meldung ⇒ Eintrag in `en.ts`.
 - Primitives aus `src/components/ui/` zuerst prüfen, bevor etwas Neues entsteht – jedes gibt es genau einmal.
 - Richtwert: Komponente ≤ 200 Zeilen, Route-Handler ≤ 120 Zeilen, sonst aufteilen.
 

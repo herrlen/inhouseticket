@@ -16,19 +16,21 @@ import {
 } from "@/db/queries/ticket-parts";
 import { hasRole, requireMember } from "@/lib/authz";
 import { MAX_COMMENT } from "@/lib/limits";
-import { de } from "@/lib/i18n/de";
+import { getT } from "@/lib/i18n/server";
 import { labelSchema, ticketTitleSchema } from "@/lib/validation/ticket";
 
 export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
-function fail(e: unknown): { ok: false; error: string } {
-  if (e instanceof TicketError) return { ok: false, error: de.tickets.errors[e.code] };
-  if (e instanceof PartError) return { ok: false, error: de.parts.errors[e.code] };
+async function fail(e: unknown): Promise<{ ok: false; error: string }> {
+  const t = await getT();
+  if (e instanceof TicketError) return { ok: false, error: t.tickets.errors[e.code] };
+  if (e instanceof PartError) return { ok: false, error: t.parts.errors[e.code] };
   throw e;
 }
 
-function issue(error: z.ZodError): { ok: false; error: string } {
-  return { ok: false, error: error.issues[0]?.message ?? de.common.invalidInput };
+async function issue(error: z.ZodError): Promise<{ ok: false; error: string }> {
+  const t = await getT();
+  return { ok: false, error: t.validation(error.issues[0]?.message ?? t.common.invalidInput) };
 }
 
 export async function createLabelAction(input: { workspaceId: string; projectId: string; name: string; color: string }): Promise<ActionResult<LabelRow>> {

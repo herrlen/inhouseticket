@@ -6,7 +6,7 @@ import { Dropdown, type DropdownItem } from "@/components/ui/dropdown";
 import { Grip, More } from "@/components/ui/icons";
 import { useShell } from "@/components/shell/shell-context";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
 import { SortableItem } from "./dnd-bridge";
 import { projectDndId, type FolderItem, type ProjectItem } from "./model";
 
@@ -27,6 +27,7 @@ export function ProjectRow(props: Props) {
 }
 
 function SortableProjectRow(props: Props) {
+  const t = useT();
   return (
     <SortableItem id={projectDndId(props.project.id)}>
       {(s) => (
@@ -37,7 +38,7 @@ function SortableProjectRow(props: Props) {
               <button
                 ref={s.setActivatorNodeRef}
                 type="button"
-                aria-label={de.explorer.dragProject(props.project.name)}
+                aria-label={t.explorer.dragProject(props.project.name)}
                 className="flex size-5 shrink-0 cursor-grab items-center justify-center rounded text-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 active:cursor-grabbing"
                 {...s.handleProps}
               >
@@ -52,19 +53,20 @@ function SortableProjectRow(props: Props) {
 }
 
 function ProjectRowView({ project, folders, favorite, onToggleFavorite, onMoveTo, onArchive, handle }: Props & { handle?: React.ReactNode }) {
+  const t = useT();
   const { slug, canAdmin } = useShell();
   const router = useRouter();
   const href = `/${slug}/p/${project.key}`;
   const active = usePathname().startsWith(href);
 
   const items: DropdownItem[] = [
-    { label: favorite ? de.explorer.unfavorite : de.explorer.favorite, onSelect: () => onToggleFavorite(project.id) },
-    { label: de.explorer.settings, onSelect: () => router.push(`${href}/settings`) },
+    { label: favorite ? t.explorer.unfavorite : t.explorer.favorite, onSelect: () => onToggleFavorite(project.id) },
+    { label: t.explorer.settings, onSelect: () => router.push(`${href}/settings`) },
     ...folders
       .filter((f) => f.id !== project.folderId)
-      .map((f) => ({ label: de.explorer.moveTo(f.name), onSelect: () => onMoveTo(project.id, f.id) })),
-    ...(project.folderId ? [{ label: de.explorer.moveToRoot, onSelect: () => onMoveTo(project.id, null) }] : []),
-    ...(canAdmin ? [{ label: de.explorer.archive, onSelect: () => onArchive(project.id), danger: true }] : []),
+      .map((f) => ({ label: t.explorer.moveTo(f.name), onSelect: () => onMoveTo(project.id, f.id) })),
+    ...(project.folderId ? [{ label: t.explorer.moveToRoot, onSelect: () => onMoveTo(project.id, null) }] : []),
+    ...(canAdmin ? [{ label: t.explorer.archive, onSelect: () => onArchive(project.id), danger: true }] : []),
   ];
 
   const row = (
@@ -75,7 +77,7 @@ function ProjectRowView({ project, folders, favorite, onToggleFavorite, onMoveTo
         {project.icon ? <span aria-hidden>{project.icon}</span> : null}
         <span className="truncate">{project.name}</span>
         {project.openCount > 0 ? (
-          <span className="ml-auto text-xs text-muted tabular-nums" aria-label={de.explorer.openCount(project.openCount)}>
+          <span className="ml-auto text-xs text-muted tabular-nums" aria-label={t.explorer.openCount(project.openCount)}>
             {project.openCount}
           </span>
         ) : null}
@@ -83,7 +85,7 @@ function ProjectRowView({ project, folders, favorite, onToggleFavorite, onMoveTo
       <Dropdown
         align="end"
         trigger={<More />}
-        triggerLabel={de.explorer.projectMenu(project.name)}
+        triggerLabel={t.explorer.projectMenu(project.name)}
         triggerClassName="flex size-6 shrink-0 items-center justify-center rounded text-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100 hover:bg-border/60"
         items={items}
       />

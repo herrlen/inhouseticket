@@ -3,17 +3,17 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LegalLinks } from "@/components/legal-links";
 import { OPERATOR } from "@/lib/legal";
-import { de } from "@/lib/i18n/de";
+import { LanguageToggle } from "@/components/language-toggle";
+import { getLocale, getT } from "@/lib/i18n/server";
 import { SOURCE_IDS, SOURCE_NAMES } from "@/lib/import/source";
 import { getSession } from "@/lib/session";
 import { MatomoTracker } from "@/components/matomo-tracker";
 
-export const metadata: Metadata = {
-  title: { absolute: "inhouseticket – Tickets für dein Team" },
-  description: de.landing.subtitle,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = (await getT()).landing;
+  return { title: { absolute: t.metaTitle }, description: t.subtitle };
+}
 
-const t = de.landing;
 // Screenshots come from e2e/landing-screenshots.spec.ts (demo workspace, light and dark).
 const SHOT = { width: 1360, height: 860 } as const;
 const DOTS = ["bg-p-coral", "bg-p-blue", "bg-p-mint", "bg-p-violet", "bg-p-sun", "bg-p-lime"];
@@ -37,6 +37,8 @@ function Screenshot({ name, alt, priority = false }: { name: string; alt: string
 
 export default async function Home() {
   if (await getSession()) redirect("/start");
+  const [all, locale] = await Promise.all([getT(), getLocale()]);
+  const t = all.landing;
 
   return (
     <div className="min-h-dvh">
@@ -44,9 +46,12 @@ export default async function Home() {
         <span className="text-[15px] font-semibold">
           inhouse<span className="text-accent">ticket</span>
         </span>
-        <Link href="/login" className="text-[13px] font-medium hover:underline">
-          {t.login}
-        </Link>
+        <div className="flex items-center gap-4">
+          <LanguageToggle locale={locale} label={all.common.language} />
+          <Link href="/login" className="text-[13px] font-medium hover:underline">
+            {t.login}
+          </Link>
+        </div>
       </header>
 
       <main id="main">
@@ -146,7 +151,7 @@ export default async function Home() {
             <ul className="flex flex-col gap-2">
               {t.claudeExamples.map((e) => (
                 <li key={e} className="rounded-[var(--radius-badge)] border border-border bg-bg px-4 py-3 text-[14px]">
-                  „{e}“
+                  {all.common.quote(e)}
                 </li>
               ))}
             </ul>

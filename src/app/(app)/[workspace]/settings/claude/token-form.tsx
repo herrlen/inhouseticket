@@ -3,11 +3,12 @@
 import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
 import { DEFAULT_EXPIRY, EXPIRY_CHOICES, type ExpiryChoice } from "@/lib/token-expiry";
 import { createTokenAction, type TokenState } from "./actions";
 
 export function TokenForm({ workspaceId, onToken }: { workspaceId: string; onToken?: (token: string) => void }) {
+  const t = useT();
   // Controlled fields: React resets uncontrolled ones after every submit, which would drop the input on errors.
   const [name, setName] = useState("");
   const [expiry, setExpiry] = useState<ExpiryChoice>(DEFAULT_EXPIRY);
@@ -27,7 +28,7 @@ export function TokenForm({ workspaceId, onToken }: { workspaceId: string; onTok
         <input type="hidden" name="workspaceId" value={workspaceId} />
         <div className="flex min-w-56 flex-1 flex-col gap-1">
           <label htmlFor="token-name" className="text-[13px] font-medium">
-            {de.claude.nameLabel}
+            {t.claude.nameLabel}
           </label>
           <input
             id="token-name"
@@ -36,13 +37,13 @@ export function TokenForm({ workspaceId, onToken }: { workspaceId: string; onTok
             onChange={(e) => setName(e.target.value)}
             required
             maxLength={60}
-            placeholder={de.claude.namePlaceholder}
+            placeholder={t.claude.namePlaceholder}
             className="h-9 rounded-[var(--radius-badge)] border border-border bg-surface px-3 text-sm placeholder:text-muted"
           />
         </div>
         <div className="flex flex-col gap-1">
           <label htmlFor="token-expiry" className="text-[13px] font-medium">
-            {de.claude.expiryLabel}
+            {t.claude.expiryLabel}
           </label>
           <select
             id="token-expiry"
@@ -53,7 +54,7 @@ export function TokenForm({ workspaceId, onToken }: { workspaceId: string; onTok
           >
             {EXPIRY_CHOICES.map((c) => (
               <option key={c} value={c}>
-                {de.claude.expiryOptions[c]}
+                {t.claude.expiryOptions[c]}
               </option>
             ))}
           </select>
@@ -61,13 +62,13 @@ export function TokenForm({ workspaceId, onToken }: { workspaceId: string; onTok
         {expiry === "custom" ? (
           <div className="flex flex-col gap-1">
             <label htmlFor="token-expiry-date" className="text-[13px] font-medium">
-              {de.claude.expiryDateLabel}
+              {t.claude.expiryDateLabel}
             </label>
             <input id="token-expiry-date" name="expiryDate" type="date" required value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} className="h-9 rounded-[var(--radius-badge)] border border-border bg-surface px-2 text-sm" />
           </div>
         ) : null}
         <Button type="submit" variant="primary" size="sm" disabled={pending}>
-          {pending ? de.claude.creating : de.claude.create}
+          {pending ? t.claude.creating : t.claude.create}
         </Button>
       </form>
       {state.error ? (
@@ -81,13 +82,14 @@ export function TokenForm({ workspaceId, onToken }: { workspaceId: string; onTok
 }
 
 function NewToken({ token }: { token: string }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
   return (
     <div role="status" className="flex flex-col gap-2 rounded-[var(--radius-badge)] border border-status-done-ink p-3">
-      <p className="text-[13px]">{de.claude.createdOnce}</p>
+      <p className="text-[13px]">{t.claude.createdOnce}</p>
       <div className="flex flex-wrap items-center gap-2">
         <label htmlFor="new-token" className="sr-only">
-          {de.claude.tokenLabel}
+          {t.claude.tokenLabel}
         </label>
         <input
           id="new-token"
@@ -103,11 +105,11 @@ function NewToken({ token }: { token: string }) {
             void navigator.clipboard.writeText(token).then(() => setCopied(true));
           }}
         >
-          {de.claude.copy}
+          {t.claude.copy}
         </Button>
       </div>
       <p aria-live="polite" className={cn("min-h-4 text-xs text-status-done-ink")}>
-        {copied ? de.claude.copied : ""}
+        {copied ? t.claude.copied : ""}
       </p>
     </div>
   );

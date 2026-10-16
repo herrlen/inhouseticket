@@ -1,6 +1,6 @@
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
 import { paletteColorFor, type PaletteColor } from "@/lib/palette";
+import { UnassignedAvatar } from "./avatar-unassigned";
 
 const fills: Record<PaletteColor, string> = {
   coral: "bg-p-coral text-p-coral-on",
@@ -37,7 +37,7 @@ export function Avatar({ user, size = "md", className }: AvatarProps) {
   const base = cn("inline-flex shrink-0 items-center justify-center rounded-full font-semibold select-none", sizes[size], className);
 
   if (!user) {
-    return <span role="img" aria-label={de.avatar.unassigned} className={cn(base, "border border-dashed border-muted")} />;
+    return <UnassignedAvatar className={cn(base, "border border-dashed border-muted")} />;
   }
   if (user.image) {
     // eslint-disable-next-line @next/next/no-img-element -- tiny avatars, no optimizer round-trip needed

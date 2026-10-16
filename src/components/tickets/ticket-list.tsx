@@ -2,7 +2,7 @@
 
 import type { TicketRow } from "@/db/queries/tickets";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { useLocale, useT } from "@/lib/i18n/client";
 import { useProjectInfo } from "./context";
 import { Avatar } from "@/components/ui/avatar";
 import { dueBucket, formatDue, priorityKey, type Group } from "./list-model";
@@ -22,24 +22,26 @@ type Props = {
 };
 
 export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect, onOpen, onPatch, today, openTicketId }: Props) {
+  const t = useT();
+  const tl = t.list; // `t` is the ticket inside the row loop
   const { project, statuses, labels, members } = useProjectInfo();
   const doneIds = new Set(statuses.filter((s) => s.category === "done").map((s) => s.id));
 
   return (
     <div className="overflow-x-auto rounded-[var(--radius-card)] border border-border bg-surface">
       <table className="w-full border-collapse text-[13px] md:min-w-[760px]">
-        <caption className="sr-only">{de.project.tableCaption(project.name)}</caption>
+        <caption className="sr-only">{t.project.tableCaption(project.name)}</caption>
         <thead className="text-left text-xs text-muted">
           <tr className="border-b border-border">
             <th scope="col" className="w-9 px-3 py-2">
-              <span className="sr-only">{de.list.select}</span>
+              <span className="sr-only">{t.list.select}</span>
             </th>
-            <th scope="col" className="w-20 py-2 font-medium">{de.project.colKey}</th>
-            <th scope="col" className="py-2 font-medium">{de.project.colTitle}</th>
-            <th scope="col" className="w-36 hidden py-2 font-medium md:table-cell">{de.project.colStatus}</th>
-            <th scope="col" className="w-32 hidden py-2 font-medium md:table-cell">{de.project.colPriority}</th>
-            <th scope="col" className="w-40 hidden py-2 font-medium md:table-cell">{de.list.colAssignee}</th>
-            <th scope="col" className="w-36 hidden py-2 font-medium md:table-cell">{de.list.colDue}</th>
+            <th scope="col" className="w-20 py-2 font-medium">{t.project.colKey}</th>
+            <th scope="col" className="py-2 font-medium">{t.project.colTitle}</th>
+            <th scope="col" className="w-36 hidden py-2 font-medium md:table-cell">{t.project.colStatus}</th>
+            <th scope="col" className="w-32 hidden py-2 font-medium md:table-cell">{t.project.colPriority}</th>
+            <th scope="col" className="w-40 hidden py-2 font-medium md:table-cell">{t.list.colAssignee}</th>
+            <th scope="col" className="w-36 hidden py-2 font-medium md:table-cell">{t.list.colDue}</th>
           </tr>
         </thead>
         {groups.map((g) => {
@@ -55,7 +57,7 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
                       checked={allSelected}
                       disabled={ids.length === 0}
                       onChange={(e) => onToggleSelect(ids, e.target.checked)}
-                      aria-label={de.list.selectGroup(g.label)}
+                      aria-label={t.list.selectGroup(g.label)}
                       className="size-4 accent-[var(--accent)]"
                     />
                   </td>
@@ -71,7 +73,7 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
               {g.tickets.length === 0 && showGroupHeaders ? (
                 <tr className="border-b border-border">
                   <td />
-                  <td colSpan={6} className="py-2 text-xs text-muted">{de.list.emptyGroup}</td>
+                  <td colSpan={6} className="py-2 text-xs text-muted">{t.list.emptyGroup}</td>
                 </tr>
               ) : null}
               {g.tickets.map((t) => {
@@ -99,7 +101,7 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
                         checked={selected.has(t.id)}
                         disabled={pending}
                         onChange={(e) => onToggleSelect([t.id], e.target.checked)}
-                        aria-label={de.list.selectTicket(key)}
+                        aria-label={tl.selectTicket(key)}
                         className="size-4 accent-[var(--accent)]"
                       />
                     </td>
@@ -110,7 +112,7 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
                         disabled={pending}
                         onClick={() => onOpen(t.id)}
                         className="flex w-full min-w-0 items-center gap-2 text-left hover:underline"
-                        aria-label={de.list.open(key, t.title)}
+                        aria-label={tl.open(key, t.title)}
                       >
                         <span className="truncate">{t.title}</span>
                         {ticketLabels.map((l) => (
@@ -125,7 +127,7 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
                       {pending ? null : <MobileMeta ticket={t} statuses={statuses} members={members} overdue={overdue} />}
                     </td>
                     {pending ? (
-                      <td colSpan={4} className="hidden py-1 text-xs text-muted md:table-cell">{de.list.saving}</td>
+                      <td colSpan={4} className="hidden py-1 text-xs text-muted md:table-cell">{tl.saving}</td>
                     ) : (
                       <>
                         <td className="hidden py-1 md:table-cell"><StatusPicker value={t.statusId} ticketLabel={key} onChange={(statusId) => onPatch(t.id, { statusId })} /></td>
@@ -146,6 +148,8 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
 }
 
 function MobileMeta({ ticket, statuses, members, overdue }: { ticket: TicketRow; statuses: ReturnType<typeof useProjectInfo>["statuses"]; members: ReturnType<typeof useProjectInfo>["members"]; overdue: boolean }) {
+  const t = useT();
+  const locale = useLocale();
   const status = statuses.find((x) => x.id === ticket.statusId);
   const assignee = members.find((m) => m.id === ticket.assigneeId);
   return (
@@ -159,7 +163,7 @@ function MobileMeta({ ticket, statuses, members, overdue }: { ticket: TicketRow;
       {ticket.priority > 0 ? (
         <span className="inline-flex items-center gap-1">
           <PriorityIcon priority={ticket.priority} />
-          {de.priority[priorityKey(ticket.priority)]}
+          {t.priority[priorityKey(ticket.priority)]}
         </span>
       ) : null}
       {assignee ? (
@@ -168,7 +172,7 @@ function MobileMeta({ ticket, statuses, members, overdue }: { ticket: TicketRow;
           {assignee.name}
         </span>
       ) : null}
-      {ticket.dueDate ? <span className={cn(overdue && "font-medium text-prio-urgent-ink")}>{formatDue(ticket.dueDate)}</span> : null}
+      {ticket.dueDate ? <span className={cn(overdue && "font-medium text-prio-urgent-ink")}>{formatDue(ticket.dueDate, locale)}</span> : null}
     </div>
   );
 }

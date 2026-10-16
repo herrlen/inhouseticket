@@ -3,15 +3,19 @@ import { verifyOAuthQueryParams } from "@better-auth/oauth-provider";
 import { findOAuthClientName } from "@/db/queries/oauth";
 import { listWorkspacesForUser } from "@/db/queries/workspaces";
 import { auth } from "@/lib/auth";
-import { de } from "@/lib/i18n/de";
+import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/lib/session";
 import { ConsentForm } from "./consent-form";
 
-export const metadata: Metadata = { title: "Zugriff erlauben" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: t.oauth.title };
+}
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
 export default async function ConsentPage({ searchParams }: Props) {
+  const t = await getT();
   const params = await searchParams;
   const query = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) for (const x of v === undefined ? [] : Array.isArray(v) ? v : [v]) query.append(k, x);
@@ -24,8 +28,8 @@ export default async function ConsentPage({ searchParams }: Props) {
   if (!valid || !clientName) {
     return (
       <>
-        <h1 className="mb-2 text-xl font-semibold">{de.oauth.title}</h1>
-        <p role="alert" className="text-prio-urgent-ink">{de.oauth.invalid}</p>
+        <h1 className="mb-2 text-xl font-semibold">{t.oauth.title}</h1>
+        <p role="alert" className="text-prio-urgent-ink">{t.oauth.invalid}</p>
       </>
     );
   }
@@ -33,8 +37,8 @@ export default async function ConsentPage({ searchParams }: Props) {
   const workspaces = (await listWorkspacesForUser(user.id)).map((w) => ({ id: w.id, name: w.name }));
   return (
     <>
-      <h1 className="mb-2 text-xl font-semibold">{de.oauth.title}</h1>
-      <p className="mb-4">{de.oauth.request(clientName)}</p>
+      <h1 className="mb-2 text-xl font-semibold">{t.oauth.title}</h1>
+      <p className="mb-4">{t.oauth.request(clientName)}</p>
       <ConsentForm oauthQuery={oauthQuery} workspaces={workspaces} email={user.email} />
     </>
   );

@@ -4,7 +4,7 @@ import { ImportError, listImportMembers, runImport } from "@/db/queries/import";
 import { json, jsonError, requireApiMember, requireSameOrigin, tooManyRequests } from "@/lib/api";
 import { hasRole } from "@/lib/authz";
 import { readBodyLimited } from "@/lib/body";
-import { de } from "@/lib/i18n/de";
+import { getT } from "@/lib/i18n/server";
 import { buildPlan, MAX_IMPORT_BYTES } from "@/lib/import/plan";
 import { readImportFile } from "@/lib/import/read";
 import { SOURCE_IDS, SOURCE_NAMES } from "@/lib/import/source";
@@ -50,14 +50,15 @@ export async function POST(request: Request, { params }: Ctx) {
   if ("error" in r) return r.error;
   if (!hasRole(r.ctx, "admin")) return jsonError(404, "not_found", "Nicht gefunden.");
   const ws = r.ctx.workspace.id;
+  const t = await getT();
 
   const body = await readBodyLimited(request, MAX_IMPORT_BYTES + 16 * 1024);
-  if (body === "too_large") return jsonError(413, "too_large", de.import.errors.too_large);
+  if (body === "too_large") return jsonError(413, "too_large", t.import.errors.too_large);
   const form = await new Response(body, { headers: { "content-type": request.headers.get("content-type") ?? "" } }).formData().catch(() => null);
   const file = form?.get("file");
   const parsed = fields.safeParse({ source: form?.get("source"), mode: form?.get("mode") });
-  if (!(file instanceof File) || !parsed.success) return jsonError(400, "invalid_input", de.common.invalidInput);
-  if (file.size > MAX_IMPORT_BYTES) return jsonError(413, "too_large", de.import.errors.too_large);
+  if (!(file instanceof File) || !parsed.success) return jsonError(400, "invalid_input", t.common.invalidInput);
+  if (file.size > MAX_IMPORT_BYTES) return jsonError(413, "too_large", t.import.errors.too_large);
   const { source, mode } = parsed.data;
 
   const limited = tooManyRequests(
@@ -66,7 +67,7 @@ export async function POST(request: Request, { params }: Ctx) {
   if (limited) return limited;
 
   const read = readImportFile(source, new Uint8Array(await file.arrayBuffer()));
-  if (!read.ok) return jsonError(422, read.error, de.import.errors[read.error](SOURCE_NAMES[source]));
+  if (!read.ok) return jsonError(422, read.error, t.import.errors[read.error](SOURCE_NAMES[source]));
   const plan = buildPlan(read.file, await listImportMembers(ws), SOURCE_NAMES[source]);
 
   if (mode === "preview") {
@@ -76,14 +77,14 @@ export async function POST(request: Request, { params }: Ctx) {
     return json({ preview: plan.preview, suggestion: { name, key: await freeKey(ws, read.file.projectKey, name), color: PALETTE.indigo } });
   }
 
-  const t = target.safeParse({ name: form?.get("name"), key: form?.get("key"), color: form?.get("color") ?? PALETTE.indigo });
-  if (!t.success) return jsonError(400, "invalid_input", t.error.issues[0]!.message);
+  const tgt = target.safeParse({ name: form?.get("name"), key: form?.get("key"), color: form?.get("color") ?? PALETTE.indigo });
+  if (!tgt.success) return jsonError(400, "invalid_input", t.validation(tgt.error.issues[0]!.message));
   try {
-    const result = await runImport({ workspaceId: ws, userId: r.ctx.user.id }, { ...t.data, source: SOURCE_NAMES[source] }, plan);
+    const result = await runImport({ workspaceId: ws, userId: r.ctx.user.id }, { ...tgt.data, source: SOURCE_NAMES[source] }, plan);
     console.info("import done", { workspaceId: ws, source, tickets: result.tickets });
     return json({ ...result, url: `/${r.ctx.workspace.slug}/p/${result.projectKey}` });
   } catch (e) {
-    if (e instanceof ImportError) return jsonError(409, e.code, de.explorer.keyTaken(t.data.key));
+    if (e instanceof ImportError) return jsonError(409, e.code, t.explorer.keyTaken(tgt.data.key));
     throw e;
   }
 }

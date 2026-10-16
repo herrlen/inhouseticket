@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { listArchivedProjects, listProjectsWithTickets } from "@/db/queries/projects";
 import { hasRole, requireMember } from "@/lib/authz";
-import { de } from "@/lib/i18n/de";
+import { getT } from "@/lib/i18n/server";
 import { PROJECT_TEMPLATES, TEMPLATE_IDS } from "@/lib/project-templates";
 import { setProjectArchivedAction } from "./actions";
 
@@ -20,6 +20,7 @@ const EXAMPLE_TICKETS = Math.max(...TEMPLATE_IDS.map((id) => PROJECT_TEMPLATES[i
 
 // Placeholder overview until lists and boards arrive (Sprints 2–4).
 export default async function WorkspacePage({ params }: Props) {
+  const t = await getT();
   const { workspace: slug } = await params;
   const ctx = await requireMember({ slug });
   const isAdmin = hasRole(ctx, "admin");
@@ -31,20 +32,20 @@ export default async function WorkspacePage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl p-4 md:p-6">
-      <h1 className="mb-6 text-xl font-semibold">{de.workspace.welcome(ctx.workspace.name)}</h1>
+      <h1 className="mb-6 text-xl font-semibold">{t.workspace.welcome(ctx.workspace.name)}</h1>
       {isNew ? (
         <section aria-labelledby="import-heading" className="mb-6 rounded-[var(--radius-card)] border border-border bg-surface p-4">
-          <h2 id="import-heading" className="font-semibold">{de.workspace.importTitle}</h2>
-          <p className="mt-1 text-[13px] text-muted">{de.workspace.importText}</p>
+          <h2 id="import-heading" className="font-semibold">{t.workspace.importTitle}</h2>
+          <p className="mt-1 text-[13px] text-muted">{t.workspace.importText}</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <Link
               href={`/${slug}/settings/data/import`}
               className="inline-flex h-9 items-center rounded-[var(--radius-badge)] bg-accent px-3.5 text-sm font-medium text-accent-contrast hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
-              {de.workspace.importButton}
+              {t.workspace.importButton}
             </Link>
             <Link href="/umziehen" className="text-[13px] text-accent underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
-              {de.workspace.importHelp}
+              {t.workspace.importHelp}
             </Link>
           </div>
         </section>
@@ -70,7 +71,7 @@ export default async function WorkspacePage({ params }: Props) {
       ))}
       {archived.length > 0 ? (
         <section aria-labelledby="archived-heading" className="mt-10">
-          <h2 id="archived-heading" className="mb-2 font-semibold">{de.workspace.archived}</h2>
+          <h2 id="archived-heading" className="mb-2 font-semibold">{t.workspace.archived}</h2>
           <ul className="rounded-[var(--radius-card)] border border-border bg-surface">
             {archived.map((p) => (
               <li key={p.id} className="flex items-center gap-3 border-b border-border px-4 py-2 last:border-0">
@@ -81,7 +82,7 @@ export default async function WorkspacePage({ params }: Props) {
                   <input type="hidden" name="workspaceId" value={ctx.workspace.id} />
                   <input type="hidden" name="projectId" value={p.id} />
                   <input type="hidden" name="archived" value="false" />
-                  <Button type="submit" size="sm" aria-label={de.workspace.restoreLabel(p.name)}>{de.workspace.restore}</Button>
+                  <Button type="submit" size="sm" aria-label={t.workspace.restoreLabel(p.name)}>{t.workspace.restore}</Button>
                 </form>
               </li>
             ))}

@@ -8,7 +8,7 @@ import { Dropdown } from "@/components/ui/dropdown";
 import { Close } from "@/components/ui/icons";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
 import { useProjectInfo } from "./context";
 import { hasFilters, type Filters } from "./filters";
 import { priorityKey } from "./list-model";
@@ -32,6 +32,7 @@ const chip = (active: boolean) =>
   );
 
 export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views, onViewsChange, shown, total }: Props) {
+  const t = useT();
   const { members, labels, currentUserId, workspaceId, project } = useProjectInfo();
   const toast = useToast();
   const [, startTransition] = useTransition();
@@ -39,7 +40,7 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
   const [name, setName] = useState("");
 
   const personLabel =
-    filters.assignee === "me" ? de.filters.me : filters.assignee === "none" ? de.list.unassigned : members.find((m) => m.id === filters.assignee)?.name;
+    filters.assignee === "me" ? t.filters.me : filters.assignee === "none" ? t.list.unassigned : members.find((m) => m.id === filters.assignee)?.name;
   const labelName = labels.find((l) => l.id === filters.label)?.name;
   const active = hasFilters(filters);
 
@@ -50,7 +51,7 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
       const r = await createSavedViewAction({ workspaceId, projectId: project.id, name: n, query: currentQuery });
       if (!r.ok) return toast({ message: r.error, tone: "error" });
       onViewsChange([...views, r.view]);
-      toast({ message: de.views.saved(n), tone: "success" });
+      toast({ message: t.views.saved(n), tone: "success" });
       setNaming(false);
       setName("");
     });
@@ -58,56 +59,56 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
 
   return (
     <div className="flex flex-col gap-2">
-      <div role="group" aria-label={de.filters.label} className="flex flex-wrap items-center gap-2">
+      <div role="group" aria-label={t.filters.label} className="flex flex-wrap items-center gap-2">
         <Dropdown
-          trigger={<>{de.filters.person}{personLabel ? `: ${personLabel}` : ""} ▾</>}
+          trigger={<>{t.filters.person}{personLabel ? `: ${personLabel}` : ""} ▾</>}
           triggerClassName={chip(Boolean(filters.assignee))}
           items={[
-            { label: de.filters.all, onSelect: () => onChange({ assignee: null }) },
-            { label: de.filters.me, onSelect: () => onChange({ assignee: "me" }) },
-            { label: de.list.unassigned, onSelect: () => onChange({ assignee: "none" }) },
+            { label: t.filters.all, onSelect: () => onChange({ assignee: null }) },
+            { label: t.filters.me, onSelect: () => onChange({ assignee: "me" }) },
+            { label: t.list.unassigned, onSelect: () => onChange({ assignee: "none" }) },
             ...members.filter((m) => m.id !== currentUserId).map((m) => ({ label: m.name, onSelect: () => onChange({ assignee: m.id }) })),
           ]}
         />
         <Dropdown
-          trigger={<>{de.filters.priority}{filters.priority !== undefined ? `: ${de.priority[priorityKey(filters.priority)]}` : ""} ▾</>}
+          trigger={<>{t.filters.priority}{filters.priority !== undefined ? `: ${t.priority[priorityKey(filters.priority)]}` : ""} ▾</>}
           triggerClassName={chip(filters.priority !== undefined)}
           items={[
-            { label: de.filters.all, onSelect: () => onChange({ priority: null }) },
-            ...[4, 3, 2, 1, 0].map((p) => ({ label: de.priority[priorityKey(p)], icon: <PriorityIcon priority={p} />, onSelect: () => onChange({ priority: String(p) }) })),
+            { label: t.filters.all, onSelect: () => onChange({ priority: null }) },
+            ...[4, 3, 2, 1, 0].map((p) => ({ label: t.priority[priorityKey(p)], icon: <PriorityIcon priority={p} />, onSelect: () => onChange({ priority: String(p) }) })),
           ]}
         />
         <Dropdown
-          trigger={<>{de.filters.due}{filters.due ? `: ${de.list.due[filters.due]}` : ""} ▾</>}
+          trigger={<>{t.filters.due}{filters.due ? `: ${t.list.due[filters.due]}` : ""} ▾</>}
           triggerClassName={chip(Boolean(filters.due))}
           items={[
-            { label: de.filters.all, onSelect: () => onChange({ due: null }) },
-            ...(["overdue", "today", "week", "later", "none"] as const).map((d) => ({ label: de.list.due[d], onSelect: () => onChange({ due: d }) })),
+            { label: t.filters.all, onSelect: () => onChange({ due: null }) },
+            ...(["overdue", "today", "week", "later", "none"] as const).map((d) => ({ label: t.list.due[d], onSelect: () => onChange({ due: d }) })),
           ]}
         />
         {labels.length > 0 ? (
           <Dropdown
-            trigger={<>{de.filters.labelFilter}{labelName ? `: ${labelName}` : ""} ▾</>}
+            trigger={<>{t.filters.labelFilter}{labelName ? `: ${labelName}` : ""} ▾</>}
             triggerClassName={chip(Boolean(filters.label))}
-            items={[{ label: de.filters.all, onSelect: () => onChange({ label: null }) }, ...labels.map((l) => ({ label: l.name, onSelect: () => onChange({ label: l.id }) }))]}
+            items={[{ label: t.filters.all, onSelect: () => onChange({ label: null }) }, ...labels.map((l) => ({ label: l.name, onSelect: () => onChange({ label: l.id }) }))]}
           />
         ) : null}
-        <label className="sr-only" htmlFor="filter-text">{de.filters.text}</label>
+        <label className="sr-only" htmlFor="filter-text">{t.filters.text}</label>
         <input
           id="filter-text"
           type="search"
           defaultValue={filters.q ?? ""}
           key={filters.q ?? ""}
-          placeholder={de.filters.textPlaceholder}
+          placeholder={t.filters.textPlaceholder}
           onChange={(e) => onChange({ q: e.target.value.trim() || null })}
           className="h-7 w-40 rounded-full border border-border bg-surface px-3 text-[13px] placeholder:text-muted"
         />
         {active ? (
           <>
             <button type="button" onClick={() => onApplyQuery(new URLSearchParams(currentQuery).has("view") ? "view=board" : "")} className="text-[13px] text-muted hover:text-text hover:underline">
-              {de.filters.reset}
+              {t.filters.reset}
             </button>
-            <span className="text-xs text-muted" aria-live="polite">{de.filters.count(shown, total)}</span>
+            <span className="text-xs text-muted" aria-live="polite">{t.filters.count(shown, total)}</span>
           </>
         ) : null}
         <span className="ml-auto" />
@@ -119,7 +120,7 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
               saveView();
             }}
           >
-            <label className="sr-only" htmlFor="view-name">{de.views.namePlaceholder}</label>
+            <label className="sr-only" htmlFor="view-name">{t.views.namePlaceholder}</label>
             <input
               id="view-name"
               autoFocus
@@ -132,17 +133,17 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
                   setNaming(false);
                 }
               }}
-              placeholder={de.views.namePlaceholder}
+              placeholder={t.views.namePlaceholder}
               className="h-7 w-40 rounded-[var(--radius-badge)] border border-accent bg-surface px-2 text-[13px]"
             />
-            <Button type="submit" size="sm" variant="primary">{de.common.save}</Button>
+            <Button type="submit" size="sm" variant="primary">{t.common.save}</Button>
           </form>
         ) : (
-          <Button size="sm" variant="ghost" onClick={() => setNaming(true)}>+ {de.views.save}</Button>
+          <Button size="sm" variant="ghost" onClick={() => setNaming(true)}>+ {t.views.save}</Button>
         )}
       </div>
       {views.length > 0 ? (
-        <ul aria-label={de.views.label} className="flex flex-wrap items-center gap-1.5">
+        <ul aria-label={t.views.label} className="flex flex-wrap items-center gap-1.5">
           {views.map((v) => {
             const isActive = v.query === currentQuery;
             return (
@@ -152,7 +153,7 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
                 </button>
                 <button
                   type="button"
-                  aria-label={de.views.remove(v.name)}
+                  aria-label={t.views.remove(v.name)}
                   onClick={() =>
                     startTransition(async () => {
                       onViewsChange(views.filter((x) => x.id !== v.id));

@@ -3,7 +3,7 @@
 import { Avatar } from "@/components/ui/avatar";
 import { Dropdown } from "@/components/ui/dropdown";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
 import { useProjectInfo } from "./context";
 import { priorityKey } from "./list-model";
 
@@ -27,6 +27,7 @@ export function StatusDot({ color }: { color: string }) {
 }
 
 export function StatusPicker({ value, onChange, ticketLabel }: { value: string; onChange: (statusId: string) => void; ticketLabel: string }) {
+  const t = useT();
   const { statuses } = useProjectInfo();
   const current = statuses.find((s) => s.id === value);
   return (
@@ -37,7 +38,7 @@ export function StatusPicker({ value, onChange, ticketLabel }: { value: string; 
           <span className="truncate">{current?.name ?? "–"}</span>
         </>
       }
-      triggerLabel={de.ticket.statusOf(ticketLabel, current?.name ?? "–")}
+      triggerLabel={t.ticket.statusOf(ticketLabel, current?.name ?? "–")}
       triggerClassName={pickerTrigger}
       items={statuses.map((s) => ({ label: s.name, icon: <StatusDot color={s.color} />, onSelect: () => s.id !== value && onChange(s.id) }))}
     />
@@ -45,7 +46,8 @@ export function StatusPicker({ value, onChange, ticketLabel }: { value: string; 
 }
 
 export function PriorityPicker({ value, onChange, ticketLabel, compact }: { value: number; onChange: (p: number) => void; ticketLabel: string; compact?: boolean }) {
-  const label = de.priority[priorityKey(value)];
+  const t = useT();
+  const label = t.priority[priorityKey(value)];
   return (
     <Dropdown
       trigger={
@@ -54,48 +56,53 @@ export function PriorityPicker({ value, onChange, ticketLabel, compact }: { valu
           {compact ? null : <span className={cn("truncate", value === 0 && "text-muted")}>{label}</span>}
         </>
       }
-      triggerLabel={de.ticket.priorityOf(ticketLabel, label)}
+      triggerLabel={t.ticket.priorityOf(ticketLabel, label)}
       triggerClassName={pickerTrigger}
-      items={[4, 3, 2, 1, 0].map((p) => ({ label: de.priority[priorityKey(p)], icon: <PriorityIcon priority={p} />, onSelect: () => p !== value && onChange(p) }))}
+      items={[4, 3, 2, 1, 0].map((p) => ({ label: t.priority[priorityKey(p)], icon: <PriorityIcon priority={p} />, onSelect: () => p !== value && onChange(p) }))}
     />
   );
 }
 
 export function AssigneePicker({ value, onChange, ticketLabel, compact }: { value: string | null; onChange: (userId: string | null) => void; ticketLabel: string; compact?: boolean }) {
+  const t = useT();
   const { members, currentUserId } = useProjectInfo();
   const current = members.find((m) => m.id === value) ?? null;
   const ordered = [...members].sort((a, b) => (a.id === currentUserId ? -1 : b.id === currentUserId ? 1 : 0));
   return (
+    // data-assignee-picker: target of the "A" shortcut in the ticket detail (not the localized label).
+    <span data-assignee-picker className="contents">
     <Dropdown
       trigger={
         <>
           <Avatar user={current} size="sm" />
-          {compact ? null : <span className={cn("truncate", !current && "text-muted")}>{current?.name ?? de.list.unassigned}</span>}
+          {compact ? null : <span className={cn("truncate", !current && "text-muted")}>{current?.name ?? t.list.unassigned}</span>}
         </>
       }
-      triggerLabel={de.ticket.assigneeOf(ticketLabel, current?.name ?? de.list.unassigned)}
+      triggerLabel={t.ticket.assigneeOf(ticketLabel, current?.name ?? t.list.unassigned)}
       triggerClassName={pickerTrigger}
       items={[
         ...ordered.map((m) => ({
-          label: m.id === currentUserId ? `${m.name} (${de.members.you})` : m.name,
+          label: m.id === currentUserId ? `${m.name} (${t.members.you})` : m.name,
           icon: <Avatar user={m} size="sm" />,
           onSelect: () => m.id !== value && onChange(m.id),
         })),
-        { label: de.list.unassigned, icon: <Avatar user={null} size="sm" />, onSelect: () => value !== null && onChange(null) },
+        { label: t.list.unassigned, icon: <Avatar user={null} size="sm" />, onSelect: () => value !== null && onChange(null) },
       ]}
     />
+    </span>
   );
 }
 
 
 /** Native date input (keyboard + screen reader friendly), styled to match. */
 export function DueDateInput({ value, onChange, ticketLabel, overdue }: { value: string | null; onChange: (d: string | null) => void; ticketLabel: string; overdue?: boolean }) {
+  const t = useT();
   return (
     <span className="relative inline-flex items-center">
       <input
         type="date"
         value={value ?? ""}
-        aria-label={de.ticket.dueOf(ticketLabel)}
+        aria-label={t.ticket.dueOf(ticketLabel)}
         onChange={(e) => {
           const next = e.target.value || null;
           if (next !== value) onChange(next);
@@ -106,7 +113,7 @@ export function DueDateInput({ value, onChange, ticketLabel, overdue }: { value:
           overdue && "font-medium text-prio-urgent-ink",
         )}
       />
-      {value && overdue ? <span className="sr-only">{de.list.due.overdue}</span> : null}
+      {value && overdue ? <span className="sr-only">{t.list.due.overdue}</span> : null}
     </span>
   );
 }

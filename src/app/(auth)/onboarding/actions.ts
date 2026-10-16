@@ -5,8 +5,8 @@ import { db } from "@/db/client";
 import { createInvitations, sendInvitationMails, type InvitationMail } from "@/db/queries/invitations";
 import { createProjectWithDefaults, createTickets } from "@/db/queries/projects";
 import { createWorkspace, findWorkspaceByDomain } from "@/db/queries/workspaces";
-import { de } from "@/lib/i18n/de";
-import { PROJECT_TEMPLATES } from "@/lib/project-templates";
+import { getLocale, getT } from "@/lib/i18n/server";
+import { projectTemplatesFor } from "@/lib/project-templates";
 import { requireUser } from "@/lib/session";
 import { slugFromDomain } from "@/lib/slug";
 import { isPersonalWorkspaceDomain, workspaceDomainOf } from "@/lib/workspace-domain";
@@ -15,21 +15,23 @@ import { onboardingSchema } from "@/lib/validation/workspace";
 export type OnboardingState = { errors?: Partial<Record<"name" | "color" | "template" | "invites" | "form", string>> };
 
 export async function createWorkspaceAction(_: OnboardingState, formData: FormData): Promise<OnboardingState> {
+  const t = await getT();
   const user = await requireUser();
   const domain = workspaceDomainOf(user.email);
-  if (!domain) return { errors: { form: de.auth.invalidEmail } };
+  if (!domain) return { errors: { form: t.auth.invalidEmail } };
 
   const parsed = onboardingSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     const errors: OnboardingState["errors"] = {};
     for (const issue of parsed.error.issues) {
       const key = issue.path[0] as keyof NonNullable<OnboardingState["errors"]>;
-      errors[key] ??= issue.message;
+      errors[key] ??= t.validation(issue.message);
     }
     return { errors };
   }
   const input = parsed.data;
-  const template = PROJECT_TEMPLATES[input.template];
+  const locale = await getLocale();
+  const template = projectTemplatesFor(locale)[input.template];
 
   if (await findWorkspaceByDomain(domain)) redirect("/start");
 
@@ -44,7 +46,7 @@ export async function createWorkspaceAction(_: OnboardingState, formData: FormDa
         key: template.key,
         color: template.color,
         icon: template.icon,
-      });
+      }, locale);
       await createTickets(tx, { workspaceId: ws.id, projectId: project.id, statusId: openStatus.id, createdBy: user.id, tickets: template.tickets });
       const invites = await createInvitations(tx, { workspaceId: ws.id, inviterId: user.id, emails: input.invites, role: "member" });
       return { slug: ws.slug, mails: invites.mails };

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { findWorkspaceByDomain, listOpenInvitations, listWorkspacesForUser } from "@/db/queries/workspaces";
 import { workspaceDomainOf } from "@/lib/workspace-domain";
-import { de } from "@/lib/i18n/de";
+import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/lib/session";
 import { SignOutButton } from "@/components/sign-out-button";
 import { JoinButton } from "./join-button";
@@ -12,6 +12,7 @@ export const metadata: Metadata = { title: "Start" };
 
 /** Decides where a signed-in user goes: their workspace, an invitation, joining, or onboarding. */
 export default async function StartPage() {
+  const t = await getT();
   const user = await requireUser();
   const [workspaces, invitations] = await Promise.all([listWorkspacesForUser(user.id), listOpenInvitations(user.email)]);
 
@@ -25,12 +26,12 @@ export default async function StartPage() {
 
   return (
     <>
-      <h1 className="mb-1 text-xl font-semibold">{de.start.title(user.name)}</h1>
+      <h1 className="mb-1 text-xl font-semibold">{t.start.title(user.name)}</h1>
       <p className="mb-6 text-muted">{user.email}</p>
 
       {workspaces.length > 0 ? (
         <section className="mb-6">
-          <h2 className="mb-2 text-[13px] font-medium text-muted">{de.start.yourWorkspaces}</h2>
+          <h2 className="mb-2 text-[13px] font-medium text-muted">{t.start.yourWorkspaces}</h2>
           <ul className="flex flex-col gap-1">
             {workspaces.map((w) => (
               <li key={w.id}>
@@ -46,11 +47,11 @@ export default async function StartPage() {
 
       {invitations.length > 0 ? (
         <section className="mb-6">
-          <h2 className="mb-2 text-[13px] font-medium text-muted">{de.start.invitations}</h2>
+          <h2 className="mb-2 text-[13px] font-medium text-muted">{t.start.invitations}</h2>
           <ul className="flex flex-col gap-3">
             {invitations.map((inv) => (
               <li key={inv.id} className="flex items-center justify-between gap-3">
-                <span>{de.start.invitedBy(inv.inviterName, inv.workspaceName)}</span>
+                <span>{t.start.invitedBy(inv.inviterName, inv.workspaceName)}</span>
                 <JoinButton kind="invitation" invitationId={inv.id} />
               </li>
             ))}
@@ -62,11 +63,11 @@ export default async function StartPage() {
         <section className="mb-6">
           {own.autoJoin ? (
             <div className="flex items-center justify-between gap-3">
-              <span>{de.start.domainWorkspace(own.name)}</span>
+              <span>{t.start.domainWorkspace(own.name)}</span>
               <JoinButton kind="domain" />
             </div>
           ) : (
-            <p className="text-muted">{de.start.askForInvite(own.name, domain!)}</p>
+            <p className="text-muted">{t.start.askForInvite(own.name, domain!)}</p>
           )}
         </section>
       ) : null}

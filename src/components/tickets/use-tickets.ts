@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { ActivityRow, TicketRow } from "@/db/queries/tickets";
 import { useToast } from "@/components/ui/toast";
 import { keyBetween } from "@/lib/fractional";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
 import type { TicketPatch } from "@/lib/validation/ticket";
 
 export const ticketsKey = (projectId: string) => ["tickets", projectId] as const;
@@ -17,11 +17,11 @@ async function getJson<T>(url: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-/** JSON request to our ticket endpoints; throws the German server message on failure. */
+/** JSON request to our ticket endpoints; throws the server message (in the UI language) on failure, or an empty one – callers fall back. */
 async function send<T>(method: "POST" | "PATCH", url: string, body: unknown): Promise<T> {
   const res = await fetch(url, { method, headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(body) });
   const data = (await res.json().catch(() => null)) as T | { error?: { message?: string } } | null;
-  if (!res.ok) throw new Error((data as { error?: { message?: string } } | null)?.error?.message ?? de.explorer.saveFailed);
+  if (!res.ok) throw new Error((data as { error?: { message?: string } } | null)?.error?.message ?? "");
   return data as T;
 }
 
@@ -64,6 +64,7 @@ function applyPatch(t: TicketRow, patch: TicketPatch): TicketRow {
 
 /** Optimistic single-ticket update with rollback, toast and retry (KONZEPT §5.5). */
 export function useUpdateTicket(workspaceId: string, projectId: string) {
+  const t = useT();
   const qc = useQueryClient();
   const toast = useToast();
   const router = useRouter();
@@ -81,9 +82,9 @@ export function useUpdateTicket(workspaceId: string, projectId: string) {
     onError: (error, variables, context) => {
       if (context?.previous) qc.setQueryData(ticketsKey(projectId), context.previous);
       toast({
-        message: error.message || de.explorer.saveFailed,
+        message: error.message || t.explorer.saveFailed,
         tone: "error",
-        action: { label: de.common.retry, onClick: () => mutation.mutate(variables) },
+        action: { label: t.common.retry, onClick: () => mutation.mutate(variables) },
       });
     },
     onSuccess: (row, { patch }) => {
@@ -97,6 +98,7 @@ export function useUpdateTicket(workspaceId: string, projectId: string) {
 }
 
 export function useCreateTicket(workspaceId: string, projectId: string) {
+  const t = useT();
   const qc = useQueryClient();
   const toast = useToast();
   const router = useRouter();
@@ -134,7 +136,7 @@ export function useCreateTicket(workspaceId: string, projectId: string) {
     },
     onError: (error, _input, context) => {
       if (context) qc.setQueryData(ticketsKey(projectId), context.previous);
-      toast({ message: error.message || de.explorer.saveFailed, tone: "error" });
+      toast({ message: error.message || t.explorer.saveFailed, tone: "error" });
     },
     onSuccess: (row, _input, context) => {
       qc.setQueryData<TicketRow[]>(ticketsKey(projectId), (list) => list?.map((t) => (t.id === context?.tempId ? row : t)));
@@ -145,6 +147,7 @@ export function useCreateTicket(workspaceId: string, projectId: string) {
 }
 
 export function useBulkUpdate(workspaceId: string, projectId: string) {
+  const t = useT();
   const qc = useQueryClient();
   const toast = useToast();
   const router = useRouter();
@@ -160,12 +163,12 @@ export function useBulkUpdate(workspaceId: string, projectId: string) {
     },
     onError: (error, _v, context) => {
       if (context?.previous) qc.setQueryData(ticketsKey(projectId), context.previous);
-      toast({ message: error.message || de.explorer.saveFailed, tone: "error" });
+      toast({ message: error.message || t.explorer.saveFailed, tone: "error" });
     },
     onSuccess: (rows, { patch }) => {
       const byId = new Map(rows.map((r) => [r.id, r]));
       qc.setQueryData<TicketRow[]>(ticketsKey(projectId), (list) => list?.map((t) => byId.get(t.id) ?? t));
-      toast({ message: de.list.bulkDone(rows.length), tone: "success" });
+      toast({ message: t.list.bulkDone(rows.length), tone: "success" });
       if (patch.statusId) router.refresh();
     },
     onSettled: () => settle(qc, projectId),

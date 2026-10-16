@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { findWorkspaceByDomain } from "@/db/queries/workspaces";
-import { de } from "@/lib/i18n/de";
+import { getT } from "@/lib/i18n/server";
 import { requireUser } from "@/lib/session";
 import { slugFromDomain } from "@/lib/slug";
 import { isPersonalWorkspaceDomain, workspaceDomainOf } from "@/lib/workspace-domain";
 import { OnboardingForm } from "./onboarding-form";
 
-export const metadata: Metadata = { title: "Workspace anlegen" };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: t.onboarding.title };
+}
 
 export default async function OnboardingPage() {
+  const t = await getT();
   const user = await requireUser("/onboarding");
   const domain = workspaceDomainOf(user.email);
   if (!domain || (await findWorkspaceByDomain(domain))) redirect("/start");
@@ -20,8 +24,8 @@ export default async function OnboardingPage() {
 
   return (
     <>
-      <h1 className="mb-1 text-xl font-semibold">{de.onboarding.title}</h1>
-      <p className="mb-6 text-muted">{isPersonalWorkspaceDomain(domain) ? de.onboarding.subtitlePersonal : de.onboarding.subtitle(domain)}</p>
+      <h1 className="mb-1 text-xl font-semibold">{t.onboarding.title}</h1>
+      <p className="mb-6 text-muted">{isPersonalWorkspaceDomain(domain) ? t.onboarding.subtitlePersonal : t.onboarding.subtitle(domain)}</p>
       <OnboardingForm suggestedName={suggestedName} />
     </>
   );

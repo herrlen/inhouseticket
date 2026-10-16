@@ -14,7 +14,8 @@ import { Archive, Chart, CheckSquare, Home, InboxIcon, Menu, Sidebar as SidebarI
 import { ToastProvider } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { LanguageToggle } from "@/components/language-toggle";
+import { useLocale, useT } from "@/lib/i18n/client";
 import { PrefsProvider } from "./prefs-context";
 import { QueryProvider } from "./query-provider";
 import { ShellProvider, useShell, type ShellInfo } from "./shell-context";
@@ -34,16 +35,18 @@ const CommandPalette = dynamic(() => import("./command-palette").then((m) => m.C
 const ShortcutHelp = dynamic(() => import("./command-palette").then((m) => m.ShortcutHelp));
 
 const noopSubscribe = () => () => {};
-/** "⌘B" on Apple devices, "Strg+B" elsewhere – resolved after hydration. */
+/** "⌘B" on Apple devices, "Strg+B" (en: "Ctrl+B") elsewhere – resolved after hydration. */
 function useShortcutLabel() {
+  const other = `${useT().common.ctrlKey}+B`;
   return useSyncExternalStore(
     noopSubscribe,
-    () => (/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘B" : "Strg+B"),
-    () => "Strg+B",
+    () => (/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘B" : other),
+    () => other,
   );
 }
 
 export function AppShell({ shell, user, explorer, initialCollapsed, initialConfetti, unread, children }: Props) {
+  const t = useT();
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const [, startTransition] = useTransition();
   const [confetti, setConfettiState] = useState(initialConfetti);
@@ -112,11 +115,11 @@ export function AppShell({ shell, user, explorer, initialCollapsed, initialConfe
       <PrefsProvider value={{ confetti, setConfetti }}>
       <ToastProvider>
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-surface focus:p-2">
-          {de.common.skipToContent}
+          {t.common.skipToContent}
         </a>
         <div className="flex h-dvh">
           <aside
-            aria-label={de.shell.sidebar}
+            aria-label={t.shell.sidebar}
             data-collapsed={collapsed}
             className={cn(
               "hidden shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-micro ease-out-quick md:flex",
@@ -146,7 +149,7 @@ export function AppShell({ shell, user, explorer, initialCollapsed, initialConfe
           <CommandPalette open onClose={() => setPaletteOpen(false)} explorer={explorer} onToggleSidebar={toggle} onShowHelp={() => setHelpOpen(true)} />
         ) : null}
         {helpOpen ? <ShortcutHelp open onClose={() => setHelpOpen(false)} /> : null}
-        <Dialog open={drawer} onClose={() => setDrawer(false)} title={de.shell.sidebar} hideTitle placement="left" className="md:hidden">
+        <Dialog open={drawer} onClose={() => setDrawer(false)} title={t.shell.sidebar} hideTitle placement="left" className="md:hidden">
           <SidebarContent collapsed={false} explorer={explorer} unread={unread} />
         </Dialog>
       </ToastProvider>
@@ -157,6 +160,7 @@ export function AppShell({ shell, user, explorer, initialCollapsed, initialConfe
 }
 
 function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: boolean; explorer: ExplorerData; unread: number; onToggle?: () => void }) {
+  const t = useT();
   const shell = useShell();
   const pathname = usePathname();
   const home = `/${shell.slug}`;
@@ -169,13 +173,13 @@ function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: 
   const claude = `${home}/settings/claude`;
   const data = `${home}/settings/data`;
   const nav: Array<{ href: string; label: string; icon: ReactNode; active: boolean; badge?: number; aria?: string }> = [
-    { href: me, label: de.me.title, icon: <CheckSquare />, active: pathname === me },
-    { href: inbox, label: de.inbox.title, icon: <InboxIcon />, active: pathname === inbox, badge: unread, aria: de.inbox.navLabel(unread) },
-    { href: dashboard, label: de.dashboard.title, icon: <Chart />, active: pathname === dashboard },
-    { href: home, label: de.shell.overview, icon: <Home />, active: pathname === home },
-    ...(shell.canAdmin ? [{ href: members, label: de.members.title, icon: <Users />, active: pathname.startsWith(members) }] : []),
-    { href: claude, label: de.claude.navLabel, icon: <Sparkle />, active: pathname === claude },
-    ...(shell.canAdmin ? [{ href: data, label: de.data.navLabel, icon: <Archive />, active: pathname.startsWith(data) }] : []),
+    { href: me, label: t.me.title, icon: <CheckSquare />, active: pathname === me },
+    { href: inbox, label: t.inbox.title, icon: <InboxIcon />, active: pathname === inbox, badge: unread, aria: t.inbox.navLabel(unread) },
+    { href: dashboard, label: t.dashboard.title, icon: <Chart />, active: pathname === dashboard },
+    { href: home, label: t.shell.overview, icon: <Home />, active: pathname === home },
+    ...(shell.canAdmin ? [{ href: members, label: t.members.title, icon: <Users />, active: pathname.startsWith(members) }] : []),
+    { href: claude, label: t.claude.navLabel, icon: <Sparkle />, active: pathname === claude },
+    ...(shell.canAdmin ? [{ href: data, label: t.data.navLabel, icon: <Archive />, active: pathname.startsWith(data) }] : []),
   ];
 
   return (
@@ -185,7 +189,7 @@ function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: 
         {!collapsed ? <span className="truncate font-semibold">{shell.workspaceName}</span> : <span className="sr-only">{shell.workspaceName}</span>}
       </div>
 
-      <nav aria-label={de.common.mainNav} className="flex flex-col gap-0.5 p-2">
+      <nav aria-label={t.common.mainNav} className="flex flex-col gap-0.5 p-2">
         {nav.map((item) =>
           collapsed ? (
             <Tooltip key={item.href} content={item.label} side="bottom">
@@ -226,13 +230,13 @@ function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: 
             onClick={onToggle}
             aria-expanded={!collapsed}
             aria-keyshortcuts="Meta+B Control+B"
-            aria-label={collapsed ? de.shell.expand : de.shell.collapse}
+            aria-label={collapsed ? t.shell.expand : t.shell.collapse}
             className={cn("flex items-center gap-2 rounded-[var(--radius-badge)] text-[13px] text-muted hover:bg-bg hover:text-text", collapsed ? "size-10 justify-center" : "h-8 w-full px-2")}
           >
             <SidebarIcon />
             {!collapsed ? (
               <>
-                {de.shell.collapse}
+                {t.shell.collapse}
                 <kbd className="ml-auto font-mono text-xs">{shortcut}</kbd>
               </>
             ) : null}
@@ -290,6 +294,8 @@ function Topbar({
   confetti: boolean;
   onToggleConfetti: () => void;
 }) {
+  const t = useT();
+  const locale = useLocale();
   const shell = useShell();
   const router = useRouter();
   const crumbs = useBreadcrumb(explorer);
@@ -300,12 +306,12 @@ function Topbar({
       <button
         type="button"
         onClick={onOpenDrawer}
-        aria-label={de.shell.openMenu}
+        aria-label={t.shell.openMenu}
         className="flex size-8 items-center justify-center rounded-[var(--radius-badge)] text-muted hover:bg-bg md:hidden"
       >
         <Menu />
       </button>
-      <nav aria-label={de.shell.breadcrumb} className="min-w-0 flex-1">
+      <nav aria-label={t.shell.breadcrumb} className="min-w-0 flex-1">
         <ol className="flex min-w-0 items-center gap-1.5 text-[13px]">
           {crumbs.map((c, i) => (
             <li key={`${i}-${c.label}`} className="flex min-w-0 items-center gap-1.5">
@@ -329,26 +335,27 @@ function Topbar({
         aria-keyshortcuts="Meta+K Control+K"
         className="flex h-8 items-center gap-2 rounded-[var(--radius-badge)] border border-border px-2.5 text-[13px] text-muted hover:bg-bg hover:text-text"
       >
-        <span>{de.shell.search}</span>
+        <span>{t.shell.search}</span>
         <kbd className="hidden font-mono text-[11px] sm:inline">{shortcutK}</kbd>
       </button>
+      <LanguageToggle locale={locale} label={t.common.language} />
       <Dropdown
         align="end"
         trigger={<Avatar user={user} size="sm" />}
-        triggerLabel={de.shell.userMenu(user.name)}
+        triggerLabel={t.shell.userMenu(user.name)}
         triggerClassName="flex size-8 items-center justify-center rounded-full hover:ring-2 hover:ring-border"
         items={[
-          ...(shell.canAdmin ? [{ label: de.members.title, onSelect: () => router.push(`/${shell.slug}/settings/members`) }] : []),
-          ...(shell.isSuperadmin ? [{ label: de.admin.title, onSelect: () => router.push("/admin") }] : []),
-          { label: de.claude.title, onSelect: () => router.push(`/${shell.slug}/settings/claude`) },
-          { label: de.shell.switchWorkspace, onSelect: () => router.push("/start") },
-          { label: confetti ? de.shell.confettiOff : de.shell.confettiOn, onSelect: onToggleConfetti },
-          { label: de.command.shortcuts, onSelect: onShowHelp },
-          { label: de.common.signOut, onSelect: () => void signOut() },
-          { label: "Impressum", onSelect: () => router.push("/impressum") },
-          { label: "Datenschutz", onSelect: () => router.push("/datenschutz") },
-          { label: "AGB", onSelect: () => router.push("/agb") },
-          { label: "AVV", onSelect: () => router.push("/avv") },
+          ...(shell.canAdmin ? [{ label: t.members.title, onSelect: () => router.push(`/${shell.slug}/settings/members`) }] : []),
+          ...(shell.isSuperadmin ? [{ label: t.admin.title, onSelect: () => router.push("/admin") }] : []),
+          { label: t.claude.title, onSelect: () => router.push(`/${shell.slug}/settings/claude`) },
+          { label: t.shell.switchWorkspace, onSelect: () => router.push("/start") },
+          { label: confetti ? t.shell.confettiOff : t.shell.confettiOn, onSelect: onToggleConfetti },
+          { label: t.command.shortcuts, onSelect: onShowHelp },
+          { label: t.common.signOut, onSelect: () => void signOut() },
+          { label: t.legal.imprint, onSelect: () => router.push("/impressum") },
+          { label: t.legal.privacy, onSelect: () => router.push("/datenschutz") },
+          { label: t.legal.terms, onSelect: () => router.push("/agb") },
+          { label: t.legal.dpa, onSelect: () => router.push("/avv") },
         ]}
       />
     </header>
@@ -358,6 +365,7 @@ function Topbar({
 type Crumb = { label: string; href?: string };
 
 function useBreadcrumb(explorer: ExplorerData): Crumb[] {
+  const t = useT();
   const shell = useShell();
   const pathname = usePathname();
   const base = `/${shell.slug}`;
@@ -369,17 +377,17 @@ function useBreadcrumb(explorer: ExplorerData): Crumb[] {
     const folder = project?.folderId ? explorer.folders.find((f) => f.id === project.folderId) : undefined;
     if (folder) crumbs.push({ label: folder.name });
     crumbs.push({ label: project?.name ?? rest[1]!, href: `${base}/p/${rest[1]}` });
-    if (rest[2] === "settings") crumbs.push({ label: de.explorer.settings });
+    if (rest[2] === "settings") crumbs.push({ label: t.explorer.settings });
   } else if (rest[0] === "me") {
-    crumbs.push({ label: de.me.title });
+    crumbs.push({ label: t.me.title });
   } else if (rest[0] === "inbox") {
-    crumbs.push({ label: de.inbox.title });
+    crumbs.push({ label: t.inbox.title });
   } else if (rest[0] === "dashboard") {
-    crumbs.push({ label: de.dashboard.title });
+    crumbs.push({ label: t.dashboard.title });
   } else if (rest[0] === "settings" && rest[1] === "members") {
-    crumbs.push({ label: de.members.title });
+    crumbs.push({ label: t.members.title });
   } else if (rest.length === 0) {
-    crumbs.push({ label: de.shell.overview });
+    crumbs.push({ label: t.shell.overview });
   }
   return crumbs;
 }

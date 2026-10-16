@@ -4,7 +4,7 @@ import { db } from "@/db/client";
 import { invitation, membership, user, workspace } from "@/db/schema";
 import { countSeats, type Role, type Tx } from "@/db/queries/workspaces";
 import { env } from "@/lib/env";
-import { de } from "@/lib/i18n/de";
+import { getTOrDefault } from "@/lib/i18n/server";
 import { buttonMail, sendMail } from "@/lib/mail";
 import { hashToken, newToken } from "@/lib/tokens";
 
@@ -72,14 +72,16 @@ export async function createInvitations(
 }
 
 export async function sendInvitationMails(mails: InvitationMail[], inviterName: string, workspaceName: string) {
-  const m = de.invite.mail(inviterName, workspaceName);
+  // Written in the inviter's UI language (the invitee's is unknown).
+  const t = await getTOrDefault();
+  const m = t.invite.mail(inviterName, workspaceName);
   for (const { email, token } of mails) {
     const url = `${env.APP_URL}/invite/${token}`;
     await sendMail({
       to: email,
       subject: m.subject,
       text: `${m.intro}\n\n${url}\n\n${m.outro}`,
-      html: buttonMail({ heading: m.heading, intro: m.intro, button: m.button, url, outro: m.outro }),
+      html: buttonMail({ heading: m.heading, intro: m.intro, button: m.button, url, outro: m.outro, lang: t.common.langTag, fallback: t.common.mailFallback }),
     });
   }
 }

@@ -12,7 +12,7 @@ import {
 } from "@/app/(app)/[workspace]/ticket-actions";
 import type { AttachmentRow, CommentRow, SubtaskRow } from "@/db/queries/ticket-parts";
 import { useToast } from "@/components/ui/toast";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
 import { activityKey, ticketsKey } from "./use-tickets";
 
 /** `manageAttachments`: the viewer may delete every attachment (ticket author or admin), not just their own. */
@@ -35,6 +35,7 @@ export function useParts(workspaceId: string, ticketId: string) {
 export function usePartMutation<I, O>(workspaceId: string, projectId: string, ticketId: string, run: (input: I) => Promise<{ ok: true; data: O } | { ok: false; error: string }>, optimistic?: (parts: Parts, input: I) => Parts) {
   const qc = useQueryClient();
   const toast = useToast();
+  const t = useT();
   return useMutation({
     mutationFn: async (input: I) => {
       const r = await run(input);
@@ -50,7 +51,7 @@ export function usePartMutation<I, O>(workspaceId: string, projectId: string, ti
     },
     onError: (error, _input, context) => {
       if (context && "previous" in context && context.previous) qc.setQueryData(partsKey(ticketId), context.previous);
-      toast({ message: error.message || de.explorer.saveFailed, tone: "error" });
+      toast({ message: error.message || t.explorer.saveFailed, tone: "error" });
     },
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: partsKey(ticketId) });

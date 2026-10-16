@@ -3,13 +3,16 @@ import { and, asc, count, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { project, status, ticket } from "@/db/schema";
 import type { Tx } from "@/db/queries/workspaces";
-import { DEFAULT_STATUSES } from "@/lib/project-templates";
+import type { Locale } from "@/lib/i18n/locale";
+import { defaultStatusesFor } from "@/lib/project-templates";
 import { initialSortKey } from "@/lib/sort-key";
 
 /** Creates a project with the default statuses. Returns the project and its "open" status. */
 export async function createProjectWithDefaults(
   tx: Tx,
   input: { workspaceId: string; name: string; key: string; color: string; icon?: string; folderId?: string | null; sort?: string },
+  /** Language of the status names; the import relies on the German defaults. */
+  locale: Locale = "de",
 ) {
   const [created] = await tx
     .insert(project)
@@ -26,7 +29,7 @@ export async function createProjectWithDefaults(
   const statuses = await tx
     .insert(status)
     .values(
-      DEFAULT_STATUSES.map((s, i) => ({
+      defaultStatusesFor(locale).map((s, i) => ({
         workspaceId: input.workspaceId,
         projectId: created!.id,
         name: s.name,

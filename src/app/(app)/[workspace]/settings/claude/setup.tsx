@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
 import { TokenForm } from "./token-form";
 
 /** Token creation plus ready-to-paste config; the snippets fill in a freshly created token. */
 export function ClaudeSetup({ workspaceId, mcpUrl }: { workspaceId: string; mcpUrl: string }) {
+  const t = useT();
   const [token, setToken] = useState<string | null>(null);
-  const value = token ?? de.claude.tokenPlaceholder;
+  const value = token ?? t.claude.tokenPlaceholder;
   const code = `claude mcp add --transport http inhouseticket ${mcpUrl} --header "Authorization: Bearer ${value}"`;
   const desktop = JSON.stringify(
     { mcpServers: { inhouseticket: { command: "npx", args: ["-y", "mcp-remote", mcpUrl, "--header", `Authorization: Bearer ${value}`] } } },
@@ -19,17 +20,17 @@ export function ClaudeSetup({ workspaceId, mcpUrl }: { workspaceId: string; mcpU
     <>
       <section aria-labelledby="token-create-heading" className="rounded-[var(--radius-card)] border border-border bg-surface p-4">
         <h2 id="token-create-heading" className="mb-3 font-semibold">
-          {de.claude.createTitle}
+          {t.claude.createTitle}
         </h2>
         <TokenForm workspaceId={workspaceId} onToken={setToken} />
       </section>
 
       <section aria-labelledby="setup-heading" className="flex flex-col gap-4">
         <h2 id="setup-heading" className="font-semibold">
-          {de.claude.setupTitle}
+          {t.claude.setupTitle}
         </h2>
-        <Snippet title={de.claude.codeTitle} text={de.claude.codeText} code={code} />
-        <Snippet title={de.claude.desktopTitle} text={de.claude.desktopText} code={desktop} />
+        <Snippet title={t.claude.codeTitle} text={t.claude.codeText} code={code} />
+        <Snippet title={t.claude.desktopTitle} text={t.claude.desktopText} code={desktop} />
       </section>
     </>
   );

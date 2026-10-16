@@ -11,7 +11,7 @@ import { env } from "@/lib/env";
 import { mayEnterBeta } from "@/lib/beta";
 import { isCompanyEmail } from "@/lib/freemail";
 import { isExemptEmail } from "@/lib/superadmin";
-import { de } from "@/lib/i18n/de";
+import { getTOrDefault } from "@/lib/i18n/server";
 import { buttonMail, sendMail } from "@/lib/mail";
 import { nameFromEmail } from "@/lib/names";
 import { rateLimit } from "@/lib/rate-limit";
@@ -43,18 +43,19 @@ export const auth = betterAuth({
     // Friendly, early rejection before a mail is sent (CLAUDE.md rule 3).
     before: createAuthMiddleware(async (ctx) => {
       if (ctx.path !== "/sign-in/magic-link") return;
+      const t = await getTOrDefault();
       const email: unknown = ctx.body?.email;
       if (typeof email !== "string" || !(isCompanyEmail(email) || isExemptEmail(email))) {
-        throw new APIError("BAD_REQUEST", { code: "FREEMAIL_NOT_ALLOWED", message: de.auth.freemail });
+        throw new APIError("BAD_REQUEST", { code: "FREEMAIL_NOT_ALLOWED", message: t.auth.freemail });
       }
       if (!(await mayEnterBeta(email))) {
-        throw new APIError("FORBIDDEN", { code: "BETA_CLOSED", message: de.auth.betaClosed });
+        throw new APIError("FORBIDDEN", { code: "BETA_CLOSED", message: t.auth.betaClosed });
       }
       if (
         env.NODE_ENV === "production" &&
         !rateLimit(`magic-link:${email.trim().toLowerCase()}`, MAGIC_LINKS_PER_EMAIL, MAGIC_LINK_EMAIL_WINDOW_MS).ok
       ) {
-        throw new APIError("TOO_MANY_REQUESTS", { code: "TOO_MANY_LINKS", message: de.login.tooMany });
+        throw new APIError("TOO_MANY_REQUESTS", { code: "TOO_MANY_LINKS", message: t.login.tooMany });
       }
     }),
   },
@@ -76,16 +77,20 @@ export const auth = betterAuth({
       storeToken: "hashed",
       rateLimit: { window: 60, max: 5 },
       sendMagicLink: async ({ email, url }) => {
+        // In the language the person chose on the sign-in page.
+        const t = await getTOrDefault();
         await sendMail({
           to: email,
-          subject: de.auth.mail.subject,
-          text: `${de.auth.mail.intro}\n\n${url}\n\n${de.auth.mail.outro}`,
+          subject: t.auth.mail.subject,
+          text: `${t.auth.mail.intro}\n\n${url}\n\n${t.auth.mail.outro}`,
           html: buttonMail({
-            heading: de.auth.mail.heading,
-            intro: de.auth.mail.intro,
-            button: de.auth.mail.button,
+            heading: t.auth.mail.heading,
+            intro: t.auth.mail.intro,
+            button: t.auth.mail.button,
             url,
-            outro: de.auth.mail.outro,
+            outro: t.auth.mail.outro,
+            lang: t.common.langTag,
+            fallback: t.common.mailFallback,
           }),
         });
       },

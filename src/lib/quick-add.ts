@@ -2,7 +2,10 @@
 //   @name     → assignee (first name, full name without spaces, or @ich)
 //   !prio     → !dringend !hoch !mittel !niedrig, !1–!4, English synonyms
 //   ^datum    → ^heute ^morgen ^übermorgen ^montag…^sonntag ^mo…^so ^24.12. ^24.12.2026 ^2026-12-24 ^+3 ^nächste-woche
+//               English too: ^today ^tomorrow ^monday…^sunday ^mon…^sun ^next-week
 // Unknown tokens stay in the title, so nothing typed is silently lost.
+
+import { intlLocale, type Locale } from "@/lib/i18n/locale";
 
 export type QuickAddMember = { id: string; name: string };
 export type QuickAddToken = { kind: "assignee" | "priority" | "due"; raw: string; label: string };
@@ -23,10 +26,14 @@ const PRIORITIES: Record<string, number> = {
   mittel: 2, medium: 2, "3": 2,
   niedrig: 1, low: 1, "4": 1,
 };
-const PRIORITY_LABEL = ["Keine", "Niedrig", "Mittel", "Hoch", "Dringend"];
+const PRIORITY_LABEL: Record<Locale, string[]> = {
+  de: ["Keine", "Niedrig", "Mittel", "Hoch", "Dringend"],
+  en: ["None", "Low", "Medium", "High", "Urgent"],
+};
 
 const WEEKDAYS: Record<string, number> = {
   montag: 1, mo: 1, dienstag: 2, di: 2, mittwoch: 3, mi: 3, donnerstag: 4, do: 4, freitag: 5, fr: 5, samstag: 6, sa: 6, sonntag: 0, so: 0,
+  monday: 1, mon: 1, tuesday: 2, tue: 2, wednesday: 3, wed: 3, thursday: 4, thu: 4, friday: 5, fri: 5, saturday: 6, sat: 6, sunday: 0, sun: 0,
 };
 
 function addDays(date: string, days: number): string {
@@ -44,10 +51,10 @@ function validDate(y: number, m: number, d: number): string | null {
 /** Resolves a ^date word relative to `today` (YYYY-MM-DD, Europe/Berlin). */
 export function parseDueWord(word: string, today: string): string | null {
   const w = fold(word);
-  if (w === "heute") return today;
-  if (w === "morgen") return addDays(today, 1);
+  if (w === "heute" || w === "today") return today;
+  if (w === "morgen" || w === "tomorrow") return addDays(today, 1);
   if (w === "uebermorgen") return addDays(today, 2);
-  if (w === "naechste-woche" || w === "naechstewoche") {
+  if (w === "naechste-woche" || w === "naechstewoche" || w === "next-week" || w === "nextweek") {
     const dow = new Date(`${today}T00:00:00Z`).getUTCDay();
     return addDays(today, ((8 - dow) % 7) || 7); // next Monday
   }
@@ -85,9 +92,13 @@ function findMember(word: string, members: QuickAddMember[], currentUserId?: str
   return prefix.length === 1 ? prefix[0]! : null; // ambiguous → no match
 }
 
-const dateFmt = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: "UTC" });
+const DATE_FMT: Record<Locale, Intl.DateTimeFormat> = {
+  de: new Intl.DateTimeFormat(intlLocale("de"), { weekday: "short", day: "2-digit", month: "2-digit", timeZone: "UTC" }),
+  en: new Intl.DateTimeFormat(intlLocale("en"), { weekday: "short", day: "2-digit", month: "2-digit", timeZone: "UTC" }),
+};
 
-export function parseQuickAdd(input: string, opts: { members: QuickAddMember[]; today: string; currentUserId?: string }): QuickAddResult {
+export function parseQuickAdd(input: string, opts: { members: QuickAddMember[]; today: string; currentUserId?: string; locale?: Locale }): QuickAddResult {
+  const locale = opts.locale ?? "de";
   const result: QuickAddResult = { title: "", tokens: [] };
   const kept: string[] = [];
   for (const part of input.split(/\s+/).filter(Boolean)) {
@@ -106,7 +117,7 @@ export function parseQuickAdd(input: string, opts: { members: QuickAddMember[]; 
         const p = PRIORITIES[fold(word)];
         if (p !== undefined) {
           result.priority = p;
-          result.tokens.push({ kind: "priority", raw: part, label: PRIORITY_LABEL[p]! });
+          result.tokens.push({ kind: "priority", raw: part, label: PRIORITY_LABEL[locale][p]! });
           continue;
         }
       }
@@ -114,7 +125,7 @@ export function parseQuickAdd(input: string, opts: { members: QuickAddMember[]; 
         const d = parseDueWord(word, opts.today);
         if (d) {
           result.dueDate = d;
-          result.tokens.push({ kind: "due", raw: part, label: dateFmt.format(new Date(`${d}T00:00:00Z`)) });
+          result.tokens.push({ kind: "due", raw: part, label: DATE_FMT[locale].format(new Date(`${d}T00:00:00Z`)) });
           continue;
         }
       }

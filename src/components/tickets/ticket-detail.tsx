@@ -6,7 +6,9 @@ import type { ActivityRow, LabelRow, TicketRow } from "@/db/queries/tickets";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 import { relativeTime } from "@/lib/relative-time";
-import { de } from "@/lib/i18n/de";
+import { useLocale, useT } from "@/lib/i18n/client";
+import type { Messages } from "@/lib/i18n/de";
+import { intlLocale, type Locale } from "@/lib/i18n/locale";
 import { MAX_TITLE } from "@/lib/limits";
 import { PALETTE } from "@/lib/palette";
 import type { TicketPatch } from "@/lib/validation/ticket";
@@ -50,6 +52,7 @@ function useDraft(initial: string, save: (value: string) => void) {
 }
 
 export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Props) {
+  const t = useT();
   const { project, workspaceId, statuses } = useProjectInfo();
   const key = `${project.key}-${ticket.number}`;
   const today = todayInBerlin();
@@ -84,7 +87,7 @@ export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Pr
         latest.current.onPatch({ priority: key === "0" ? 0 : 5 - Number(key) });
       } else if (key === "a") {
         e.preventDefault();
-        panel.current?.querySelector<HTMLButtonElement>('button[aria-label^="Zuständig für"]')?.click();
+        panel.current?.querySelector<HTMLButtonElement>("[data-assignee-picker] button[aria-haspopup]")?.click();
       } else if (key === "d") {
         e.preventDefault();
         const input = panel.current?.querySelector<HTMLInputElement>('input[type="date"]');
@@ -104,7 +107,7 @@ export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Pr
     <div ref={panel} className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <span className="font-mono text-xs text-muted">{key}</span>
-        <label htmlFor="ticket-title" className="sr-only">{de.detail.title}</label>
+        <label htmlFor="ticket-title" className="sr-only">{t.detail.title}</label>
         <textarea
           id="ticket-title"
           value={title.draft}
@@ -127,17 +130,17 @@ export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Pr
       </div>
 
       <dl className="grid grid-cols-[7rem_1fr] items-center gap-x-3 gap-y-1 text-[13px]">
-        <dt className="text-muted">{de.project.colStatus}</dt>
+        <dt className="text-muted">{t.project.colStatus}</dt>
         <dd><StatusPicker value={ticket.statusId} ticketLabel={key} onChange={(statusId) => onPatch({ statusId })} /></dd>
-        <dt className="text-muted">{de.project.colPriority}</dt>
+        <dt className="text-muted">{t.project.colPriority}</dt>
         <dd><PriorityPicker value={ticket.priority} ticketLabel={key} onChange={(priority) => onPatch({ priority })} /></dd>
-        <dt className="text-muted">{de.list.colAssignee}</dt>
+        <dt className="text-muted">{t.list.colAssignee}</dt>
         <dd><AssigneePicker value={ticket.assigneeId} ticketLabel={key} onChange={(assigneeId) => onPatch({ assigneeId })} /></dd>
-        <dt className="text-muted">{de.list.colDue}</dt>
+        <dt className="text-muted">{t.list.colDue}</dt>
         <dd>
           <DueDateInput value={ticket.dueDate} ticketLabel={key} overdue={dueBucket(ticket.dueDate, today, done) === "overdue"} onChange={(dueDate) => onPatch({ dueDate })} />
         </dd>
-        <dt className="text-muted">{de.detail.labels}</dt>
+        <dt className="text-muted">{t.detail.labels}</dt>
         <dd>
           <LabelEditor
             workspaceId={workspaceId}
@@ -156,34 +159,34 @@ export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Pr
           <Attachments workspaceId={workspaceId} ticketId={ticket.id} attachments={parts.data.attachments} manageAll={parts.data.manageAttachments} actions={actions} />
         </>
       ) : parts.isError ? (
-        <p className="text-xs text-prio-urgent-ink">{de.detail.activityError}</p>
+        <p className="text-xs text-prio-urgent-ink">{t.detail.activityError}</p>
       ) : (
         <div className="h-24 animate-pulse rounded-[var(--radius-badge)] bg-bg" aria-hidden />
       )}
 
-      <section aria-label={de.detail.tabs}>
-        <div role="tablist" aria-label={de.detail.tabs} className="mb-3 flex gap-4 border-b border-border text-[13px]">
-          {(["comments", "activity"] as const).map((t) => (
+      <section aria-label={t.detail.tabs}>
+        <div role="tablist" aria-label={t.detail.tabs} className="mb-3 flex gap-4 border-b border-border text-[13px]">
+          {(["comments", "activity"] as const).map((k) => (
             <button
-              key={t}
+              key={k}
               type="button"
               role="tab"
-              id={`tab-${t}`}
-              aria-selected={tab === t}
-              aria-controls={`panel-${t}`}
-              tabIndex={tab === t ? 0 : -1}
-              onClick={() => setTab(t)}
+              id={`tab-${k}`}
+              aria-selected={tab === k}
+              aria-controls={`panel-${k}`}
+              tabIndex={tab === k ? 0 : -1}
+              onClick={() => setTab(k)}
               onKeyDown={(e) => {
                 if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
                   e.preventDefault();
-                  const next = t === "comments" ? "activity" : "comments";
+                  const next = k === "comments" ? "activity" : "comments";
                   setTab(next);
                   document.getElementById(`tab-${next}`)?.focus();
                 }
               }}
-              className={cn("-mb-px border-b-2 pb-2", tab === t ? "border-accent font-medium" : "border-transparent text-muted hover:text-text")}
+              className={cn("-mb-px border-b-2 pb-2", tab === k ? "border-accent font-medium" : "border-transparent text-muted hover:text-text")}
             >
-              {t === "comments" ? `${de.detail.comments}${parts.data?.comments.length ? ` (${parts.data.comments.length})` : ""}` : de.detail.activity}
+              {k === "comments" ? `${t.detail.comments}${parts.data?.comments.length ? ` (${parts.data.comments.length})` : ""}` : t.detail.activity}
             </button>
           ))}
         </div>
@@ -196,7 +199,7 @@ export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Pr
         </div>
       </section>
       {/* Keyboard hints are pointless on touch screens. */}
-      <p className="hidden text-xs text-muted [@media(hover:hover)]:block">{de.detail.navHint}</p>
+      <p className="hidden text-xs text-muted [@media(hover:hover)]:block">{t.detail.navHint}</p>
     </div>
   );
 }
@@ -204,6 +207,7 @@ export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Pr
 const LABEL_COLORS = Object.values(PALETTE);
 
 function LabelEditor({ workspaceId, ticket, onChange, onCreated }: { workspaceId: string; ticket: TicketRow; onChange: (ids: string[]) => void; onCreated: (l: LabelRow) => void }) {
+  const t = useT();
   const { project, labels } = useProjectInfo();
   const toast = useToast();
   const [value, setValue] = useState("");
@@ -238,7 +242,7 @@ function LabelEditor({ workspaceId, ticket, onChange, onCreated }: { workspaceId
           <button
             type="button"
             onClick={() => onChange(ticket.labelIds.filter((id) => id !== l.id))}
-            aria-label={de.detail.removeLabel(l.name)}
+            aria-label={t.detail.removeLabel(l.name)}
             className="rounded-full px-1 text-muted hover:bg-bg hover:text-text"
           >
             ×
@@ -257,8 +261,8 @@ function LabelEditor({ workspaceId, ticket, onChange, onCreated }: { workspaceId
             add(value);
           }
         }}
-        aria-label={de.detail.addLabel}
-        placeholder={de.detail.addLabelPlaceholder}
+        aria-label={t.detail.addLabel}
+        placeholder={t.detail.addLabelPlaceholder}
         className="h-7 w-36 rounded-[var(--radius-badge)] bg-transparent px-1.5 text-xs placeholder:text-muted hover:bg-bg"
       />
       <datalist id={listId}>
@@ -270,40 +274,42 @@ function LabelEditor({ workspaceId, ticket, onChange, onCreated }: { workspaceId
   );
 }
 
-function describe(a: ActivityRow): string {
+function describe(a: ActivityRow, t: Messages, locale: Locale): string {
   const p = a.payload as Record<string, unknown>;
   const str = (v: unknown) => (v === null || v === undefined || v === "" ? "–" : String(v));
   switch (a.type) {
-    case "created": return de.activity.created;
-    case "title": return de.activity.title(str(p.to));
-    case "description": return de.activity.description;
-    case "status": return de.activity.status(str(p.from), str(p.to));
-    case "priority": return de.activity.priority(de.priority[(["none", "low", "medium", "high", "urgent"] as const)[Number(p.to)] ?? "none"]);
-    case "assignee": return p.to ? de.activity.assignee(str(p.to)) : de.activity.unassigned;
-    case "due": return p.to ? de.activity.due(new Intl.DateTimeFormat("de-DE", { timeZone: "UTC" }).format(new Date(`${String(p.to)}T00:00:00Z`))) : de.activity.dueRemoved;
-    case "labels": return de.activity.labels((p.added as string[]) ?? [], (p.removed as string[]) ?? []);
-    case "subtask_added": return de.activity.subtask_added(str(p.title));
-    case "subtask_done": return de.activity.subtask_done(str(p.title));
-    case "subtask_reopened": return de.activity.subtask_reopened(str(p.title));
-    case "subtask_removed": return de.activity.subtask_removed(str(p.title));
-    case "attachment_added": return de.activity.attachment_added(str(p.fileName));
-    case "attachment_removed": return de.activity.attachment_removed(str(p.fileName));
-    case "imported": return de.import.activity(str(p.source), p.ref ? String(p.ref) : "");
+    case "created": return t.activity.created;
+    case "title": return t.activity.title(str(p.to));
+    case "description": return t.activity.description;
+    case "status": return t.activity.status(str(p.from), str(p.to));
+    case "priority": return t.activity.priority(t.priority[(["none", "low", "medium", "high", "urgent"] as const)[Number(p.to)] ?? "none"]);
+    case "assignee": return p.to ? t.activity.assignee(str(p.to)) : t.activity.unassigned;
+    case "due": return p.to ? t.activity.due(new Intl.DateTimeFormat(intlLocale(locale), { timeZone: "UTC" }).format(new Date(`${String(p.to)}T00:00:00Z`))) : t.activity.dueRemoved;
+    case "labels": return t.activity.labels((p.added as string[]) ?? [], (p.removed as string[]) ?? []);
+    case "subtask_added": return t.activity.subtask_added(str(p.title));
+    case "subtask_done": return t.activity.subtask_done(str(p.title));
+    case "subtask_reopened": return t.activity.subtask_reopened(str(p.title));
+    case "subtask_removed": return t.activity.subtask_removed(str(p.title));
+    case "attachment_added": return t.activity.attachment_added(str(p.fileName));
+    case "attachment_removed": return t.activity.attachment_removed(str(p.fileName));
+    case "imported": return t.import.activity(str(p.source), p.ref ? String(p.ref) : "");
     default: return a.type;
   }
 }
 
 function Activity({ workspaceId, ticketId }: { workspaceId: string; ticketId: string }) {
+  const t = useT();
+  const locale = useLocale();
   const { data, isError } = useActivity(workspaceId, ticketId);
   return (
     <section>
-      {isError ? <p className="text-xs text-prio-urgent-ink">{de.detail.activityError}</p> : null}
+      {isError ? <p className="text-xs text-prio-urgent-ink">{t.detail.activityError}</p> : null}
       <ol className="flex flex-col gap-1.5 border-l border-border pl-3 text-xs">
         {(data ?? []).map((a) => (
           <li key={a.id}>
-            <span className="font-medium">{a.actorName ?? de.activity.someone}</span> {describe(a)}
-            {a.via === "mcp" ? <span className="text-muted"> {de.activity.viaClaude}</span> : null}
-            <span className="text-muted"> · <time dateTime={a.createdAt}>{relativeTime(a.createdAt)}</time></span>
+            <span className="font-medium">{a.actorName ?? t.activity.someone}</span> {describe(a, t, locale)}
+            {a.via === "mcp" ? <span className="text-muted"> {t.activity.viaClaude}</span> : null}
+            <span className="text-muted"> · <time dateTime={a.createdAt}>{relativeTime(a.createdAt, undefined, locale)}</time></span>
           </li>
         ))}
       </ol>

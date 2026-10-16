@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GermanOnly } from "@/components/german-only";
 import Link from "next/link";
 import { OPERATOR } from "@/lib/legal";
 import { MAX_USERS_PER_WORKSPACE } from "@/lib/limits";
@@ -8,7 +9,7 @@ export const metadata: Metadata = { title: "AGB" };
 // Terms for a free B2B service, reviewed by a lawyer (2026-10-10). Changes need another review.
 export default function AgbPage() {
   return (
-    <>
+    <GermanOnly>
       <h1>Allgemeine Geschäftsbedingungen</h1>
       <p className="text-[13px] text-muted">Stand: Oktober 2026</p>
 
@@ -74,6 +75,6 @@ export default function AgbPage() {
         Es gilt deutsches Recht unter Ausschluss des UN-Kaufrechts. Gerichtsstand ist Hamburg, soweit der Kunde Kaufmann, juristische Person des
         öffentlichen Rechts oder öffentlich-rechtliches Sondervermögen ist. Sollte eine Bestimmung unwirksam sein, bleibt der Rest wirksam.
       </p>
-    </>
+    </GermanOnly>
   );
 }

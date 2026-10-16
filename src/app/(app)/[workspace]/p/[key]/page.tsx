@@ -7,7 +7,7 @@ import { findProjectByKey, listStatuses } from "@/db/queries/projects";
 import { listAssignableMembers, listLabels, listTickets } from "@/db/queries/tickets";
 import { listSavedViews } from "@/db/queries/views";
 import { requireMember } from "@/lib/authz";
-import { de } from "@/lib/i18n/de";
+import { getT } from "@/lib/i18n/server";
 
 type Props = { params: Promise<{ workspace: string; key: string }> };
 
@@ -25,6 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ProjectPage({ params }: Props) {
+  const t = await getT();
   const { ctx, project } = await load(params);
   const wsId = ctx.workspace.id;
   const [tickets, statuses, members, labels, savedViews] = await Promise.all([
@@ -43,7 +44,7 @@ export default async function ProjectPage({ params }: Props) {
         <h1 className="text-xl font-semibold">{project.name}</h1>
         <span className="font-mono text-[13px] text-muted">{project.key}</span>
         <Link href={`/${ctx.workspace.slug}/p/${project.key}/settings`} className="ml-auto text-[13px] text-muted hover:text-text">
-          {de.explorer.settings}
+          {t.explorer.settings}
         </Link>
       </header>
       <Suspense>

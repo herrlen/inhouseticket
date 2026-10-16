@@ -6,7 +6,8 @@ import type { ExplorerData } from "@/components/explorer/explorer";
 import type { SearchHit } from "@/db/queries/search";
 import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
+import type { Messages } from "@/lib/i18n/de";
 import { useShell } from "./shell-context";
 
 type Item = { id: string; group: "actions" | "projects" | "tickets"; label: string; hint?: string; color?: string; run: () => void };
@@ -27,14 +28,16 @@ export function CommandPalette({
   onToggleSidebar: () => void;
   onShowHelp: () => void;
 }) {
+  const t = useT();
   return (
-    <Dialog open={open} onClose={onClose} title={de.command.title} hideTitle className="top-[15vh] w-[min(36rem,calc(100vw-2rem))]">
+    <Dialog open={open} onClose={onClose} title={t.command.title} hideTitle className="top-[15vh] w-[min(36rem,calc(100vw-2rem))]">
       {open ? <PaletteBody explorer={explorer} onClose={onClose} onToggleSidebar={onToggleSidebar} onShowHelp={onShowHelp} /> : null}
     </Dialog>
   );
 }
 
 function PaletteBody({ explorer, onClose, onToggleSidebar, onShowHelp }: { explorer: ExplorerData; onClose: () => void; onToggleSidebar: () => void; onShowHelp: () => void }) {
+  const t = useT();
   const { slug, workspaceId, canAdmin } = useShell();
   const router = useRouter();
   const pathname = usePathname();
@@ -73,23 +76,23 @@ function PaletteBody({ explorer, onClose, onToggleSidebar, onShowHelp }: { explo
     const firstProject = explorer.projects.find((p) => p.key === currentKey) ?? explorer.projects[0];
     const actions: Item[] = [
       ...(firstProject
-        ? [{ id: "a-new", group: "actions" as const, label: de.command.newTicket(firstProject.name), hint: "C", run: () => go(`/${slug}/p/${firstProject.key}?new=1`) }]
+        ? [{ id: "a-new", group: "actions" as const, label: t.command.newTicket(firstProject.name), hint: "C", run: () => go(`/${slug}/p/${firstProject.key}?new=1`) }]
         : []),
-      { id: "a-me", group: "actions", label: de.me.title, run: () => go(`/${slug}/me`) },
-      { id: "a-home", group: "actions", label: de.shell.overview, run: () => go(`/${slug}`) },
+      { id: "a-me", group: "actions", label: t.me.title, run: () => go(`/${slug}/me`) },
+      { id: "a-home", group: "actions", label: t.shell.overview, run: () => go(`/${slug}`) },
       ...(currentKey
         ? [
-            { id: "a-list", group: "actions" as const, label: de.command.toList, hint: "L", run: () => go(`/${slug}/p/${currentKey}`) },
-            { id: "a-board", group: "actions" as const, label: de.command.toBoard, hint: "B", run: () => go(`/${slug}/p/${currentKey}?view=board`) },
-            { id: "a-settings", group: "actions" as const, label: de.command.projectSettings, run: () => go(`/${slug}/p/${currentKey}/settings`) },
+            { id: "a-list", group: "actions" as const, label: t.command.toList, hint: "L", run: () => go(`/${slug}/p/${currentKey}`) },
+            { id: "a-board", group: "actions" as const, label: t.command.toBoard, hint: "B", run: () => go(`/${slug}/p/${currentKey}?view=board`) },
+            { id: "a-settings", group: "actions" as const, label: t.command.projectSettings, run: () => go(`/${slug}/p/${currentKey}/settings`) },
           ]
         : []),
-      ...(canAdmin ? [{ id: "a-members", group: "actions" as const, label: de.members.title, run: () => go(`/${slug}/settings/members`) }] : []),
-      { id: "a-claude", group: "actions", label: de.claude.title, run: () => go(`/${slug}/settings/claude`) },
-      ...(canAdmin ? [{ id: "a-data", group: "actions" as const, label: de.data.title, run: () => go(`/${slug}/settings/data`) }] : []),
-      ...(canAdmin ? [{ id: "a-import", group: "actions" as const, label: de.import.title, run: () => go(`/${slug}/settings/data/import`) }] : []),
-      { id: "a-sidebar", group: "actions", label: de.command.toggleSidebar, hint: "⌘B", run: () => { onClose(); onToggleSidebar(); } },
-      { id: "a-help", group: "actions", label: de.command.shortcuts, hint: "?", run: () => { onClose(); onShowHelp(); } },
+      ...(canAdmin ? [{ id: "a-members", group: "actions" as const, label: t.members.title, run: () => go(`/${slug}/settings/members`) }] : []),
+      { id: "a-claude", group: "actions", label: t.claude.title, run: () => go(`/${slug}/settings/claude`) },
+      ...(canAdmin ? [{ id: "a-data", group: "actions" as const, label: t.data.title, run: () => go(`/${slug}/settings/data`) }] : []),
+      ...(canAdmin ? [{ id: "a-import", group: "actions" as const, label: t.import.title, run: () => go(`/${slug}/settings/data/import`) }] : []),
+      { id: "a-sidebar", group: "actions", label: t.command.toggleSidebar, hint: "⌘B", run: () => { onClose(); onToggleSidebar(); } },
+      { id: "a-help", group: "actions", label: t.command.shortcuts, hint: "?", run: () => { onClose(); onShowHelp(); } },
     ];
     const projects: Item[] = explorer.projects.map((p) => ({ id: `p-${p.id}`, group: "projects", label: p.name, hint: p.key, color: p.color, run: () => go(`/${slug}/p/${p.key}`) }));
     const tickets: Item[] = (q.trim().length >= 2 ? hits : []).map((h) => ({
@@ -101,7 +104,7 @@ function PaletteBody({ explorer, onClose, onToggleSidebar, onShowHelp }: { explo
       run: () => go(`/${slug}/p/${h.projectKey}?t=${h.key}`),
     }));
     return [...actions.filter((a) => matches(a.label)), ...projects.filter((p) => matches(p.label) || matches(p.hint ?? "")).slice(0, 6), ...tickets];
-  }, [q, hits, explorer.projects, currentKey, slug, canAdmin, onClose, onShowHelp, onToggleSidebar, router]);
+  }, [q, hits, explorer.projects, currentKey, slug, canAdmin, onClose, onShowHelp, onToggleSidebar, router, t]);
 
   const safeActive = Math.min(active, Math.max(0, items.length - 1));
   useEffect(() => {
@@ -109,9 +112,9 @@ function PaletteBody({ explorer, onClose, onToggleSidebar, onShowHelp }: { explo
   }, [safeActive]);
 
   const groups: Array<{ key: Item["group"]; label: string }> = [
-    { key: "actions", label: de.command.groups.actions },
-    { key: "projects", label: de.command.groups.projects },
-    { key: "tickets", label: de.command.groups.tickets },
+    { key: "actions", label: t.command.groups.actions },
+    { key: "projects", label: t.command.groups.projects },
+    { key: "tickets", label: t.command.groups.tickets },
   ];
 
   return (
@@ -122,8 +125,8 @@ function PaletteBody({ explorer, onClose, onToggleSidebar, onShowHelp }: { explo
         aria-expanded
         aria-controls={listId}
         aria-activedescendant={items[safeActive] ? `${listId}-${items[safeActive].id}` : undefined}
-        aria-label={de.command.input}
-        placeholder={de.command.placeholder}
+        aria-label={t.command.input}
+        placeholder={t.command.placeholder}
         value={q}
         onChange={(e) => {
           setQ(e.target.value);
@@ -141,8 +144,8 @@ function PaletteBody({ explorer, onClose, onToggleSidebar, onShowHelp }: { explo
         }}
         className="h-11 border-b border-border bg-transparent px-1 text-[15px] placeholder:text-muted focus:outline-none"
       />
-      <ul ref={listRef} id={listId} role="listbox" aria-label={de.command.results} className="max-h-[50vh] overflow-y-auto py-2">
-        {items.length === 0 ? <li className="px-2 py-3 text-[13px] text-muted">{q.trim().length >= 2 ? de.command.noResults : de.command.typeToSearch}</li> : null}
+      <ul ref={listRef} id={listId} role="listbox" aria-label={t.command.results} className="max-h-[50vh] overflow-y-auto py-2">
+        {items.length === 0 ? <li className="px-2 py-3 text-[13px] text-muted">{q.trim().length >= 2 ? t.command.noResults : t.command.typeToSearch}</li> : null}
         {groups.map((g) => {
           const groupItems = items.map((it, index) => ({ it, index })).filter(({ it }) => it.group === g.key);
           if (groupItems.length === 0) return null;
@@ -175,13 +178,14 @@ function PaletteBody({ explorer, onClose, onToggleSidebar, onShowHelp }: { explo
   );
 }
 
-const SHORTCUTS: Array<{ keys: string[]; label: keyof typeof de.help.items }> = [
-  { keys: ["⌘/Strg", "K"], label: "palette" },
+const MOD = "mod";
+const SHORTCUTS: Array<{ keys: string[]; label: keyof Messages["help"]["items"] }> = [
+  { keys: [MOD, "K"], label: "palette" },
   { keys: ["/"], label: "search" },
   { keys: ["C"], label: "create" },
   { keys: ["L"], label: "list" },
   { keys: ["B"], label: "board" },
-  { keys: ["⌘/Strg", "B"], label: "sidebar" },
+  { keys: [MOD, "B"], label: "sidebar" },
   { keys: ["↑", "↓"], label: "navigate" },
   { keys: ["1–4"], label: "priority" },
   { keys: ["0"], label: "noPriority" },
@@ -192,17 +196,18 @@ const SHORTCUTS: Array<{ keys: string[]; label: keyof typeof de.help.items }> = 
 ];
 
 export function ShortcutHelp({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const t = useT();
   return (
-    <Dialog open={open} onClose={onClose} title={de.help.title}>
+    <Dialog open={open} onClose={onClose} title={t.help.title}>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[13px]">
         {SHORTCUTS.map((s) => (
           <div key={s.label} className="contents">
             <dt className="flex gap-1">
               {s.keys.map((k) => (
-                <kbd key={k} className="rounded border border-border bg-bg px-1.5 font-mono text-[11px]">{k}</kbd>
+                <kbd key={k} className="rounded border border-border bg-bg px-1.5 font-mono text-[11px]">{k === MOD ? t.common.modKey : k}</kbd>
               ))}
             </dt>
-            <dd>{de.help.items[s.label]}</dd>
+            <dd>{t.help.items[s.label]}</dd>
           </div>
         ))}
       </dl>

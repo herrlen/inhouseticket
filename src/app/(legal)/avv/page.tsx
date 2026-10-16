@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GermanOnly } from "@/components/german-only";
 import { OPERATOR } from "@/lib/legal";
 import { PrintButton } from "./print-button";
 
@@ -8,7 +9,7 @@ export const metadata: Metadata = { title: "Auftragsverarbeitungsvertrag", };
 // what the code and operations actually do (docs/security-review.md, docs/betrieb.md).
 export default function AvvPage() {
   return (
-    <>
+    <GermanOnly>
       <h1>Auftragsverarbeitungsvertrag (AVV)</h1>
       <p className="text-[13px] text-muted">nach Art. 28 DSGVO · Stand: Oktober 2026</p>
       <PrintButton />
@@ -79,6 +80,6 @@ export default function AvvPage() {
         <li><strong>Verfügbarkeit:</strong> tägliche Sicherung der Datenbank (konsistenter Dump) und tägliches Projekt-Backup beim Hoster, Aufbewahrung 30 Tage; dokumentiertes Wiederherstellungsverfahren.</li>
         <li><strong>Betrieb:</strong> Änderungen werden vor dem Ausrollen automatisch getestet; administrativer Zugang nur für Personen des Auftragsverarbeiters; die Betreiberübersicht zeigt nur Kennzahlen, keine Inhalte.</li>
       </ul>
-    </>
+    </GermanOnly>
   );
 }

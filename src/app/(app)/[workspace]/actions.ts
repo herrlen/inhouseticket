@@ -22,7 +22,7 @@ import { hasRole, requireMember, requireRole } from "@/lib/authz";
 import { workspace as workspaceTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { keyBetween } from "@/lib/fractional";
-import { de } from "@/lib/i18n/de";
+import { getLocale, getT } from "@/lib/i18n/server";
 import { createProjectSchema, folderNameSchema, statusSchema, updateProjectSchema } from "@/lib/validation/project";
 
 export type FormState = { error?: string; fieldErrors?: Record<string, string>; ok?: boolean };
@@ -35,9 +35,10 @@ function refresh(slug: string) {
   revalidatePath(`/${slug}`, "layout");
 }
 
-function fieldErrors(error: z.ZodError): Record<string, string> {
+async function fieldErrors(error: z.ZodError): Promise<Record<string, string>> {
+  const t = await getT();
   const out: Record<string, string> = {};
-  for (const issue of error.issues) out[String(issue.path[0])] ??= issue.message;
+  for (const issue of error.issues) out[String(issue.path[0])] ??= t.validation(issue.message);
   return out;
 }
 
@@ -46,14 +47,15 @@ function fieldErrors(error: z.ZodError): Record<string, string> {
 // ---------------------------------------------------------------------------
 
 export async function createProjectAction(_: FormState, formData: FormData): Promise<FormState> {
+  const t = await getT();
   const ctx = await requireMember({ workspaceId: id.parse(formData.get("workspaceId")) });
   const parsed = createProjectSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error) };
+  if (!parsed.success) return { fieldErrors: await fieldErrors(parsed.error) };
   const input = parsed.data;
   const wsId = ctx.workspace.id;
 
-  if (input.folderId && !(await folderExists(wsId, input.folderId))) return { error: de.explorer.folderGone };
-  if (await projectKeyTaken(wsId, input.key)) return { fieldErrors: { key: de.explorer.keyTaken(input.key) } };
+  if (input.folderId && !(await folderExists(wsId, input.folderId))) return { error: t.explorer.folderGone };
+  if (await projectKeyTaken(wsId, input.key)) return { fieldErrors: { key: t.explorer.keyTaken(input.key) } };
 
   const sort = keyBetween(await lastProjectSort(wsId, input.folderId), null);
   await db.transaction(async (tx) => {
@@ -65,7 +67,7 @@ export async function createProjectAction(_: FormState, formData: FormData): Pro
       icon: input.icon ?? undefined,
       folderId: input.folderId,
       sort,
-    });
+    }, await getLocale());
   });
   refresh(ctx.workspace.slug);
   redirect(`/${ctx.workspace.slug}/p/${input.key}`);
@@ -75,7 +77,7 @@ export async function updateProjectAction(_: FormState, formData: FormData): Pro
   const ctx = await requireMember({ workspaceId: id.parse(formData.get("workspaceId")) });
   const projectId = id.parse(formData.get("projectId"));
   const parsed = updateProjectSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error) };
+  if (!parsed.success) return { fieldErrors: await fieldErrors(parsed.error) };
   await updateProject(ctx.workspace.id, projectId, parsed.data);
   refresh(ctx.workspace.slug);
   return { ok: true };
@@ -95,10 +97,11 @@ const moveProjectInput = z.object({ workspaceId: id, projectId: id, folderId: id
 
 /** Drag & drop / "move to" – called with optimistic UI, so it returns instead of throwing. */
 export async function moveProjectAction(input: z.input<typeof moveProjectInput>): Promise<Result> {
+  const t = await getT();
   const data = moveProjectInput.safeParse(input);
-  if (!data.success) return { ok: false, error: de.common.invalidInput };
+  if (!data.success) return { ok: false, error: t.common.invalidInput };
   const ctx = await requireMember({ workspaceId: data.data.workspaceId });
-  if (data.data.folderId && !(await folderExists(ctx.workspace.id, data.data.folderId))) return { ok: false, error: de.explorer.folderGone };
+  if (data.data.folderId && !(await folderExists(ctx.workspace.id, data.data.folderId))) return { ok: false, error: t.explorer.folderGone };
   await updateProject(ctx.workspace.id, data.data.projectId, { folderId: data.data.folderId, sort: data.data.sort });
   refresh(ctx.workspace.slug);
   return { ok: true };
@@ -111,7 +114,7 @@ export async function moveProjectAction(input: z.input<typeof moveProjectInput>)
 export async function createFolderAction(_: FormState, formData: FormData): Promise<FormState> {
   const ctx = await requireMember({ workspaceId: id.parse(formData.get("workspaceId")) });
   const name = folderNameSchema.safeParse(formData.get("name"));
-  if (!name.success) return { fieldErrors: { name: name.error.issues[0]!.message } };
+  if (!name.success) return { fieldErrors: { name: (await getT()).validation(name.error.issues[0]!.message) } };
   const sort = keyBetween(await lastFolderSort(ctx.workspace.id), null);
   const folder = await createFolder(ctx.workspace.id, name.data, sort);
   const prefs = await getPrefs(ctx.workspace.id, ctx.user.id);
@@ -123,23 +126,25 @@ export async function createFolderAction(_: FormState, formData: FormData): Prom
 export async function renameFolderAction(_: FormState, formData: FormData): Promise<FormState> {
   const ctx = await requireMember({ workspaceId: id.parse(formData.get("workspaceId")) });
   const name = folderNameSchema.safeParse(formData.get("name"));
-  if (!name.success) return { fieldErrors: { name: name.error.issues[0]!.message } };
+  if (!name.success) return { fieldErrors: { name: (await getT()).validation(name.error.issues[0]!.message) } };
   await renameFolder(ctx.workspace.id, id.parse(formData.get("folderId")), name.data);
   refresh(ctx.workspace.slug);
   return { ok: true };
 }
 
 export async function deleteFolderAction(input: { workspaceId: string; folderId: string }): Promise<Result> {
+  const t = await getT();
   const ctx = await requireMember({ workspaceId: id.parse(input.workspaceId) });
-  if (!hasRole(ctx, "admin")) return { ok: false, error: de.members.noPermission };
+  if (!hasRole(ctx, "admin")) return { ok: false, error: t.members.noPermission };
   await deleteFolder(ctx.workspace.id, id.parse(input.folderId));
   refresh(ctx.workspace.slug);
   return { ok: true };
 }
 
 export async function moveFolderAction(input: { workspaceId: string; folderId: string; sort: string }): Promise<Result> {
+  const t = await getT();
   const parsed = z.object({ workspaceId: id, folderId: id, sort: sortKey }).safeParse(input);
-  if (!parsed.success) return { ok: false, error: de.common.invalidInput };
+  if (!parsed.success) return { ok: false, error: t.common.invalidInput };
   const ctx = await requireMember({ workspaceId: parsed.data.workspaceId });
   await moveFolder(ctx.workspace.id, parsed.data.folderId, parsed.data.sort);
   refresh(ctx.workspace.slug);
@@ -159,8 +164,9 @@ const prefsInput = z.object({
 });
 
 export async function savePrefsAction(input: z.input<typeof prefsInput>): Promise<Result> {
+  const t = await getT();
   const parsed = prefsInput.safeParse(input);
-  if (!parsed.success) return { ok: false, error: de.common.invalidInput };
+  if (!parsed.success) return { ok: false, error: t.common.invalidInput };
   const { workspaceId, ...patch } = parsed.data;
   const ctx = await requireMember({ workspaceId });
   await updatePrefs(ctx.workspace.id, ctx.user.id, patch);
@@ -181,7 +187,7 @@ async function projectContext(formData: FormData) {
 export async function createStatusAction(_: FormState, formData: FormData): Promise<FormState> {
   const { ctx, project } = await projectContext(formData);
   const parsed = statusSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error) };
+  if (!parsed.success) return { fieldErrors: await fieldErrors(parsed.error) };
   const statuses = await listStatuses(ctx.workspace.id, project.id);
   // New statuses go before the first "done" status, so "Erledigt" stays last.
   const firstDone = statuses.findIndex((s) => s.category === "done");
@@ -193,15 +199,16 @@ export async function createStatusAction(_: FormState, formData: FormData): Prom
 }
 
 export async function updateStatusAction(_: FormState, formData: FormData): Promise<FormState> {
+  const t = await getT();
   const { ctx, project } = await projectContext(formData);
   const statusId = id.parse(formData.get("statusId"));
   const parsed = statusSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error) };
+  if (!parsed.success) return { fieldErrors: await fieldErrors(parsed.error) };
   const statuses = await listStatuses(ctx.workspace.id, project.id);
-  if (!statuses.some((s) => s.id === statusId)) return { error: de.common.invalidInput };
+  if (!statuses.some((s) => s.id === statusId)) return { error: t.common.invalidInput };
   const target = statuses.find((s) => s.id === statusId)!;
   if (target.category === "done" && parsed.data.category !== "done" && statuses.filter((s) => s.category === "done").length === 1) {
-    return { error: de.projectSettings.needsDone };
+    return { error: t.projectSettings.needsDone };
   }
   await updateStatus(ctx.workspace.id, statusId, parsed.data);
   refresh(ctx.workspace.slug);
@@ -224,16 +231,17 @@ export async function moveStatusAction(formData: FormData) {
 }
 
 export async function deleteStatusAction(_: FormState, formData: FormData): Promise<FormState> {
+  const t = await getT();
   const { ctx, project } = await projectContext(formData);
   const statusId = id.parse(formData.get("statusId"));
   const targetRaw = String(formData.get("targetStatusId") ?? "");
   const statuses = await listStatuses(ctx.workspace.id, project.id);
   const target = statuses.find((s) => s.id === statusId);
-  if (!target) return { error: de.common.invalidInput };
-  if (statuses.length <= 1) return { error: de.projectSettings.needsOne };
-  if (target.category === "done" && statuses.filter((s) => s.category === "done").length === 1) return { error: de.projectSettings.needsDone };
+  if (!target) return { error: t.common.invalidInput };
+  if (statuses.length <= 1) return { error: t.projectSettings.needsOne };
+  if (target.category === "done" && statuses.filter((s) => s.category === "done").length === 1) return { error: t.projectSettings.needsDone };
   const moveTo = targetRaw && statuses.some((s) => s.id === targetRaw && s.id !== statusId) ? targetRaw : null;
-  if (target.ticketCount > 0 && !moveTo) return { error: de.projectSettings.chooseTarget };
+  if (target.ticketCount > 0 && !moveTo) return { error: t.projectSettings.chooseTarget };
   await deleteStatus(ctx.workspace.id, project.id, statusId, moveTo);
   refresh(ctx.workspace.slug);
   return { ok: true };
@@ -244,18 +252,20 @@ export async function deleteStatusAction(_: FormState, formData: FormData): Prom
 // ---------------------------------------------------------------------------
 
 export async function createSavedViewAction(input: { workspaceId: string; projectId: string; name: string; query: string }): Promise<{ ok: true; view: SavedViewRow } | { ok: false; error: string }> {
+  const t = await getT();
   const parsed = z
-    .object({ workspaceId: id, projectId: id, name: z.string().trim().min(1, de.views.nameRequired).max(60, de.views.nameTooLong), query: z.string().max(2000) })
+    .object({ workspaceId: id, projectId: id, name: z.string().trim().min(1, t.views.nameRequired).max(60, t.views.nameTooLong), query: z.string().max(2000) })
     .safeParse(input);
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? de.common.invalidInput };
+  if (!parsed.success) return { ok: false, error: t.validation(parsed.error.issues[0]?.message ?? t.common.invalidInput) };
   const ctx = await requireMember({ workspaceId: parsed.data.workspaceId });
   const view = await createSavedView(ctx.workspace.id, ctx.user.id, parsed.data.projectId, parsed.data.name, parsed.data.query);
-  return view ? { ok: true, view } : { ok: false, error: de.common.invalidInput };
+  return view ? { ok: true, view } : { ok: false, error: t.common.invalidInput };
 }
 
 export async function deleteSavedViewAction(input: { workspaceId: string; viewId: string }): Promise<Result> {
+  const t = await getT();
   const parsed = z.object({ workspaceId: id, viewId: id }).safeParse(input);
-  if (!parsed.success) return { ok: false, error: de.common.invalidInput };
+  if (!parsed.success) return { ok: false, error: t.common.invalidInput };
   const ctx = await requireMember({ workspaceId: parsed.data.workspaceId });
   await deleteSavedView(ctx.workspace.id, ctx.user.id, parsed.data.viewId);
   return { ok: true };
@@ -281,8 +291,9 @@ export async function setWorkloadThresholdAction(formData: FormData) {
 // ---------------------------------------------------------------------------
 
 export async function markNotificationsReadAction(input: { workspaceId: string; ids?: string[] }): Promise<Result> {
+  const t = await getT();
   const parsed = z.object({ workspaceId: id, ids: z.array(id).max(200).optional() }).safeParse(input);
-  if (!parsed.success) return { ok: false, error: de.common.invalidInput };
+  if (!parsed.success) return { ok: false, error: t.common.invalidInput };
   const ctx = await requireMember({ workspaceId: parsed.data.workspaceId });
   await markRead(ctx.workspace.id, ctx.user.id, parsed.data.ids);
   refresh(ctx.workspace.slug);

@@ -10,7 +10,7 @@ import { cleanViewQuery } from "@/lib/view-query";
 import { FilterBar } from "./filter-bar";
 import { applyFilters, readFilters } from "./filters";
 import { SlideOver } from "@/components/ui/dialog";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
 import { usePrefs } from "@/components/shell/prefs-context";
 import { confettiBurst } from "@/lib/confetti";
 import { cn } from "@/lib/cn";
@@ -56,6 +56,7 @@ const isEditable = (el: EventTarget | null) =>
   el instanceof HTMLElement && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) || Boolean(el.closest("[role=menu],dialog")));
 
 export function ProjectView({ info, statuses, members, labels: initialLabels, initialTickets, savedViews }: Props) {
+  const t = useT();
   const params = useSearchParams();
   const groupBy = (GROUPS.find((g) => g === params.get("group")) ?? "status") as GroupBy;
   const sortBy = (SORTS.find((s) => s === params.get("sort")) ?? "manual") as SortBy;
@@ -93,7 +94,7 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
     () => applyFilters(tickets, filters, { currentUserId: info.currentUserId, today, doneStatusIds, projectKey: project.key }),
     [tickets, filters, info.currentUserId, today, doneStatusIds, project.key],
   );
-  const groups = useMemo(() => groupTickets(filtered, { groupBy, sortBy, statuses, members, today }), [filtered, groupBy, sortBy, statuses, members, today]);
+  const groups = useMemo(() => groupTickets(filtered, { groupBy, sortBy, statuses, members, today, t }), [filtered, groupBy, sortBy, statuses, members, today, t]);
   const visibleOrder = groups.flatMap((g) => g.tickets).filter((t) => !t.id.startsWith("temp-"));
   const openTicket = openKey ? tickets.find((t) => `${project.key}-${t.number}` === openKey) ?? null : null;
 
@@ -147,7 +148,7 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
     <ProjectInfoProvider value={providerValue}>
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <div role="group" aria-label={de.view.switcher} className="inline-flex rounded-[var(--radius-badge)] border border-border bg-surface p-0.5">
+          <div role="group" aria-label={t.view.switcher} className="inline-flex rounded-[var(--radius-badge)] border border-border bg-surface p-0.5">
             {(["list", "board"] as const).map((v) => (
               <button
                 key={v}
@@ -157,12 +158,12 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
                 onClick={() => setParams({ view: v === "board" ? "board" : null })}
                 className={cn("h-7 rounded px-2.5 text-[13px]", view === v ? "bg-bg font-medium" : "text-muted hover:text-text")}
               >
-                {de.view[v]}
+                {t.view[v]}
               </button>
             ))}
           </div>
           <span role="status" aria-live="polite" className="order-last w-full text-xs text-muted sm:order-none sm:w-auto">
-            {saving ? de.list.savingAll : ""}
+            {saving ? t.list.savingAll : ""}
           </span>
           <div className="min-w-64 flex-1">
             <QuickAdd ref={quickAdd} onCreate={({ title, assigneeId, priority, dueDate }) => create.mutate({ title, assigneeId, priority, dueDate })} />
@@ -170,15 +171,15 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
           {view === "list" ? (
           <>
           <label className="flex items-center gap-1.5 text-[13px] text-muted">
-            {de.list.groupBy}
+            {t.list.groupBy}
             <select value={groupBy} onChange={(e) => setParams({ group: e.target.value === "status" ? null : e.target.value })} className="h-8 rounded-[var(--radius-badge)] border border-border bg-surface px-2 text-text">
-              {GROUPS.map((g) => <option key={g} value={g}>{de.list.groups[g]}</option>)}
+              {GROUPS.map((g) => <option key={g} value={g}>{t.list.groups[g]}</option>)}
             </select>
           </label>
           <label className="flex items-center gap-1.5 text-[13px] text-muted">
-            {de.list.sortBy}
+            {t.list.sortBy}
             <select value={sortBy} onChange={(e) => setParams({ sort: e.target.value === "manual" ? null : e.target.value })} className="h-8 rounded-[var(--radius-badge)] border border-border bg-surface px-2 text-text">
-              {SORTS.map((s) => <option key={s} value={s}>{de.list.sorts[s]}</option>)}
+              {SORTS.map((s) => <option key={s} value={s}>{t.list.sorts[s]}</option>)}
             </select>
           </label>
           </>
@@ -216,7 +217,7 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
             }}
           />
         ) : filtered.length === 0 ? (
-          <p className="rounded-[var(--radius-card)] border border-dashed border-border p-8 text-center text-muted">{tickets.length === 0 ? de.list.empty : de.filters.noMatch}</p>
+          <p className="rounded-[var(--radius-card)] border border-dashed border-border p-8 text-center text-muted">{tickets.length === 0 ? t.list.empty : t.filters.noMatch}</p>
         ) : (
           <TicketList
             groups={groups}
@@ -249,7 +250,7 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
         />
       </div>
 
-      <SlideOver open={Boolean(openTicket)} onClose={close} title={openTicket ? `${project.key}-${openTicket.number}` : de.detail.close} hideTitle>
+      <SlideOver open={Boolean(openTicket)} onClose={close} title={openTicket ? `${project.key}-${openTicket.number}` : t.detail.close} hideTitle>
         {openTicket ? (
           <TicketDetail
             key={openTicket.id}

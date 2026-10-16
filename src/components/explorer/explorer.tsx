@@ -8,7 +8,7 @@ import { useShell } from "@/components/shell/shell-context";
 import { Plus, Star } from "@/components/ui/icons";
 import { useToast } from "@/components/ui/toast";
 import { keyBetween } from "@/lib/fractional";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
 import { FolderNameDialog, NewProjectDialog } from "./dialogs";
 import { DndRoot, SortableList } from "./dnd-bridge";
 import { FolderRow } from "./folder-row";
@@ -45,6 +45,7 @@ function useSynced<T>(value: T): [T, (v: T | ((prev: T) => T)) => void] {
 }
 
 export function Explorer({ data }: { data: ExplorerData }) {
+  const t = useT();
   const { workspaceId, slug } = useShell();
   const toast = useToast();
   const router = useRouter();
@@ -69,7 +70,7 @@ export function Explorer({ data }: { data: ExplorerData }) {
   function failed(rollback: () => void) {
     return (error?: string) => {
       rollback();
-      toast({ message: error ?? de.explorer.saveFailed, tone: "error" });
+      toast({ message: error ?? t.explorer.saveFailed, tone: "error" });
     };
   }
 
@@ -123,9 +124,9 @@ export function Explorer({ data }: { data: ExplorerData }) {
     startTransition(async () => {
       await call(true);
       toast({
-        message: de.explorer.archived(project.name),
+        message: t.explorer.archived(project.name),
         tone: "success",
-        action: { label: de.explorer.undo, onClick: () => startTransition(() => call(false).then(() => router.refresh())) },
+        action: { label: t.explorer.undo, onClick: () => startTransition(() => call(false).then(() => router.refresh())) },
       });
     });
   }
@@ -141,7 +142,7 @@ export function Explorer({ data }: { data: ExplorerData }) {
           setFolders(before.folders);
           setProjects(before.projects);
         })(r.error);
-      } else toast({ message: de.explorer.folderDeleted(folder.name), tone: "success" });
+      } else toast({ message: t.explorer.folderDeleted(folder.name), tone: "success" });
     });
   }
 
@@ -180,10 +181,10 @@ export function Explorer({ data }: { data: ExplorerData }) {
     return ref.kind === "project" ? (projects.find((p) => p.id === ref.id)?.name ?? "") : (folders.find((f) => f.id === ref.id)?.name ?? "");
   };
   const announcements: Announcements = {
-    onDragStart: ({ active }) => de.explorer.dnd.start(nameOf(active.id)),
-    onDragOver: ({ active, over }) => (over ? de.explorer.dnd.over(nameOf(active.id), nameOf(over.id)) : de.explorer.dnd.outside(nameOf(active.id))),
-    onDragEnd: ({ active, over }) => (over ? de.explorer.dnd.end(nameOf(active.id), nameOf(over.id)) : de.explorer.dnd.cancel(nameOf(active.id))),
-    onDragCancel: ({ active }) => de.explorer.dnd.cancel(nameOf(active.id)),
+    onDragStart: ({ active }) => t.explorer.dnd.start(nameOf(active.id)),
+    onDragOver: ({ active, over }) => (over ? t.explorer.dnd.over(nameOf(active.id), nameOf(over.id)) : t.explorer.dnd.outside(nameOf(active.id))),
+    onDragEnd: ({ active, over }) => (over ? t.explorer.dnd.end(nameOf(active.id), nameOf(over.id)) : t.explorer.dnd.cancel(nameOf(active.id))),
+    onDragCancel: ({ active }) => t.explorer.dnd.cancel(nameOf(active.id)),
   };
 
   const rowProps = { folders: sortedFolders, onToggleFavorite: toggleFavorite, onMoveTo: moveTo, onArchive: archive };
@@ -193,7 +194,7 @@ export function Explorer({ data }: { data: ExplorerData }) {
       {favoriteProjects.length > 0 ? (
         <section aria-labelledby="fav-heading">
           <h2 id="fav-heading" className="mb-1 flex items-center gap-1.5 px-2 text-xs font-medium text-muted">
-            <Star size={12} filled /> {de.explorer.favorites}
+            <Star size={12} filled /> {t.explorer.favorites}
           </h2>
           <ul>
             {favoriteProjects.map((p) => (
@@ -206,7 +207,7 @@ export function Explorer({ data }: { data: ExplorerData }) {
       <section aria-labelledby="projects-heading">
         <div className="mb-1 flex items-center justify-between px-2">
           <h2 id="projects-heading" className="text-xs font-medium text-muted">
-            {de.explorer.projects}
+            {t.explorer.projects}
           </h2>
         </div>
         <DndRoot
@@ -215,7 +216,7 @@ export function Explorer({ data }: { data: ExplorerData }) {
           onDragEnd={onDragEnd}
           onDragCancel={() => setOverFolder(null)}
           announcements={announcements}
-          instructions={de.explorer.dnd.instructions}
+          instructions={t.explorer.dnd.instructions}
         >
           <SortableList ids={sortedFolders.map((f) => folderDndId(f.id))}>
             <ul>
@@ -250,7 +251,7 @@ export function Explorer({ data }: { data: ExplorerData }) {
           </SortableList>
         </DndRoot>
 
-        {projects.length === 0 ? <p className="px-2 py-1 text-[13px] text-muted">{de.explorer.noProjects}</p> : null}
+        {projects.length === 0 ? <p className="px-2 py-1 text-[13px] text-muted">{t.explorer.noProjects}</p> : null}
 
         <div className="mt-1 flex flex-col">
           <button
@@ -258,14 +259,14 @@ export function Explorer({ data }: { data: ExplorerData }) {
             onClick={() => setDialog({ kind: "project", folderId: null })}
             className="flex h-8 items-center gap-2 rounded-[var(--radius-badge)] px-2 text-[13px] text-muted hover:bg-bg hover:text-text"
           >
-            <Plus size={14} /> {de.explorer.newProject}
+            <Plus size={14} /> {t.explorer.newProject}
           </button>
           <button
             type="button"
             onClick={() => setDialog({ kind: "folder" })}
             className="flex h-8 items-center gap-2 rounded-[var(--radius-badge)] px-2 text-[13px] text-muted hover:bg-bg hover:text-text"
           >
-            <Plus size={14} /> {de.explorer.newFolder}
+            <Plus size={14} /> {t.explorer.newFolder}
           </button>
         </div>
       </section>

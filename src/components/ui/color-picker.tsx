@@ -1,5 +1,7 @@
+"use client";
+
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
 import { PALETTE, PALETTE_COLORS, paletteColorFromHex, type PaletteColor } from "@/lib/palette";
 
 const swatches: Record<PaletteColor, string> = {
@@ -10,6 +12,7 @@ const swatches: Record<PaletteColor, string> = {
 
 /** Radio group over the 12 palette colors; submits the hex value as `name`. */
 export function ColorPicker({ name, legend, defaultValue, error }: { name: string; legend: string; defaultValue?: string; error?: string }) {
+  const t = useT();
   const selected = (defaultValue && paletteColorFromHex(defaultValue)) || "indigo";
   return (
     <fieldset>
@@ -18,7 +21,7 @@ export function ColorPicker({ name, legend, defaultValue, error }: { name: strin
         {PALETTE_COLORS.map((c) => (
           <label key={c} className="relative">
             <input type="radio" name={name} value={PALETTE[c]} defaultChecked={c === selected} className="peer sr-only" />
-            <span className="sr-only">{de.palette[c]}</span>
+            <span className="sr-only">{t.palette[c]}</span>
             <span
               aria-hidden
               className={cn(

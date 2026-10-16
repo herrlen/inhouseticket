@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { de } from "@/lib/i18n/de";
+import { intlLocale } from "@/lib/i18n/locale";
+import { getLocale, getT } from "@/lib/i18n/server";
 import { MAX_IMPORT_BYTES, MAX_IMPORT_TICKETS } from "@/lib/import/plan";
 import { SOURCE_IDS } from "@/lib/import/source";
 import { MAX_DESCRIPTION, MAX_SUBTASKS, MAX_TITLE } from "@/lib/limits";
@@ -8,16 +9,15 @@ import { MAX_DESCRIPTION, MAX_SUBTASKS, MAX_TITLE } from "@/lib/limits";
 // Public help page for moving from another tool. Lives in the (legal) group for its
 // plain page layout; the export steps are the same texts the import page shows.
 
-const t = de.migrate;
-const num = (n: number) => n.toLocaleString("de-DE");
+export async function generateMetadata(): Promise<Metadata> {
+  const t = (await getT()).migrate;
+  return { title: t.metaTitle, description: t.metaDescription, alternates: { canonical: "/umziehen" } };
+}
 
-export const metadata: Metadata = {
-  title: t.metaTitle,
-  description: t.metaDescription,
-  alternates: { canonical: "/umziehen" },
-};
-
-export default function MigratePage() {
+export default async function MigratePage() {
+  const [all, locale] = await Promise.all([getT(), getLocale()]);
+  const t = all.migrate;
+  const num = (n: number) => n.toLocaleString(intlLocale(locale));
   return (
     <>
       <h1>{t.title}</h1>
@@ -37,8 +37,8 @@ export default function MigratePage() {
 
       {SOURCE_IDS.map((id) => (
         <section key={id} id={id} aria-labelledby={`${id}-heading`} className="scroll-mt-8">
-          <h2 id={`${id}-heading`}>{t.toolTitle(de.import.sources[id])}</h2>
-          <p>{de.import.howTo[id]}</p>
+          <h2 id={`${id}-heading`}>{t.toolTitle(all.import.sources[id])}</h2>
+          <p>{all.import.howTo[id]}</p>
         </section>
       ))}
 

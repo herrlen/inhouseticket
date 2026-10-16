@@ -2,7 +2,7 @@
 
 import { useId, useState, type ComponentProps } from "react";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
 
 export type InputProps = Omit<ComponentProps<"input">, "id"> & {
   label: string;
@@ -17,6 +17,7 @@ export type InputProps = Omit<ComponentProps<"input">, "id"> & {
 };
 
 export function Input({ label, hideLabel, hint, error, showCounter, maxLength, className, inputClassName, onChange, ...props }: InputProps) {
+  const t = useT();
   const id = useId();
   const initial = String(props.value ?? props.defaultValue ?? "");
   const [count, setCount] = useState(initial.length);
@@ -59,7 +60,7 @@ export function Input({ label, hideLabel, hint, error, showCounter, maxLength, c
           ) : null}
         </span>
         {showCounter && maxLength ? (
-          <span id={`${id}-count`} className="text-muted tabular-nums" aria-label={de.input.counter(current, maxLength)}>
+          <span id={`${id}-count`} className="text-muted tabular-nums" aria-label={t.input.counter(current, maxLength)}>
             {current}/{maxLength}
           </span>
         ) : null}

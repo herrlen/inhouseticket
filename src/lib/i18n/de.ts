@@ -1,4 +1,4 @@
-// German UI strings. Keep keys stable; an English file can follow the same shape later.
+// German UI strings (default locale). Keep keys stable; en.ts mirrors this shape (type Messages).
 export const de = {
   common: {
     close: "Schließen",
@@ -13,7 +13,23 @@ export const de = {
     delete: "Löschen",
     skipToContent: "Zum Inhalt springen",
     mainNav: "Hauptnavigation",
+    langTag: "de",
+    mailFallback: "Falls der Button nicht funktioniert:",
+    modKey: "⌘/Strg",
+    ctrlKey: "Strg",
+    language: "Sprache",
+    quote: (text: string) => `„${text}“`,
   },
+  legal: {
+    nav: "Rechtliches",
+    imprint: "Impressum",
+    privacy: "Datenschutz",
+    terms: "AGB",
+    dpa: "AVV",
+    germanOnly: "",
+  },
+  /** Validation messages are written in German in the Zod schemas; other locales translate them here. */
+  validation: (message: string) => message,
   input: {
     counter: (count: number, max: number) => `${count} von ${max} Zeichen`,
   },
@@ -35,6 +51,7 @@ export const de = {
     claim: "Tickets. Ohne Ballast.",
   },
   landing: {
+    metaTitle: "inhouseticket – Tickets für dein Team",
     title: "Tickets für dein Team – schnell, schlicht, kostenlos.",
     subtitle: "Liste und Kanban, die Auslastung auf einen Blick und Claude als Kollege. Für Teams bis 100 Personen, gehostet in Deutschland.",
     start: "Kostenlos starten",
@@ -204,6 +221,7 @@ export const de = {
   login: {
     title: "Anmelden",
     subtitle: "Ohne Passwort – wir schicken dir einen Link.",
+    emailPlaceholder: "vorname@firma.de",
     email: "Firmen-E-Mail",
     hint: "Mit deiner Firmenadresse landest du im Workspace deines Teams.",
     submit: "Anmeldelink senden",
@@ -251,6 +269,7 @@ export const de = {
     thenImport: "Danach Projekte aus Jira, ClickUp, Notion oder monday.com importieren",
     invites: "Kollegen einladen",
     optional: "optional",
+    invitesPlaceholder: "anna@firma.de, max@firma.de",
     invitesHint: "Firmen-E-Mails, durch Komma getrennt.",
     submit: "Workspace anlegen",
     creating: "Wird angelegt …",
@@ -632,6 +651,7 @@ export const de = {
     keyHint: (key: string) => `Tickets heißen dann ${key}-1, ${key}-2 … Das Kürzel lässt sich später nicht ändern.`,
     color: "Farbe",
     icon: "Icon",
+    iconPlaceholder: "z. B. 📣",
     iconHint: "Optional, genau ein Emoji.",
     folder: "Ordner",
     noFolder: "Kein Ordner",
@@ -915,4 +935,15 @@ export const de = {
   },
 } as const;
 
-export type Messages = typeof de;
+/** Literal types widened to string, so other locales can follow the same shape. */
+type Widen<T> = T extends string
+  ? string
+  : T extends (...args: infer A) => infer R
+    ? (...args: A) => Widen<R>
+    : T extends readonly (infer U)[]
+      ? readonly Widen<U>[]
+      : T extends object
+        ? { readonly [K in keyof T]: Widen<T[K]> }
+        : T;
+
+export type Messages = Widen<typeof de>;

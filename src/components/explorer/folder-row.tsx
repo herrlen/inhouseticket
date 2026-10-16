@@ -4,7 +4,7 @@ import { Dropdown } from "@/components/ui/dropdown";
 import { ChevronDown, ChevronRight, Grip, More } from "@/components/ui/icons";
 import { useShell } from "@/components/shell/shell-context";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
 import { SortableItem, SortableList } from "./dnd-bridge";
 import { folderDndId, projectDndId, type FolderItem, type ProjectItem } from "./model";
 
@@ -22,6 +22,7 @@ type Props = {
 };
 
 export function FolderRow({ folder, projects, expanded, onToggle, onRename, onDelete, onNewProject, dropTarget, children }: Props) {
+  const t = useT();
   const { canAdmin } = useShell();
   const openCount = projects.reduce((n, p) => n + p.openCount, 0);
   const listId = `folder-${folder.id}`;
@@ -34,7 +35,7 @@ export function FolderRow({ folder, projects, expanded, onToggle, onRename, onDe
         <button
           ref={s.setActivatorNodeRef}
           type="button"
-          aria-label={de.explorer.dragFolder(folder.name)}
+          aria-label={t.explorer.dragFolder(folder.name)}
           className="flex size-5 shrink-0 cursor-grab items-center justify-center rounded text-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
           {...s.handleProps}
         >
@@ -54,19 +55,19 @@ export function FolderRow({ folder, projects, expanded, onToggle, onRename, onDe
         <Dropdown
           align="end"
           trigger={<More />}
-          triggerLabel={de.explorer.folderMenu(folder.name)}
+          triggerLabel={t.explorer.folderMenu(folder.name)}
           triggerClassName="flex size-6 shrink-0 items-center justify-center rounded text-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100 hover:bg-border/60"
           items={[
-            { label: de.explorer.newProjectHere, onSelect: () => onNewProject(folder.id) },
-            { label: de.explorer.rename, onSelect: () => onRename(folder) },
-            ...(canAdmin ? [{ label: de.explorer.deleteFolder, onSelect: () => onDelete(folder), danger: true }] : []),
+            { label: t.explorer.newProjectHere, onSelect: () => onNewProject(folder.id) },
+            { label: t.explorer.rename, onSelect: () => onRename(folder) },
+            ...(canAdmin ? [{ label: t.explorer.deleteFolder, onSelect: () => onDelete(folder), danger: true }] : []),
           ]}
         />
       </div>
       {expanded ? (
         <SortableList ids={projects.map((p) => projectDndId(p.id))}>
           <ul id={listId} className="ml-4 border-l border-border pl-1">
-            {projects.length === 0 ? <li className="px-2 py-1 text-xs text-muted">{de.explorer.emptyFolder}</li> : children}
+            {projects.length === 0 ? <li className="px-2 py-1 text-xs text-muted">{t.explorer.emptyFolder}</li> : children}
           </ul>
         </SortableList>
       ) : null}

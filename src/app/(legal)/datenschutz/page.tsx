@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GermanOnly } from "@/components/german-only";
 import { OPERATOR } from "@/lib/legal";
 
 export const metadata: Metadata = { title: "Datenschutz" };
@@ -7,7 +8,7 @@ export const metadata: Metadata = { title: "Datenschutz" };
 // Keep in sync with new features.
 export default function DatenschutzPage() {
   return (
-    <>
+    <GermanOnly>
       <h1>Datenschutzerklärung</h1>
       <p className="text-[13px] text-muted">Stand: 15. Oktober 2026</p>
 
@@ -98,6 +99,6 @@ export default function DatenschutzPage() {
         <a className="text-accent underline" href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>. Außerdem kannst du dich bei einer
         Datenschutz-Aufsichtsbehörde beschweren, zum Beispiel beim Hamburgischen Beauftragten für Datenschutz und Informationsfreiheit.
       </p>
-    </>
+    </GermanOnly>
   );
 }

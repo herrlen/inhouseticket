@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { de } from "@/lib/i18n/de";
+import { useT } from "@/lib/i18n/client";
 
 const DEFAULT_DURATION_MS = 5000;
 
@@ -26,6 +26,7 @@ export function useToast() {
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const t = useT();
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
 
@@ -39,7 +40,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={toast}>
       {children}
       <section
-        aria-label={de.common.notifications}
+        aria-label={t.common.notifications}
         aria-live="polite"
         className="pointer-events-none fixed right-4 bottom-4 z-[100] flex w-[min(24rem,calc(100vw-2rem))] flex-col gap-2"
       >
@@ -54,6 +55,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 const dots = { info: "bg-accent", success: "bg-status-done", error: "bg-prio-urgent" } as const;
 
 function Toast({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => void }) {
+  const t = useT();
   const tone = toast.tone ?? "info";
   const duration = toast.duration ?? (tone === "error" ? 0 : DEFAULT_DURATION_MS);
   const [paused, setPaused] = useState(false);
@@ -87,7 +89,7 @@ function Toast({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => void }
           {toast.action.label}
         </button>
       ) : null}
-      <button type="button" onClick={onDismiss} aria-label={de.common.close} className="text-muted hover:text-text">
+      <button type="button" onClick={onDismiss} aria-label={t.common.close} className="text-muted hover:text-text">
         <span aria-hidden>×</span>
       </button>
     </div>

@@ -1,5 +1,6 @@
 import { compareKeys } from "@/lib/fractional";
-import { de } from "@/lib/i18n/de";
+import { de, type Messages } from "@/lib/i18n/de";
+import { intlLocale, type Locale } from "@/lib/i18n/locale";
 
 // Pure list logic (unit-tested): grouping, sorting, due-date buckets.
 
@@ -65,8 +66,9 @@ export function sortTickets<T extends ListTicket>(tickets: readonly T[], sortBy:
 
 export function groupTickets<T extends ListTicket>(
   tickets: readonly T[],
-  opts: { groupBy: GroupBy; sortBy: SortBy; statuses: StatusOption[]; members: Array<{ id: string; name: string }>; today: string },
+  opts: { groupBy: GroupBy; sortBy: SortBy; statuses: StatusOption[]; members: Array<{ id: string; name: string }>; today: string; t?: Messages },
 ): Group<T>[] {
+  const t = opts.t ?? de;
   const sorted = sortTickets(tickets, opts.sortBy);
   const doneIds = new Set(opts.statuses.filter((s) => s.category === "done").map((s) => s.id));
 
@@ -77,7 +79,7 @@ export function groupTickets<T extends ListTicket>(
 
   switch (opts.groupBy) {
     case "none":
-      return [{ key: "all", label: de.list.all, tickets: sorted }];
+      return [{ key: "all", label: t.list.all, tickets: sorted }];
     case "status":
       // All statuses stay visible (they are the workflow), even when empty.
       return make(
@@ -86,14 +88,14 @@ export function groupTickets<T extends ListTicket>(
       );
     case "priority":
       return make(
-        [4, 3, 2, 1, 0].map((p) => ({ key: `p${p}`, label: de.priority[priorityKey(p)], match: (t: T) => t.priority === p })),
+        [4, 3, 2, 1, 0].map((p) => ({ key: `p${p}`, label: t.priority[priorityKey(p)], match: (t: T) => t.priority === p })),
         false,
       );
     case "assignee":
       return make(
         [
           ...opts.members.map((m) => ({ key: m.id, label: m.name, match: (t: T) => t.assigneeId === m.id })),
-          { key: "none", label: de.list.unassigned, match: (t: T) => !t.assigneeId || !opts.members.some((m) => m.id === t.assigneeId) },
+          { key: "none", label: t.list.unassigned, match: (t: T) => !t.assigneeId || !opts.members.some((m) => m.id === t.assigneeId) },
         ],
         false,
       );
@@ -101,7 +103,7 @@ export function groupTickets<T extends ListTicket>(
       return make(
         (["overdue", "today", "week", "later", "none"] as const).map((b) => ({
           key: b,
-          label: de.list.due[b],
+          label: t.list.due[b],
           match: (t: T) => dueBucket(t.dueDate, opts.today, doneIds.has(t.statusId)) === b,
         })),
         false,
@@ -109,9 +111,12 @@ export function groupTickets<T extends ListTicket>(
   }
 }
 
-const dueFmt = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
+const dueFmt: Record<Locale, Intl.DateTimeFormat> = {
+  de: new Intl.DateTimeFormat(intlLocale("de"), { day: "2-digit", month: "2-digit", timeZone: "UTC" }),
+  en: new Intl.DateTimeFormat(intlLocale("en"), { day: "2-digit", month: "2-digit", timeZone: "UTC" }),
+};
 
-/** "2026-10-09" → "09.10." (date-only, no timezone shift). Usable on server and client. */
-export function formatDue(date: string | null): string {
-  return date ? dueFmt.format(new Date(`${date}T00:00:00Z`)) : "";
+/** "2026-10-09" → "09.10." (en: "09/10"; date-only, no timezone shift). Usable on server and client. */
+export function formatDue(date: string | null, locale: Locale = "de"): string {
+  return date ? dueFmt[locale].format(new Date(`${date}T00:00:00Z`)) : "";
 }
