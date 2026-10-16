@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createWorkspace, INVITE_LINK, linkFromMail, signIn, uniqueDomain } from "./helpers/auth";
+import { createWorkspace, INVITE_LINK, linkFromMail, openMagicLink, requestMagicLink, signIn, uniqueDomain } from "./helpers/auth";
 
 test("freemail addresses are rejected with a friendly message", async ({ page }) => {
   await page.goto("/login");
@@ -21,8 +21,20 @@ test("a used magic link cannot be used again", async ({ page, context }) => {
   const link = await signIn(page, `paul@${domain}`);
   await expect(page).toHaveURL(/\/onboarding$/);
   await context.clearCookies();
+  // Opening the link alone (as a mail scanner does) consumes nothing; the confirm click would.
   await page.goto(link);
+  await expect(page.getByRole("heading", { name: "Anmeldung bestätigen" })).toBeVisible();
+  await page.getByRole("button", { name: "Jetzt anmelden" }).click();
   await expect(page.getByText(/abgelaufen oder wurde schon benutzt/)).toBeVisible();
+});
+
+test("a mail scanner opening the link first does not use it up", async ({ page, request }) => {
+  const email = `scan@${uniqueDomain("scan")}`;
+  const link = await requestMagicLink(page, email);
+  // What scanners and link previews do: fetch the address from the mail, follow redirects.
+  expect((await request.get(link)).ok()).toBe(true);
+  await openMagicLink(page, link);
+  await expect(page).toHaveURL(/\/set-password/);
 });
 
 test("an invited colleague joins via the invitation link", async ({ browser }) => {

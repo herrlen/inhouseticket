@@ -9,6 +9,7 @@ import { db } from "@/db/client";
 import { userHasPassword } from "@/db/queries/credentials";
 import * as schema from "@/db/schema";
 import { env } from "@/lib/env";
+import { magicLinkConfirmUrl } from "@/lib/magic-link-url";
 import { mayEnterBeta } from "@/lib/beta";
 import { isCompanyEmail } from "@/lib/freemail";
 import { isExemptEmail } from "@/lib/superadmin";
@@ -135,7 +136,10 @@ export const auth = betterAuth({
       expiresIn: MAGIC_LINK_TTL_SECONDS,
       storeToken: "hashed",
       rateLimit: { window: 60, max: 5 },
-      sendMagicLink: async ({ email, url }) => {
+      sendMagicLink: async ({ email, url: verifyUrl }) => {
+        // Mail scanners and link previews fetch links ahead of the person; a GET on the verify
+        // endpoint consumes the token. So the mail points at a confirm page whose button does it.
+        const url = magicLinkConfirmUrl(verifyUrl);
         // In the language the person chose on the sign-in page.
         const t = await getTOrDefault();
         await sendMail({

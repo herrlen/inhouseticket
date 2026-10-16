@@ -20,7 +20,14 @@ export async function linkFromMail(to: string, pattern: RegExp, since: Date): Pr
   throw new Error(`No mail for ${to} matching ${pattern}`);
 }
 
-export const MAGIC_LINK = /http:\/\/localhost:3100\/api\/auth\/magic-link\/verify\?\S+/;
+export const MAGIC_LINK = /http:\/\/localhost:3100\/login\/link\?\S+/;
+
+/** Opens the link from the sign-in mail and confirms on the page it lands on (mail scanners don't). */
+export async function openMagicLink(page: Page, link: string): Promise<void> {
+  await page.goto(link);
+  await page.locator('form[action="/api/auth/magic-link/verify"] button[type="submit"]').click();
+  await page.waitForURL((url) => url.pathname !== "/login/link");
+}
 export const INVITE_LINK = /http:\/\/localhost:3100\/invite\/[\w-]+/;
 
 /** Unique company domain per test run, so tests never share workspaces. */
@@ -55,7 +62,7 @@ export async function setPassword(page: Page, password = E2E_PASSWORD) {
 /** Signs in through the real magic-link flow; a new account sets its password on the way. */
 export async function signIn(page: Page, email: string, next?: string) {
   const link = await requestMagicLink(page, email, next);
-  await page.goto(link);
+  await openMagicLink(page, link);
   if (new URL(page.url()).pathname === "/set-password") await setPassword(page);
   return link;
 }

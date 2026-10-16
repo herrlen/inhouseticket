@@ -5,6 +5,7 @@ import {
   E2E_PASSWORD,
   linkFromMail,
   RESET_LINK,
+  openMagicLink,
   requestMagicLink,
   setPassword,
   signInWithPassword,
@@ -21,7 +22,7 @@ async function hasLiveSession(page: Page): Promise<boolean> {
 
 test("link sign-in without a password: set it first, no way around", async ({ page }) => {
   const email = `nora@${uniqueDomain("setpw")}`;
-  await page.goto(await requestMagicLink(page, email));
+  await openMagicLink(page, await requestMagicLink(page, email));
   await expect(page).toHaveURL(/\/set-password$/);
 
   // Every other page and the API send the person back.

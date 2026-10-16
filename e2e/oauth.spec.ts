@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
-import { createWorkspace, E2E_PASSWORD, linkFromMail, MAGIC_LINK, setPassword, uniqueDomain } from "./helpers/auth";
+import { createWorkspace, E2E_PASSWORD, linkFromMail, MAGIC_LINK, openMagicLink, setPassword, uniqueDomain } from "./helpers/auth";
 
 // The connector flow of claude.ai, step by step: discovery, dynamic client registration,
 // authorization code + PKCE with consent, token, MCP call, refresh, disconnect.
@@ -114,7 +114,7 @@ test("connector login: not signed in → magic link → consent; deny returns an
   await page.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(email);
   await page.getByRole("button", { name: "Anmeldelink per E-Mail senden" }).click();
   await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
-  await page.goto(await linkFromMail(email, MAGIC_LINK, since));
+  await openMagicLink(page, await linkFromMail(email, MAGIC_LINK, since));
   await expect(page.getByRole("heading", { name: "Zugriff erlauben?" })).toBeVisible();
 
   const denied = new Promise<URL>((resolve) => {
@@ -141,7 +141,7 @@ test("connector login of a person without a password: link → set password → 
   await page.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(email);
   await page.getByRole("button", { name: "Anmeldelink per E-Mail senden" }).click();
   await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
-  await page.goto(await linkFromMail(email, MAGIC_LINK, since));
+  await openMagicLink(page, await linkFromMail(email, MAGIC_LINK, since));
   // The authorize endpoint itself sends the person to set a password first, then continues.
   await expect(page).toHaveURL(/\/set-password\?next=%2Fapi%2Fauth%2Foauth2%2Fauthorize/);
   await setPassword(page);

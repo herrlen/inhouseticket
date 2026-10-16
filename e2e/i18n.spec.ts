@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { linkFromMail, MAGIC_LINK, uniqueDomain } from "./helpers/auth";
+import { linkFromMail, MAGIC_LINK, openMagicLink, uniqueDomain } from "./helpers/auth";
 import { waitForHydration } from "./helpers/hydration";
 
 test("landing page switches to English and back, by keyboard", async ({ page }) => {
@@ -40,7 +40,7 @@ test("the app works in English", async ({ page, context }) => {
   await page.getByRole("textbox", { name: "Company email" }).fill(email);
   await page.getByRole("button", { name: "Send sign-in link by email" }).click();
   await expect(page.getByRole("heading", { name: "Check your inbox" })).toBeVisible();
-  await page.goto(await linkFromMail(email, MAGIC_LINK, since));
+  await openMagicLink(page, await linkFromMail(email, MAGIC_LINK, since));
 
   // First sign-in by link: set a password (in English, too).
   await expect(page.getByRole("heading", { name: "Set a password" })).toBeVisible();
