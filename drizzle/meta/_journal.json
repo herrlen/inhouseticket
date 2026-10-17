@@ -71,6 +71,13 @@
       "when": 1791314914697,
       "tag": "0009_page_views",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792264853808,
+      "tag": "0010_oauth_token_audience",
+      "breakpoints": true
     }
   ]
 }

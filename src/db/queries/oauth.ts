@@ -21,8 +21,9 @@ export async function authenticateOAuthAccessToken(raw: string, resource: string
     .where(and(eq(oauthAccessToken.token, hashToken(raw)), isNull(oauthAccessToken.revoked), gt(oauthAccessToken.expiresAt, now)))
     .limit(1);
   if (!row?.userId) return null;
-  // Audience: tokens issued for another resource are not valid here.
-  if (row.resources?.length && !row.resources.includes(resource)) return null;
+  // Audience: only tokens issued for this resource. A token without one (no RFC 8707 `resource`
+  // in the request) is not valid here either; older rows were backfilled (migration 0010).
+  if (!row.resources?.includes(resource)) return null;
   return { tokenId: `oauth:${row.id}`, userId: row.userId, workspaceId: row.workspaceId };
 }
 
