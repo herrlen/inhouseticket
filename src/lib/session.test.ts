@@ -26,8 +26,31 @@ describe("safeNext", () => {
     ["//evil.example", "/start"],
     ["/\\evil.example", "/start"],
     ["javascript:alert(1)", "/start"],
+    // Browsers strip tab/CR/LF from URLs: "/\t/evil.example" would become "//evil.example".
+    ["/\t/evil.example", "/start"],
+    ["/\n/evil.example", "/start"],
+    ["/\r/evil.example", "/start"],
+    ["/\u0000/evil.example", "/start"],
+    ["/\u007f/evil.example", "/start"],
+    ["/x\\evil", "/start"],
+    ["\\\\evil.example", "/start"],
+    // Dot segments that normalize into a protocol-relative path.
+    ["/..//evil.example", "/start"],
+    ["/.//evil.example", "/start"],
+    // Still-encoded characters stay inert path bytes, never a host.
+    ["/%09/evil.example", "/%09/evil.example"],
+    ["/%2F%2Fevil.example", "/start"],
+    ["/%5c%5cevil.example", "/start"],
+    ["/firma?q=a%2Fb", "/firma?q=a%2Fb"],
+    ["/firma?view=board#t-1", "/firma?view=board#t-1"],
+    ["/api/auth/oauth2/authorize?client_id=a&state=b", "/api/auth/oauth2/authorize?client_id=a&state=b"],
   ])("%j → %j", (input, expected) => {
     expect(safeNext(input)).toBe(expected);
+  });
+
+  it("uses the first value of a repeated parameter", () => {
+    expect(safeNext(["/\t/evil.example", "/ok"])).toBe("/start");
+    expect(safeNext(["/ok", "//evil"])).toBe("/ok");
   });
 });
 
