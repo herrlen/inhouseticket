@@ -62,10 +62,12 @@ export async function revokeOAuthConnection(workspaceId: string, userId: string,
   });
 }
 
-/** Client name for the consent page. */
-export async function findOAuthClientName(clientId: string): Promise<string | null> {
-  const [row] = await db.select({ name: oauthClient.name }).from(oauthClient).where(and(eq(oauthClient.clientId, clientId), eq(oauthClient.disabled, false))).limit(1);
-  return row ? row.name || "Unbenannte App" : null;
+/** Client name and registered redirect URIs for the consent page. */
+export async function findOAuthClient(clientId: string): Promise<{ name: string; redirectUris: string[] } | null> {
+  const [row] = await db
+    .select({ name: oauthClient.name, redirectUris: oauthClient.redirectUris })
+    .from(oauthClient)
+    .where(and(eq(oauthClient.clientId, clientId), eq(oauthClient.disabled, false)))
+    .limit(1);
+  return row ? { name: row.name || "Unbenannte App", redirectUris: row.redirectUris } : null;
 }
-
-

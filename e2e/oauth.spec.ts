@@ -20,19 +20,19 @@ async function discover(api: APIRequestContext) {
   return { resource: resourceMeta.resource as string, as: asMeta as { authorization_endpoint: string; token_endpoint: string; registration_endpoint: string } };
 }
 
-async function register(api: APIRequestContext, endpoint: string) {
+async function register(api: APIRequestContext, endpoint: string, clientName = "Claude", callback = CALLBACK) {
   const res = await api.post(new URL(endpoint).pathname, {
-    data: { client_name: "Claude", redirect_uris: [CALLBACK], grant_types: ["authorization_code", "refresh_token"], response_types: ["code"], token_endpoint_auth_method: "none" },
+    data: { client_name: clientName, redirect_uris: [callback], grant_types: ["authorization_code", "refresh_token"], response_types: ["code"], token_endpoint_auth_method: "none" },
   });
   expect(res.status(), await res.text()).toBe(201);
   return (await res.json()).client_id as string;
 }
 
-function authorizeUrl(endpoint: string, clientId: string, resource: string) {
+function authorizeUrl(endpoint: string, clientId: string, resource: string, callback = CALLBACK) {
   const verifier = b64url(randomBytes(32));
   const challenge = b64url(createHash("sha256").update(verifier).digest());
   const url = new URL(endpoint);
-  const q = { response_type: "code", client_id: clientId, redirect_uri: CALLBACK, code_challenge: challenge, code_challenge_method: "S256", state: "st4te", scope: "openid profile email offline_access", resource };
+  const q = { response_type: "code", client_id: clientId, redirect_uri: callback, code_challenge: challenge, code_challenge_method: "S256", state: "st4te", scope: "openid profile email offline_access", resource };
   for (const [k, v] of Object.entries(q)) url.searchParams.set(k, v);
   return { path: url.pathname + url.search, verifier };
 }
@@ -74,6 +74,9 @@ test("claude.ai connector: discovery, registration, consent, MCP call, refresh, 
   await expect(page.getByRole("heading", { name: "Zugriff erlauben?" })).toBeVisible();
   await expect(page.getByText("Claude möchte in deinem Namen")).toBeVisible();
   await expect(page.getByText("Workspace: OAuth GmbH")).toBeVisible();
+  await expect(page.getByText("Nach dem Erlauben geht es weiter zu")).toBeVisible();
+  await expect(page.getByText("claude.ai", { exact: true })).toBeVisible();
+  await expect(page.getByText("Nicht verifizierte Anwendung")).toHaveCount(0);
   const code = await allow(page);
 
   const tokens = await token(api, as.token_endpoint, { grant_type: "authorization_code", code, redirect_uri: CALLBACK, client_id: clientId, code_verifier: verifier, resource });
@@ -164,4 +167,33 @@ test("connector login with email and password", async ({ browser }) => {
   await page.getByLabel("Passwort", { exact: true }).fill(E2E_PASSWORD);
   await page.getByRole("button", { name: "Anmelden", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Zugriff erlauben?" })).toBeVisible();
+});
+
+test("a client that calls itself Claude but redirects elsewhere is flagged as unverified", async ({ page, browser }) => {
+  await createWorkspace(page, `ute@${uniqueDomain("oauthphish")}`, "Phish GmbH");
+  const api = (await browser.newContext()).request;
+  const { resource, as } = await discover(api);
+  const evil = "https://evil.example/cb";
+  const clientId = await register(api, as.registration_endpoint, `Claude${"\u202e"} ${"x".repeat(200)}`, evil);
+
+  await page.goto(authorizeUrl(as.authorization_endpoint, clientId, resource, evil).path);
+  await expect(page.getByRole("alert").filter({ hasText: "Nicht verifizierte Anwendung" })).toBeVisible();
+  await expect(page.getByText("evil.example", { exact: true })).toBeVisible();
+  // The self-chosen name is cut at 60 characters at registration.
+  await expect(page.getByText(/Eine Anwendung, die sich „Claude x+…“ nennt/)).toBeVisible();
+  await expect(page.getByText("x".repeat(60))).toHaveCount(0);
+
+  const allowButton = page.getByRole("button", { name: "Trotzdem erlauben" });
+  await expect(allowButton).toBeDisabled();
+  await page.getByRole("checkbox", { name: "Ich habe die Verbindung selbst gestartet und vertraue evil.example." }).check();
+  await expect(allowButton).toBeEnabled();
+
+  const redirected = new Promise<URL>((resolve) => {
+    void page.route("https://evil.example/**", async (route) => {
+      resolve(new URL(route.request().url()));
+      await route.fulfill({ status: 200, body: "ok" });
+    });
+  });
+  await allowButton.click();
+  expect((await redirected).searchParams.get("code")).toBeTruthy();
 });

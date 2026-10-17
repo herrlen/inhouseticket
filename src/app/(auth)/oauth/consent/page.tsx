@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { verifyOAuthQueryParams } from "@better-auth/oauth-provider";
-import { findOAuthClientName } from "@/db/queries/oauth";
 import { listWorkspacesForUser } from "@/db/queries/workspaces";
 import { auth } from "@/lib/auth";
 import { getT } from "@/lib/i18n/server";
+import { consentClient } from "@/lib/oauth-consent";
 import { requireUser } from "@/lib/session";
 import { ConsentForm } from "./consent-form";
 
@@ -24,8 +24,8 @@ export default async function ConsentPage({ searchParams }: Props) {
 
   const { secret } = await auth.$context;
   const valid = await verifyOAuthQueryParams(oauthQuery, secret);
-  const clientName = valid ? await findOAuthClientName(query.get("client_id") ?? "") : null;
-  if (!valid || !clientName) {
+  const client = valid ? await consentClient(query) : null;
+  if (!client) {
     return (
       <>
         <h1 className="mb-2 text-xl font-semibold">{t.oauth.title}</h1>
@@ -34,12 +34,25 @@ export default async function ConsentPage({ searchParams }: Props) {
     );
   }
 
+  const { name, trust } = client;
+  const unverified = trust.kind === "unknown";
   const workspaces = (await listWorkspacesForUser(user.id)).map((w) => ({ id: w.id, name: w.name }));
   return (
     <>
       <h1 className="mb-2 text-xl font-semibold">{t.oauth.title}</h1>
-      <p className="mb-4">{t.oauth.request(clientName)}</p>
-      <ConsentForm oauthQuery={oauthQuery} workspaces={workspaces} email={user.email} />
+      {unverified ? (
+        <div role="alert" className="mb-4 rounded-[var(--radius-badge)] border border-prio-urgent-ink p-3 text-[13px] text-prio-urgent-ink">
+          <p className="mb-1 font-semibold">{t.oauth.unverifiedTitle}</p>
+          <p>{t.oauth.unverifiedText(trust.host)}</p>
+        </div>
+      ) : null}
+      <p className="mb-4 break-words">{unverified ? t.oauth.requestUnverified(name) : t.oauth.request(name)}</p>
+      <div className="mb-4 rounded-[var(--radius-badge)] border border-border p-3">
+        <p className="text-[13px] text-muted">{t.oauth.redirectLabel}</p>
+        <p className="font-mono text-base font-semibold break-all">{trust.host}</p>
+        <p className="mt-1 text-[13px] text-muted">{trust.kind === "known" ? t.oauth.redirectKnown : trust.kind === "loopback" ? t.oauth.redirectLoopback : t.oauth.redirectUnknown}</p>
+      </div>
+      <ConsentForm oauthQuery={oauthQuery} workspaces={workspaces} email={user.email} unverifiedHost={unverified ? trust.host : null} />
     </>
   );
 }

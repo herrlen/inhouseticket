@@ -19,6 +19,7 @@ import { setPasswordUrl } from "@/lib/password-gate";
 import { getTOrDefault } from "@/lib/i18n/server";
 import { buttonMail, sendMail } from "@/lib/mail";
 import { nameFromEmail } from "@/lib/names";
+import { sanitizeClientName } from "@/lib/oauth-client-trust";
 import { failedSignInEmail, shouldSendNoPasswordLink } from "@/lib/no-password-link";
 import { addressKey, rateLimit } from "@/lib/rate-limit";
 import { hashToken } from "@/lib/tokens";
@@ -121,6 +122,15 @@ export const auth = betterAuth({
       if (ctx.path === "/request-password-reset") {
         // Same answer as a sent mail: the response never reveals whether the address exists.
         if (tooManyForEmail("reset", ctx.body?.email, RESETS_PER_EMAIL)) return ctx.json({ status: true });
+        return;
+      }
+      if (ctx.path === "/oauth2/register") {
+        // Open registration: the name is self-chosen. No control/bidi characters and a length
+        // cap, so it cannot crowd the redirect host off the consent page (ADR 004).
+        const body: unknown = ctx.body;
+        if (body && typeof body === "object" && "client_name" in body) {
+          return { context: { body: { ...body, client_name: sanitizeClientName(body.client_name) } } };
+        }
         return;
       }
       if (ctx.path === "/oauth2/authorize" && ctx.request) {

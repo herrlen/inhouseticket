@@ -32,3 +32,10 @@ export const MAX_PASSWORD = 128;
  */
 export const NO_PASSWORD_LINKS_PER_EMAIL = 1;
 export const NO_PASSWORD_LINK_WINDOW_MS = 15 * 60_000;
+
+/**
+ * Self-chosen name of a dynamically registered OAuth client (connector). Longer names are cut at
+ * registration and on the consent page – a long name could push the redirect host out of view.
+ * Set 2026-10-17 (security review).
+ */
+export const MAX_OAUTH_CLIENT_NAME = 60;

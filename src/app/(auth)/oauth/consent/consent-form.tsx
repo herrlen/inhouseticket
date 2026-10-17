@@ -1,13 +1,22 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/client";
 import { consentAction, type ConsentState } from "./actions";
 
-export function ConsentForm({ oauthQuery, workspaces, email }: { oauthQuery: string; workspaces: Array<{ id: string; name: string }>; email: string }) {
+type Props = {
+  oauthQuery: string;
+  workspaces: Array<{ id: string; name: string }>;
+  email: string;
+  /** Redirect host of a client we don't know: "Allow" needs an explicit confirmation first. */
+  unverifiedHost: string | null;
+};
+
+export function ConsentForm({ oauthQuery, workspaces, email, unverifiedHost }: Props) {
   const t = useT();
   const [state, action, pending] = useActionState<ConsentState, FormData>(consentAction, {});
+  const [confirmed, setConfirmed] = useState(false);
 
   return (
     <form action={action} className="flex flex-col gap-4">
@@ -34,14 +43,33 @@ export function ConsentForm({ oauthQuery, workspaces, email }: { oauthQuery: str
         </div>
       )}
       <p className="text-[13px] text-muted">{email}</p>
+      {unverifiedHost ? (
+        <label className="flex items-start gap-2 text-[13px]">
+          <input
+            type="checkbox"
+            name="confirmUnverified"
+            value="yes"
+            checked={confirmed}
+            onChange={(e) => setConfirmed(e.currentTarget.checked)}
+            className="mt-0.5 size-4 shrink-0 accent-[var(--accent)]"
+          />
+          <span className="break-words">{t.oauth.unverifiedConfirm(unverifiedHost)}</span>
+        </label>
+      ) : null}
       {state.error ? (
         <p role="alert" className="text-[13px] text-prio-urgent-ink">
           {state.error}
         </p>
       ) : null}
       <div className="flex gap-2">
-        <Button type="submit" name="accept" value="yes" variant="primary" disabled={pending || workspaces.length === 0}>
-          {t.oauth.allow}
+        <Button
+          type="submit"
+          name="accept"
+          value="yes"
+          variant={unverifiedHost ? "danger" : "primary"}
+          disabled={pending || workspaces.length === 0 || (unverifiedHost !== null && !confirmed)}
+        >
+          {unverifiedHost ? t.oauth.allowUnverified : t.oauth.allow}
         </Button>
         <Button type="submit" name="accept" value="no" disabled={pending}>
           {t.oauth.deny}
