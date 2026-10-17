@@ -25,3 +25,10 @@ export const PROJECT_KEY_PATTERN = /^[A-Z][A-Z0-9]{1,9}$/;
 /** Password length (Better Auth enforces the same values, see src/lib/auth.ts). Set 2026-10-16. */
 export const MIN_PASSWORD = 10;
 export const MAX_PASSWORD = 128;
+
+/**
+ * Automatic sign-in link after a failed password sign-in of an account without a password
+ * (Len, 2026-10-17): at most one mail per address in this window.
+ */
+export const NO_PASSWORD_LINKS_PER_EMAIL = 1;
+export const NO_PASSWORD_LINK_WINDOW_MS = 15 * 60_000;

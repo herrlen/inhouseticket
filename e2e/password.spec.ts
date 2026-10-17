@@ -4,6 +4,9 @@ import {
   createWorkspace,
   E2E_PASSWORD,
   linkFromMail,
+  MAGIC_LINK,
+  mailCount,
+  mailText,
   RESET_LINK,
   openMagicLink,
   requestMagicLink,
@@ -13,6 +16,9 @@ import {
 } from "./helpers/auth";
 
 const INVALID = "E-Mail-Adresse oder Passwort stimmt nicht.";
+const NO_PASSWORD_HINT = "Falls dein Konto noch kein Passwort hat, haben wir dir gerade einen Link geschickt, mit dem du eins festlegst.";
+/** The sign-in link goes out after the response; give it time before asserting "no mail". */
+const MAIL_GRACE_MS = 2000;
 
 /** Session state straight from the database, past Better Auth's 5-minute cookie cache. */
 async function hasLiveSession(page: Page): Promise<boolean> {
@@ -72,14 +78,92 @@ test("password sign-in: right password gets in, wrong ones and unknown addresses
   const path = await createWorkspace(page, `lars@${domain}`, "Login KG");
 
   const other = await (await browser.newContext()).newPage();
+  const since = new Date(Date.now() - 1000);
   await signInWithPassword(other, `lars@${domain}`, "falsches-passwort");
-  await expect(other.getByText(INVALID)).toBeVisible();
+  await expect(other.getByRole("alert").filter({ hasText: INVALID })).toContainText(NO_PASSWORD_HINT);
   await signInWithPassword(other, `niemand@${domain}`, "irgendein-passwort");
-  await expect(other.getByText(INVALID)).toBeVisible();
+  await expect(other.getByRole("alert").filter({ hasText: INVALID })).toContainText(NO_PASSWORD_HINT);
+  // Account with a password and unknown address: no mail.
+  await other.waitForTimeout(MAIL_GRACE_MS);
+  expect(await mailCount(`lars@${domain}`, since)).toBe(0);
+  expect(await mailCount(`niemand@${domain}`, since)).toBe(0);
 
   await signInWithPassword(other, `lars@${domain}`, E2E_PASSWORD);
   await expect(other).toHaveURL(new RegExp(`${path}$`));
   await expect(other.getByRole("heading", { name: "Willkommen bei Login KG" })).toBeVisible();
+});
+
+test("account without a password: password attempt shows the box, mails a link, then a password is set", async ({ page, browser }) => {
+  const domain = uniqueDomain("nopw");
+  const email = `ole@${domain}`;
+  // Signed in by link once, never set a password.
+  await openMagicLink(page, await requestMagicLink(page, email));
+  await expect(page).toHaveURL(/\/set-password$/);
+
+  const other = await (await browser.newContext()).newPage();
+  const since = new Date(Date.now() - 1000);
+  await signInWithPassword(other, email, "irgendein-passwort");
+  const box = other.getByRole("alert").filter({ hasText: INVALID });
+  await expect(box).toContainText(NO_PASSWORD_HINT);
+  await expect(other.getByLabel("Passwort", { exact: true })).toHaveValue("");
+  await expect(other.getByRole("button", { name: "Anmeldelink an diese Adresse senden" })).toBeVisible();
+  expect(new URL(other.url()).search).toBe("");
+
+  const text = await mailText(email, since);
+  expect(text).toContain("aber für dein Konto ist noch keins festgelegt");
+  const link = text.match(MAGIC_LINK)?.[0];
+  expect(link).toBeTruthy();
+
+  // A second attempt shows the box again, but no second mail (one per 15 minutes).
+  await other.getByLabel("Passwort", { exact: true }).fill("noch-ein-versuch");
+  await other.getByRole("button", { name: "Anmelden", exact: true }).click();
+  await expect(other.getByRole("alert").filter({ hasText: INVALID })).toBeVisible();
+  await other.waitForTimeout(MAIL_GRACE_MS);
+  expect(await mailCount(email, since)).toBe(1);
+
+  await openMagicLink(other, link!);
+  await expect(other).toHaveURL(/\/set-password$/);
+  await setPassword(other);
+  await expect(other).toHaveURL(/\/onboarding$/);
+  await other.getByRole("textbox", { name: "Name des Workspace" }).fill("Ohne Passwort KG");
+  await other.getByRole("button", { name: "Workspace anlegen" }).click();
+  await expect(other.getByRole("heading", { name: "Willkommen bei Ohne Passwort KG" })).toBeVisible();
+
+  // From now on the password works.
+  const fresh = await (await browser.newContext()).newPage();
+  await signInWithPassword(fresh, email, E2E_PASSWORD);
+  await expect(fresh.getByRole("heading", { name: "Willkommen bei Ohne Passwort KG" })).toBeVisible();
+});
+
+test("the box's button mails a sign-in link to the typed address", async ({ page }) => {
+  const email = `pia@${uniqueDomain("boxlink")}`;
+  await signInWithPassword(page, email, "irgendein-passwort");
+  await expect(page.getByRole("alert").filter({ hasText: INVALID })).toBeVisible();
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+    expect(violations.map((v) => `${colorScheme}: ${v.id}`)).toEqual([]);
+  }
+  const since = new Date(Date.now() - 1000);
+  await page.getByRole("button", { name: "Anmeldelink an diese Adresse senden" }).click();
+  await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
+  expect(await linkFromMail(email, MAGIC_LINK, since)).toBeTruthy();
+});
+
+test("auth forms before hydration: no submit, and never a password in the URL", async ({ browser }) => {
+  const page = await (await browser.newContext({ javaScriptEnabled: false })).newPage();
+  await page.goto("/login");
+  const submit = page.getByRole("button", { name: "Anmelden", exact: true });
+  await expect(submit).toBeDisabled();
+  await expect(page.locator("form:has(input[name=password])")).toHaveAttribute("method", "post");
+  await page.getByRole("textbox", { name: "Firmen-E-Mail" }).fill("nora@firma.de");
+  await page.getByLabel("Passwort", { exact: true }).fill("geheim-und-lang");
+  await page.getByLabel("Passwort", { exact: true }).press("Enter");
+  expect(page.url()).not.toContain("geheim");
+
+  await page.goto("/forgot-password");
+  await expect(page.getByRole("button", { name: "Link zum Zurücksetzen senden" })).toBeDisabled();
+  await expect(page.locator("form:has(input[name=email])")).toHaveAttribute("method", "post");
 });
 
 test("change password in the settings ends other sessions", async ({ page, browser }) => {

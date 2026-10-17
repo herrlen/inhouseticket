@@ -32,6 +32,10 @@ Ein kostenloses, schlankes Ticketing-System für interne Teams – so schnell wi
 - Passwort 10–128 Zeichen (`limits.ts`), gehasht von Better Auth (scrypt). „Passwort vergessen“ schickt einen Link
   (30 Minuten, einmalig, Token nur gehasht gespeichert). In **Konto** (Menü am Avatar): Passwort ändern (aktuelles + neues)
   und „Passwort zurücksetzen“ per Mail. Ändern beendet die anderen Sitzungen, Zurücksetzen alle.
+- Passwort-Login eines Kontos **ohne Passwort** (Len, 2026-10-17): dieselbe neutrale Meldung wie bei falschem Passwort
+  oder unbekannter Adresse („… Falls dein Konto noch kein Passwort hat, haben wir dir gerade einen Link geschickt …“),
+  sichtbar als Fehlerkasten mit Knopf „Anmeldelink an diese Adresse senden“. Der Server schickt dann von sich aus einen
+  Anmeldelink (höchstens einer je Adresse und 15 Minuten, `limits.ts`), nach dem Klick folgt „Passwort festlegen“.
 - **Workspace = E-Mail-Domain.** Erster User einer Domain erstellt den Workspace und ist Owner.
 - Weitere User mit derselben Domain: Beitritt per Einladung **oder** optional Auto-Join (Owner-Einstellung, **standardmäßig aus**).
 - Externe Domains nur per Einladung (z. B. Freelancer mit Firmen-Domain).

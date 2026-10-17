@@ -20,6 +20,25 @@ export async function linkFromMail(to: string, pattern: RegExp, since: Date): Pr
   throw new Error(`No mail for ${to} matching ${pattern}`);
 }
 
+/** Number of mails to `to` that arrived after `since`. */
+export async function mailCount(to: string, since: Date): Promise<number> {
+  const res = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`);
+  const { messages } = (await res.json()) as { messages: MailpitMessage[] };
+  return messages.filter((m) => new Date(m.Created) >= since).length;
+}
+
+/** Text of the newest mail to `to` after `since`. */
+export async function mailText(to: string, since: Date): Promise<string> {
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const res = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`);
+    const { messages } = (await res.json()) as { messages: MailpitMessage[] };
+    const fresh = messages.find((m) => new Date(m.Created) >= since);
+    if (fresh) return ((await (await fetch(`${MAILPIT}/api/v1/message/${fresh.ID}`)).json()) as { Text: string }).Text;
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  throw new Error(`No mail for ${to}`);
+}
+
 export const MAGIC_LINK = /http:\/\/localhost:3100\/login\/link\?\S+/;
 
 /** Opens the link from the sign-in mail and confirms on the page it lands on (mail scanners don't). */

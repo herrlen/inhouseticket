@@ -7,11 +7,13 @@ import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 import { getEmailDomain } from "@/lib/freemail";
 import { useT } from "@/lib/i18n/client";
+import { useHydrated } from "@/lib/use-hydrated";
 
 type State = { kind: "idle" } | { kind: "sending" } | { kind: "sent"; email: string } | { kind: "error"; message: string };
 
 export function ForgotPasswordForm() {
   const t = useT();
+  const hydrated = useHydrated();
   const [state, setState] = useState<State>({ kind: "idle" });
   const sentHeading = useRef<HTMLHeadingElement>(null);
 
@@ -43,7 +45,7 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+    <form method="post" onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
       <Input
         name="email"
         type="email"
@@ -54,7 +56,7 @@ export function ForgotPasswordForm() {
         required
         error={state.kind === "error" ? state.message : undefined}
       />
-      <Button type="submit" variant="primary" disabled={state.kind === "sending"}>
+      <Button type="submit" variant="primary" disabled={state.kind === "sending" || !hydrated}>
         {state.kind === "sending" ? t.login.sending : t.password.forgotSubmit}
       </Button>
       <Link href="/login" className="text-[13px] text-accent hover:underline">
