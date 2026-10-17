@@ -895,6 +895,7 @@ export const de = {
     statsPerDay: "Pro Tag",
     statsTopPages: "Seiten",
     statsReferrers: "Herkunft",
+    statsReferrersOther: "Weitere (über 200 am Tag)",
     statsTotal: (n: number) => `${n.toLocaleString("de-DE")} Aufrufe gesamt`,
     ipTitle: "Erkannte IP-Adresse",
     ipText: "So sieht die App deine Anfrage hinter dem mittwald-Proxy. Die Begrenzungen pro IP (z. B. Anmeldelinks) zählen auf diese Adresse. Sie sollte deiner echten IP entsprechen (z. B. laut wieistmeineip.de), nicht einer Adresse von mittwald.",

@@ -39,3 +39,19 @@ const BOT = /bot|crawl|spider|slurp|preview|monitor|curl|wget|python|httpclient|
 export function isBot(userAgent: string | null): boolean {
   return !userAgent || BOT.test(userAgent);
 }
+
+/** Distinct referrer hosts stored per day; beyond that they are summed up as OTHER_REFERRER. */
+export const MAX_REFERRERS_PER_DAY = 200;
+/** Bucket for referrer hosts beyond the daily cap (shown translated in /admin). */
+export const OTHER_REFERRER = "*";
+
+/**
+ * Keeps the referrer column bounded: random Referer headers would otherwise add a row per request.
+ * `seen` holds today's hosts (the caller resets it when the day changes).
+ */
+export function cappedReferrer(host: string, seen: Set<string>, max = MAX_REFERRERS_PER_DAY): string {
+  if (!host || seen.has(host)) return host;
+  if (seen.size >= max) return OTHER_REFERRER;
+  seen.add(host);
+  return host;
+}

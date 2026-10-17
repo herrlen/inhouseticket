@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isBot, normalizePath, referrerHost } from "./pageview-path";
+import { cappedReferrer, isBot, normalizePath, OTHER_REFERRER, referrerHost } from "./pageview-path";
 
 describe("normalizePath", () => {
   it("keeps public pages", () => {
@@ -38,5 +38,17 @@ describe("isBot", () => {
     expect(isBot("Mozilla/5.0 HeadlessChrome/140")).toBe(true);
     expect(isBot(null)).toBe(true);
     expect(isBot("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/140 Safari/537.36")).toBe(false);
+  });
+});
+
+describe("cappedReferrer", () => {
+  it("keeps known and new hosts up to the cap, then sums the rest up", () => {
+    const seen = new Set<string>();
+    expect(cappedReferrer("", seen, 2)).toBe("");
+    expect(cappedReferrer("a.example", seen, 2)).toBe("a.example");
+    expect(cappedReferrer("b.example", seen, 2)).toBe("b.example");
+    expect(cappedReferrer("c.example", seen, 2)).toBe(OTHER_REFERRER);
+    expect(cappedReferrer("a.example", seen, 2)).toBe("a.example");
+    expect(seen.size).toBe(2);
   });
 });

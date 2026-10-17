@@ -2,6 +2,7 @@ import "server-only";
 import { sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { todayInBerlin } from "@/components/tickets/list-model";
+import { cappedReferrer } from "@/lib/pageview-path";
 
 // Buffers page views in memory and writes them once a minute (one container; at most a minute
 // of counts is lost on restart). Keeps the database off the request path.
@@ -10,9 +11,14 @@ const FLUSH_MS = 60_000;
 const MAX_KEYS = 5_000;
 const buffer = new Map<string, number>();
 let timer: ReturnType<typeof setInterval> | undefined;
+/** Referrer hosts of the current day (per process; after a restart the cap starts again). */
+let referrers = { day: "", seen: new Set<string>() };
 
-export function recordPageView(path: string, referrer: string) {
-  const key = `${todayInBerlin()}\u0000${path}\u0000${referrer}`;
+export function recordPageView(path: string, referrerHost: string) {
+  const day = todayInBerlin();
+  if (referrers.day !== day) referrers = { day, seen: new Set() };
+  const referrer = cappedReferrer(referrerHost, referrers.seen);
+  const key = `${day}\u0000${path}\u0000${referrer}`;
   if (!buffer.has(key) && buffer.size >= MAX_KEYS) return; // flood guard (random referrers)
   buffer.set(key, (buffer.get(key) ?? 0) + 1);
   if (!timer) {

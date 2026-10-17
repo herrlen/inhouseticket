@@ -7,6 +7,7 @@ import { LegalLinks } from "@/components/legal-links";
 import { ADMIN_PAGE_SIZE, listWorkspacesForAdmin, platformTotals } from "@/db/queries/admin";
 import { intlLocale } from "@/lib/i18n/locale";
 import { getLocale, getT } from "@/lib/i18n/server";
+import { OTHER_REFERRER } from "@/lib/pageview-path";
 import { pageViewStats } from "@/lib/pageviews";
 import { requireSuperadmin } from "@/lib/superadmin";
 import { isPersonalWorkspaceDomain } from "@/lib/workspace-domain";
@@ -177,7 +178,7 @@ export default async function AdminPage({ searchParams }: Props) {
             {[
               { title: t.admin.statsPerDay, rows: stats.perDay.map((d) => [d.day.split("-").reverse().join("."), d.views] as const) },
               { title: t.admin.statsTopPages, rows: stats.perPath.map((p) => [p.path, p.views] as const) },
-              { title: t.admin.statsReferrers, rows: stats.perReferrer.map((r) => [r.referrer, r.views] as const) },
+              { title: t.admin.statsReferrers, rows: stats.perReferrer.map((r) => [r.referrer === OTHER_REFERRER ? t.admin.statsReferrersOther : r.referrer, r.views] as const) },
             ].map((block) => (
               <table key={block.title} className="w-full">
                 <caption className="mb-1 text-left font-medium">{block.title}</caption>

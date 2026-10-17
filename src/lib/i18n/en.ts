@@ -932,6 +932,7 @@ export const en: Messages = {
     statsPerDay: "Per day",
     statsTopPages: "Pages",
     statsReferrers: "Referrers",
+    statsReferrersOther: "Others (over 200 a day)",
     statsTotal: (n: number) => `${n.toLocaleString("en-GB")} views in total`,
     ipTitle: "Detected IP address",
     ipText: "This is how the app sees your request behind the mittwald proxy. Per-IP limits (e.g. sign-in links) count against this address. It should match your real IP (e.g. according to wieistmeineip.de), not a mittwald address.",
