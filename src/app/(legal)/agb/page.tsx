@@ -30,9 +30,9 @@ export default function AgbPage() {
 
       <h2>3. Registrierung und Workspace</h2>
       <ul>
-        <li>Die Anmeldung erfolgt mit einer geschäftlichen E-Mail-Adresse per Anmeldelink. Adressen von Freemail-Anbietern sind ausgeschlossen.</li>
+        <li>Die Anmeldung erfolgt mit einer geschäftlichen E-Mail-Adresse und einem Passwort oder per Anmeldelink. Adressen von Freemail-Anbietern sind ausgeschlossen.</li>
         <li>Wer einen Workspace anlegt, wird dessen Besitzer und handelt für den Kunden. Der Besitzer verwaltet Mitglieder und Rollen und kann den Workspace löschen.</li>
-        <li>Der Kunde sorgt dafür, dass nur berechtigte Personen Zugang erhalten, und hält Anmeldelinks, API-Tokens und Zugänge geheim.</li>
+        <li>Der Kunde sorgt dafür, dass nur berechtigte Personen Zugang erhalten, und hält Passwörter, Anmeldelinks, API-Tokens und Zugänge geheim.</li>
       </ul>
 
       <h2>4. Pflichten des Kunden</h2>

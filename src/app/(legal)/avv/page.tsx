@@ -28,7 +28,7 @@ export default function AvvPage() {
       <h2>2. Daten und betroffene Personen</h2>
       <ul>
         <li><strong>Betroffene:</strong> Mitglieder und eingeladene Personen des Workspace; Personen, die in Tickets oder Kommentaren genannt werden.</li>
-        <li><strong>Daten:</strong> Name, geschäftliche E-Mail-Adresse, Rolle; Inhalte von Projekten, Tickets, Unteraufgaben, Kommentaren und Bild-Anhängen; Aktivitätsprotokoll; Benachrichtigungen; technische Daten der Anmeldung (Sitzung mit IP-Adresse und Browser-Kennung, API-Tokens als Hash).</li>
+        <li><strong>Daten:</strong> Name, geschäftliche E-Mail-Adresse, Rolle; Inhalte von Projekten, Tickets, Unteraufgaben, Kommentaren und Bild-Anhängen; Aktivitätsprotokoll; Benachrichtigungen; technische Daten der Anmeldung (Passwort nur als Hash, Sitzung mit IP-Adresse und Browser-Kennung, API-Tokens als Hash).</li>
         <li>Besondere Kategorien (Art. 9 DSGVO) sind nicht vorgesehen; der Verantwortliche stellt sicher, dass solche Daten nicht eingegeben werden.</li>
       </ul>
 
@@ -72,8 +72,8 @@ export default function AvvPage() {
       <ul>
         <li><strong>Standort:</strong> Betrieb ausschließlich in einem Rechenzentrum in Deutschland (mittwald); dessen Maßnahmen zur physischen Sicherheit gelten ergänzend.</li>
         <li><strong>Mandantentrennung:</strong> Jede Datenbankabfrage ist auf den Workspace beschränkt; zusammengesetzte Fremdschlüssel verhindern Verknüpfungen über Workspaces hinweg; Zugriff nur für aktive Mitglieder.</li>
-        <li><strong>Zugang:</strong> Anmeldung ohne Passwort per einmaligem, 15 Minuten gültigem Link; nur geschäftliche E-Mail-Adressen; Rollen (Besitzer, Admin, Mitglied); Begrenzung von Anmelde-, Einladungs- und API-Anfragen.</li>
-        <li><strong>Geheimnisse:</strong> Anmeldecodes, API- und OAuth-Tokens nur als Hash gespeichert; API-Tokens widerrufbar und mit wählbarem Ablauf; Verbindungen zu KI-Assistenten jederzeit trennbar.</li>
+        <li><strong>Zugang:</strong> Anmeldung mit persönlichem Passwort (mindestens 10 Zeichen) oder per einmaligem, 15 Minuten gültigem Link; ein Konto ohne Passwort muss nach der Anmeldung zuerst eines festlegen, bevor es auf Workspaces, API oder KI-Verbindungen zugreifen kann; Zurücksetzen nur per einmaligem, 30 Minuten gültigem Link, danach werden alle Sitzungen beendet; nur geschäftliche E-Mail-Adressen; Rollen (Besitzer, Admin, Mitglied); Begrenzung von Anmelde-, Einladungs- und API-Anfragen je IP-Adresse sowie von Anmeldeversuchen und Mails je E-Mail-Adresse (pseudonymisiert als Hash der Adresse).</li>
+        <li><strong>Geheimnisse:</strong> Passwörter nur als scrypt-Hash mit zufälligem Salt; Anmeldecodes, Codes zum Zurücksetzen des Passworts, API- und OAuth-Tokens nur als Hash gespeichert; API-Tokens widerrufbar und mit wählbarem Ablauf; Verbindungen zu KI-Assistenten jederzeit trennbar.</li>
         <li><strong>Übertragung:</strong> ausschließlich verschlüsselt (TLS); Sicherheits-Header und Content-Security-Policy gegen eingeschleuste Inhalte; Prüfung der Herkunft bei schreibenden Anfragen.</li>
         <li><strong>Eingaben:</strong> Prüfung aller Eingaben auf dem Server; Bild-Anhänge werden am Dateiinhalt erkannt, nur WebP, JPEG und PNG bis 100 KB; Inhalte werden ohne ausführbares HTML dargestellt.</li>
         <li><strong>Nachvollziehbarkeit:</strong> Aktivitätsprotokoll je Ticket (wer, was, wann, ob über einen KI-Assistenten).</li>
