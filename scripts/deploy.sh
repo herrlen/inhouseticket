@@ -100,7 +100,8 @@ rm -f "$ENVFILE"
 schritt "Prüfen"
 for i in $(seq 1 60); do
   V="$(curl -sf -m 5 "$URL/api/health" | jq -r '.version // empty' 2>/dev/null || true)"
-  [[ "$V" == "$TAG" ]] && { echo "Live: $URL ($TAG) nach ${i}×5 s"; exit 0; }
+  # /api/health reports the short form "sha-<7 hex>" (src/app/api/health/route.ts).
+  [[ "$V" == "sha-${SHA:0:7}" ]] && { echo "Live: $URL ($TAG) nach ${i}×5 s"; exit 0; }
   sleep 5
 done
 fehler "Neue Version nach 5 Minuten nicht erreichbar – Logs: mw container logs -p $PROJECT app"
