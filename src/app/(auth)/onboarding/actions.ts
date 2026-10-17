@@ -6,6 +6,7 @@ import { createInvitations, sendInvitationMails, type InvitationMail } from "@/d
 import { createProjectWithDefaults, createTickets } from "@/db/queries/projects";
 import { createWorkspace, findWorkspaceByDomain } from "@/db/queries/workspaces";
 import { getLocale, getT } from "@/lib/i18n/server";
+import { takeInviteMails } from "@/lib/invite-limit";
 import { projectTemplatesFor } from "@/lib/project-templates";
 import { requireUser } from "@/lib/session";
 import { slugFromDomain } from "@/lib/slug";
@@ -36,9 +37,10 @@ export async function createWorkspaceAction(_: OnboardingState, formData: FormDa
   if (await findWorkspaceByDomain(domain)) redirect("/start");
 
   let slug: string;
+  let workspaceId: string;
   let mails: InvitationMail[] = [];
   try {
-    ({ slug, mails } = await db.transaction(async (tx) => {
+    ({ slug, workspaceId, mails } = await db.transaction(async (tx) => {
       const ws = await createWorkspace(tx, { name: input.name, domain, color: input.color, slugBase: isPersonalWorkspaceDomain(domain) ? input.name : slugFromDomain(domain), ownerId: user.id });
       const { project, openStatus } = await createProjectWithDefaults(tx, {
         workspaceId: ws.id,
@@ -49,7 +51,7 @@ export async function createWorkspaceAction(_: OnboardingState, formData: FormDa
       }, locale);
       await createTickets(tx, { workspaceId: ws.id, projectId: project.id, statusId: openStatus.id, createdBy: user.id, tickets: template.tickets });
       const invites = await createInvitations(tx, { workspaceId: ws.id, inviterId: user.id, emails: input.invites, role: "member" });
-      return { slug: ws.slug, mails: invites.mails };
+      return { slug: ws.slug, workspaceId: ws.id, mails: invites.mails };
     }));
   } catch (e) {
     // Someone from the same domain was faster (unique domain) → join flow instead.
@@ -57,6 +59,8 @@ export async function createWorkspaceAction(_: OnboardingState, formData: FormDa
     throw e;
   }
 
-  if (mails.length > 0) await sendInvitationMails(mails, user.name, input.name);
+  // Same hourly budget as the settings page (a fresh workspace always has room for one batch;
+  // beyond it the invitations exist but no mail goes out).
+  if (mails.length > 0 && takeInviteMails(workspaceId, mails.length)) await sendInvitationMails(mails, user.name, input.name);
   redirect(input.thenImport ? `/${slug}/settings/data/import` : `/${slug}`);
 }
