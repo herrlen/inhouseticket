@@ -46,6 +46,15 @@ export const de = {
       button: "Jetzt anmelden",
       outro: "Du hast keinen Link angefordert? Dann ignoriere diese E-Mail einfach.",
     },
+    /** After a password sign-in attempt on an account that has no password yet. */
+    noPasswordMail: {
+      subject: "Dein Anmeldelink für inhouseticket",
+      heading: "Du hast noch kein Passwort",
+      intro:
+        "Du wolltest dich mit einem Passwort anmelden, aber für dein Konto ist noch keins festgelegt. Mit diesem Link meldest du dich an und legst eins fest. Er ist 15 Minuten gültig und funktioniert einmal.",
+      button: "Anmelden und Passwort festlegen",
+      outro: "Das warst du nicht? Dann ignoriere diese E-Mail einfach – ohne den Link passiert nichts.",
+    },
   },
   home: {
     claim: "Tickets. Ohne Ballast.",
@@ -227,6 +236,9 @@ export const de = {
     submit: "Anmelden",
     signingIn: "Wird angemeldet …",
     invalid: "E-Mail-Adresse oder Passwort stimmt nicht.",
+    invalidHint: "Falls dein Konto noch kein Passwort hat, haben wir dir gerade einen Link geschickt, mit dem du eins festlegst.",
+    passwordMissing: "Bitte gib dein Passwort ein.",
+    linkToAddress: "Anmeldelink an diese Adresse senden",
     or: "oder",
     linkSubmit: "Anmeldelink per E-Mail senden",
     linkHint: "Ohne Passwort anmelden – auch wenn du es vergessen hast. Beim ersten Mal legst du danach ein Passwort fest.",

@@ -84,6 +84,14 @@ export const en: Messages = {
       button: "Sign in now",
       outro: "Didn't request a link? Then simply ignore this email.",
     },
+    noPasswordMail: {
+      subject: "Your sign-in link for inhouseticket",
+      heading: "You don't have a password yet",
+      intro:
+        "You tried to sign in with a password, but your account doesn't have one yet. With this link you sign in and set one. It is valid for 15 minutes and works once.",
+      button: "Sign in and set password",
+      outro: "Wasn't you? Then simply ignore this email – nothing happens without the link.",
+    },
   },
   home: {
     claim: "Tickets. Without the baggage.",
@@ -265,6 +273,9 @@ export const en: Messages = {
     submit: "Sign in",
     signingIn: "Signing in …",
     invalid: "Email address or password is not correct.",
+    invalidHint: "If your account doesn't have a password yet, we've just sent you a link to set one.",
+    passwordMissing: "Please enter your password.",
+    linkToAddress: "Send a sign-in link to this address",
     or: "or",
     linkSubmit: "Send sign-in link by email",
     linkHint: "Sign in without a password – also if you forgot it. The first time, you set a password afterwards.",

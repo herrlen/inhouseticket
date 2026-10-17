@@ -34,3 +34,16 @@ Schema-Änderung, keine neue Abhängigkeit.
 - Better Auths Cookie-Cache (5 Minuten) bedeutet: Andere Geräte merken das Abmelden nach Ändern oder
   Zurücksetzen spätestens nach 5 Minuten; serverseitig ist die Sitzung sofort gelöscht.
 - Datenschutzerklärung und AVV beschreiben noch „Anmeldung ohne Passwort“ – Anpassung durch Len.
+
+## Nachtrag 2026-10-17: Konto ohne Passwort versucht es mit Passwort
+- Entscheidung Len (für alle Apps): eine neutrale Meldung auf dem Bildschirm, und für ein bestehendes Konto ohne
+  Passwort schickt der Server automatisch einen Anmeldelink (Mailtext erklärt, dass danach ein Passwort festgelegt
+  wird). Unbekannte Adresse oder Konto mit Passwort: keine Mail. Höchstens eine Mail je Adresse und 15 Minuten.
+- Umsetzung als **After-Hook auf `/sign-in/email`** in `src/lib/auth.ts`: Er sieht Better Auths eigenes Ergebnis
+  (401), ändert Antwort und Status nicht und plant die Arbeit mit `after()` – Datenbankabfrage und Versand laufen
+  nach der Antwort, die Antwortzeit verrät nichts. Der Link entsteht über `auth.api.signInMagicLink`, also mit
+  denselben Hooks (Firmenadresse, Beta, Limit je Adresse), demselben Token-Hashing und derselben Bestätigungsseite.
+  Konten entstehen hier nie.
+- Verworfen: **eigener Wrapper-Endpunkt** statt `/api/auth/sign-in/email` – der offene Better-Auth-Endpunkt bliebe
+  daneben erreichbar, und der Wrapper müsste Cookies und Fehlerformat nachbauen. **Mail im Client auslösen** – der
+  Client kennt den Kontostatus nicht (keine Enumeration), müsste also immer senden.
