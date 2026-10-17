@@ -50,3 +50,22 @@ gehasht gespeichert.
 - Workspace-Bindung über die Einwilligungsseite (`oauth_workspace`); Mitgliedschaft und Sperre werden bei jedem
   MCP-Aufruf geprüft. „Trennen“ löscht Einwilligung, alle Tokens und die Workspace-Wahl sofort.
 - Login-Weiterleitung prüft die Signatur der Anfrage, bevor sie zum Authorize-Endpunkt zurückleitet.
+
+## Security-Review 2026-10-17
+
+Geprüft (extern, alle Projekte): inhouseticket „sehr ordentlich“, 0 hoch, 2 mittel. Mandantentrennung, Passwörter
+und Token-Speicherung ohne Befund, `pnpm audit` ohne hohe Befunde. Alle Befunde behoben (Freigabe Len):
+
+| Befund | Schwere | Fix |
+|---|---|---|
+| Offene Weiterleitung über `next=/%09/evil.example` (Browser entfernen Tab/CR/LF, aus `/\t/` wird `//`) | mittel | `safeNext()` lehnt Steuerzeichen, Backslashes und kodierte Trenner ab, parst per `URL` und lässt nur denselben Origin zu (`src/lib/session.ts`); alle Aufrufer (Login, Set-Password, Magic Link) laufen darüber, Better Auth prüft Callback-URLs zusätzlich selbst |
+| OAuth-Consent-Phishing: anonym registrierter Client „Claude“ mit fremder `redirect_uri` bekommt nach einem Klick dauerhaft MCP-Zugriff | mittel | Einwilligung zeigt den Ziel-Host groß; bekannte Ziele (claude.ai, claude.com, Loopback) normal, alle anderen „Nicht verifizierte Anwendung“ mit Pflicht-Häkchen, serverseitig erneut geprüft; `client_name` bereinigt und auf 60 Zeichen begrenzt. Registrierung bleibt offen – warnen statt sperren (ADR 004) |
+| Passwort-Reset widerrief keine API-Tokens und OAuth-Verbindungen | niedrig | `onPasswordReset` widerruft alle API-Tokens und löscht OAuth-Tokens, Einwilligungen und Workspace-Wahl; neuer Knopf „Alle Verbindungen trennen“ unter Konto. Passwort *ändern* trennt bewusst nicht (beendet nur andere Sitzungen) – dafür gibt es den Knopf |
+| `/stat` ohne Rate-Limit, Body erst nach dem Puffern geprüft, privilegierte Matomo-Parameter (cid, country, ua, uid …) durchgereicht | niedrig | 120 Treffer/IP/min, Body gezählt gelesen (16 KB), Allowlist statt Blockliste, `/stat` und `/stat.js` am Proxy vorbei, `proxyClientMaxBodySize` 1 MB |
+| `/stat.js` lud den Tracker live vom Matomo-Server | niedrig | `public/stat.js` eingecheckt: offizielles Matomo-Release 5.13.0, byte-gleich mit dem Live-Stand (Hash in `docs/betrieb.md`) |
+| OAuth akzeptierte Access-Tokens ohne `resources` (Zielgruppe) | niedrig | nur noch Tokens mit `https://…/mcp` als Ressource; Bestand per Migration 0010 nachgetragen, damit verbundene Connectors weiterlaufen. MCP-Clients senden `resource` (RFC 8707) – die E2E-Strecke bildet den claude.ai-Ablauf so nach |
+| Einladungen aus dem Onboarding zählten nicht gegen das Mail-Limit; `/api/health` zeigte den vollen Commit-SHA; `page_view_daily` mit beliebig vielen Referrer-Hosts | niedrig | gemeinsames Budget `takeInviteMails()`; Health meldet `sha-<7>` (Deploy-Skript prüft dasselbe); höchstens 200 Referrer-Hosts pro Tag, Rest als ein Sammelposten |
+
+Offen (Len):
+- `MATOMO_TOKEN` live prüfen: eigener Benutzer, nur Recht „Schreiben“ auf die inhouseticket-Site, kein Superuser.
+- Neue offizielle Claude-Hosts bei Bedarf in `KNOWN_REDIRECT_HOSTS` nachtragen (`src/lib/oauth-client-trust.ts`).
