@@ -20,7 +20,7 @@ import { getTOrDefault } from "@/lib/i18n/server";
 import { buttonMail, sendMail } from "@/lib/mail";
 import { nameFromEmail } from "@/lib/names";
 import { failedSignInEmail, shouldSendNoPasswordLink } from "@/lib/no-password-link";
-import { rateLimit } from "@/lib/rate-limit";
+import { addressKey, rateLimit } from "@/lib/rate-limit";
 import { hashToken } from "@/lib/tokens";
 
 /** The MCP endpoint is the one protected resource OAuth clients (claude.ai connectors) get tokens for. */
@@ -42,7 +42,7 @@ const PER_EMAIL_WINDOW_MS = 15 * 60_000;
 /** Per-address limit in production (local and E2E runs reuse addresses in quick succession). */
 function tooManyForEmail(prefix: string, email: unknown, limit: number): boolean {
   if (env.NODE_ENV !== "production" || typeof email !== "string") return false;
-  return !rateLimit(`${prefix}:${email.trim().toLowerCase()}`, limit, PER_EMAIL_WINDOW_MS).ok;
+  return !rateLimit(addressKey(prefix, email), limit, PER_EMAIL_WINDOW_MS).ok;
 }
 
 /**
@@ -143,7 +143,7 @@ export const auth = betterAuth({
       }
       if (
         env.NODE_ENV === "production" &&
-        !rateLimit(`magic-link:${email.trim().toLowerCase()}`, MAGIC_LINKS_PER_EMAIL, MAGIC_LINK_EMAIL_WINDOW_MS).ok
+        !rateLimit(addressKey("magic-link", email), MAGIC_LINKS_PER_EMAIL, MAGIC_LINK_EMAIL_WINDOW_MS).ok
       ) {
         throw new APIError("TOO_MANY_REQUESTS", { code: "TOO_MANY_LINKS", message: t.login.tooMany });
       }

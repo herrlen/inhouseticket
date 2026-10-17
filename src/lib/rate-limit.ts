@@ -1,4 +1,5 @@
 // Fixed-window rate limiter in memory (one container; KONZEPT §4 "Rate-Limit pro Token").
+import { createHmac, randomBytes } from "node:crypto";
 
 type Window = { start: number; count: number };
 const windows = new Map<string, Window>();
@@ -23,4 +24,19 @@ export function rateLimit(
   if (w.count + cost > limit) return { ok: false, retryAfterSec: Math.ceil((w.start + windowMs - now) / 1000) };
   w.count += cost;
   return { ok: true };
+}
+
+/**
+ * HMAC key for per-address counters: the auth secret, or a random key per process (the counters
+ * live in this process only, so a stable key is not needed). Read from process.env directly so
+ * the pure callers stay unit-testable without the full env validation.
+ */
+const ADDRESS_KEY: string | Buffer = process.env.BETTER_AUTH_SECRET || randomBytes(32);
+
+/**
+ * Counter key for an e-mail address: prefix plus HMAC-SHA-256 of the normalized address. The
+ * plain address is never held in memory (privacy policy: "pseudonymisiert (Hash der Adresse)").
+ */
+export function addressKey(prefix: string, email: string): string {
+  return `${prefix}:${createHmac("sha256", ADDRESS_KEY).update(email.trim().toLowerCase()).digest("base64url")}`;
 }

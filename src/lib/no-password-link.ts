@@ -3,7 +3,7 @@
 // server quietly mails a sign-in link – after it, the forced set-password page follows.
 // Pure (no DB, no mail), so the decision is unit-tested; the wiring sits in src/lib/auth.ts.
 import { NO_PASSWORD_LINK_WINDOW_MS, NO_PASSWORD_LINKS_PER_EMAIL } from "@/lib/limits";
-import { rateLimit } from "@/lib/rate-limit";
+import { addressKey, rateLimit } from "@/lib/rate-limit";
 
 /** What the database knows about an address: no account, an account without or with a password. */
 export type PasswordState = "noAccount" | "noPassword" | "hasPassword";
@@ -25,5 +25,5 @@ export function failedSignInEmail(status: number | undefined, email: unknown): s
  */
 export function shouldSendNoPasswordLink(email: string, state: PasswordState, now = Date.now()): boolean {
   if (state !== "noPassword") return false;
-  return rateLimit(`no-password-link:${email}`, NO_PASSWORD_LINKS_PER_EMAIL, NO_PASSWORD_LINK_WINDOW_MS, now).ok;
+  return rateLimit(addressKey("no-password-link", email), NO_PASSWORD_LINKS_PER_EMAIL, NO_PASSWORD_LINK_WINDOW_MS, now).ok;
 }
