@@ -25,8 +25,9 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      // Pages only: API, MCP and static files carry no inline scripts (and skip the proxy's body buffering).
-      source: "/((?!api|mcp|_next/static|_next/image|favicon.ico|robots.txt).*)",
+      // Pages only: API, MCP, the tracking endpoint and static files carry no inline scripts (and
+      // skip the proxy's body buffering). "stat" only as the whole path, so /statistik-gmbh stays covered.
+      source: "/((?!api|mcp|stat$|stat\\.js$|_next/static|_next/image|favicon.ico|robots.txt).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

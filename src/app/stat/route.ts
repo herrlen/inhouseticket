@@ -1,20 +1,28 @@
 import { after } from "next/server";
+import { readBodyLimited } from "@/lib/body";
 import { forwardHit, matomoEnabled } from "@/lib/matomo";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
+/** A tracking hit is a few hundred bytes; 16 KB leaves room for long URLs and events. */
 const MAX_BODY = 16 * 1024;
+/** Hits per client address and minute – page views, events and heartbeat pings of a busy tab fit easily. */
+const HITS_PER_MINUTE = 120;
 
 /** Matomo tracking endpoint on our own domain (see src/lib/matomo.ts). Answers at once, forwards afterwards. */
 async function handle(request: Request) {
   if (!matomoEnabled()) return new Response(null, { status: 404 });
+  // The address is only used for this in-memory counter and, truncated, for Matomo (privacy policy).
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
+  if (!rateLimit(`stat:${ip || "unknown"}`, HITS_PER_MINUTE, 60_000).ok) return new Response(null, { status: 429 });
   const params = new URL(request.url).searchParams;
   if (request.method === "POST") {
-    const body = await request.text();
-    if (body.length > MAX_BODY) return new Response(null, { status: 413 });
-    for (const [k, v] of new URLSearchParams(body)) params.append(k, v);
+    // Counted while reading, so an oversized (or chunked) body never sits in memory.
+    const body = await readBodyLimited(request, MAX_BODY);
+    if (body === "too_large") return new Response(null, { status: 413 });
+    for (const [k, v] of new URLSearchParams(new TextDecoder().decode(body))) params.append(k, v);
   }
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
   const ua = request.headers.get("user-agent") ?? "";
   const lang = request.headers.get("accept-language") ?? "";
   after(() => forwardHit(params, ip, ua, lang));

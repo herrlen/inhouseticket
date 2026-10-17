@@ -25,9 +25,21 @@ describe("trackingParams", () => {
     expect([...p.keys()]).toEqual(["url", "action_name"]);
   });
 
+  it("drops privileged and unknown parameters (allowlist)", () => {
+    const privileged = "cid=abcdef0123456789&country=de&region=BY&city=X&lat=1&long=2&ua=Bot&uid=u1&cdt_utc=1&new_visit=1&lang=fr&requests=[]&foo=bar";
+    expect(trackingParams(new URLSearchParams(`${privileged}&url=https://x/&e_c=Board&dimension3=a&dimension1234=b`)).toString()).toBe(
+      "url=https%3A%2F%2Fx%2F&e_c=Board&dimension3=a",
+    );
+  });
+
+  it("keeps what the tracker sends for a page view", () => {
+    const hit = "action_name=Start&url=https://inhouseticket.com/&urlref=&rand=123&apiv=1&h=1&m=2&s=3&res=1920x1080&pv_id=Ab12Cd&pf_net=0&pf_srv=12&uadata={}&send_image=0&ca=1&ping=1";
+    expect(trackingParams(new URLSearchParams(hit)).size).toBe(16);
+  });
+
   it("bounds value length and parameter count", () => {
     expect(trackingParams(new URLSearchParams({ url: "x".repeat(3000) })).size).toBe(0);
-    const many = new URLSearchParams(Array.from({ length: 150 }, (_, i) => [`k${i}`, "v"]));
+    const many = new URLSearchParams(Array.from({ length: 150 }, (_, i) => [`dimension${i + 1}`, "v"]));
     expect(trackingParams(many).size).toBe(100);
   });
 });

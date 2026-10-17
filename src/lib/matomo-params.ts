@@ -2,8 +2,25 @@ import { isIP } from "node:net";
 
 // Pure helpers for the Matomo proxy (src/app/stat/route.ts) – kept free of env/server-only for tests.
 
-/** Values the browser must never set: site, address, auth and timestamps are decided by the proxy. */
-const BLOCKED = new Set(["token_auth", "cip", "idsite", "cdt", "cdt_utc", "rec"]);
+/**
+ * Tracking API parameters the browser may send (allowlist, Matomo tracking HTTP API). Everything
+ * else is dropped – above all what only an authenticated request may set (token_auth, cip, cdt,
+ * country/region/city/lat/long, ua, uid, cid, idsite, rec, new_visit) and the tracker's
+ * visitor/cookie values (_id, _idn …): without them Matomo derives the visit from a server-side
+ * hash that changes daily.
+ */
+const ALLOWED = new Set([
+  // page view and request basics
+  "action_name", "url", "urlref", "rand", "apiv", "h", "m", "s", "res", "cookie", "pv_id", "ca", "send_image", "ping",
+  // performance timings
+  "pf_net", "pf_srv", "pf_tfr", "pf_dm1", "pf_dm2", "pf_onl", "gt_ms",
+  // browser features (client hints, legacy plugin flags)
+  "uadata", "pdf", "qt", "realp", "wma", "fla", "java", "ag",
+  // events, site search, outlinks/downloads, content tracking, goals
+  "e_c", "e_a", "e_n", "e_v", "search", "search_cat", "search_count", "link", "download", "c_n", "c_p", "c_t", "c_i", "idgoal", "revenue",
+]);
+/** Custom dimensions (dimension1 … dimension999). */
+const DIMENSION = /^dimension\d{1,3}$/;
 const MAX_PARAMS = 100;
 const MAX_VALUE = 2048;
 
@@ -29,14 +46,12 @@ export function anonymizeIp(raw: string): string {
   return "";
 }
 
-/** Keeps only plain tracking parameters from the browser (bounded in count and length). */
+/** Keeps only allowlisted tracking parameters from the browser (bounded in count and length). */
 export function trackingParams(input: URLSearchParams): URLSearchParams {
   const out = new URLSearchParams();
   for (const [key, value] of input) {
     if (out.size >= MAX_PARAMS) break;
-    // "_*" are the tracker's own visitor/cookie values (_id, _idn …); without them Matomo derives
-    // the visit from a server-side hash that changes daily.
-    if (!key || key.startsWith("_") || BLOCKED.has(key) || value.length > MAX_VALUE) continue;
+    if (!(ALLOWED.has(key) || DIMENSION.test(key)) || value.length > MAX_VALUE) continue;
     out.append(key, value);
   }
   return out;
