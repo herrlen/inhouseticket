@@ -7,6 +7,7 @@ import { after } from "next/server";
 import { magicLink } from "better-auth/plugins/magic-link";
 import { oauthProvider } from "@better-auth/oauth-provider";
 import { db } from "@/db/client";
+import { revokeAllConnections } from "@/db/queries/connections";
 import { passwordStateByEmail, userHasPassword } from "@/db/queries/credentials";
 import * as schema from "@/db/schema";
 import { env } from "@/lib/env";
@@ -94,6 +95,10 @@ export const auth = betterAuth({
     maxPasswordLength: MAX_PASSWORD,
     resetPasswordTokenExpiresIn: RESET_LINK_TTL_SECONDS,
     revokeSessionsOnPasswordReset: true,
+    // A reset means "I lost control of this account": API tokens and connector access end too.
+    onPasswordReset: async ({ user }) => {
+      await revokeAllConnections(user.id);
+    },
     sendResetPassword: async ({ user, url }) => {
       // The link carries the token: never log it. Language of the person who asked for it.
       const t = await getTOrDefault();

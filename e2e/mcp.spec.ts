@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
-import { createWorkspace, uniqueDomain } from "./helpers/auth";
+import { createWorkspace, linkFromMail, RESET_LINK, uniqueDomain } from "./helpers/auth";
 import { waitForHydration } from "./helpers/hydration";
 
 // The MCP endpoint end to end: token from the settings page, JSON-RPC over Streamable HTTP.
@@ -165,4 +165,45 @@ test("token expiry is chosen by the user: custom date, validation, no expiry", a
   await page.getByRole("combobox", { name: "Gültig" }).selectOption("never");
   await page.getByRole("button", { name: "Token erstellen" }).click();
   await expect(tokens).toContainText("ohne Ablauf");
+});
+
+test("'Alle Verbindungen trennen' in the account settings revokes every API token at once", async ({ page, browser }) => {
+  const path = await createWorkspace(page, `toni@${uniqueDomain("disconnectall")}`, "Trenn GmbH");
+  const first = await newToken(page, path, "Laptop");
+  const second = await newToken(page, path, "CI");
+  const api = (await browser.newContext()).request;
+  expect((await rpc(api, first, "tools/list")).status).toBe(200);
+
+  await page.goto(`${path}/settings/account`);
+  const start = page.getByRole("button", { name: "Alle Verbindungen trennen" });
+  await waitForHydration(start);
+  await start.click();
+  await page.getByRole("button", { name: "Ja, alle trennen" }).click();
+  await expect(page.getByText("Getrennt: 2 API-Tokens, 0 Apps.")).toBeVisible();
+  await expect(start).toBeFocused();
+
+  expect((await rpc(api, first, "tools/list")).status).toBe(401);
+  expect((await rpc(api, second, "tools/list")).status).toBe(401);
+});
+
+test("a password reset revokes the person's API tokens", async ({ page, browser }) => {
+  const email = `rolf@${uniqueDomain("resettokens")}`;
+  const path = await createWorkspace(page, email, "Reset Token GmbH");
+  const token = await newToken(page, path, "Skript");
+  const api = (await browser.newContext()).request;
+  expect((await rpc(api, token, "tools/list")).status).toBe(200);
+
+  const other = await (await browser.newContext()).newPage();
+  await other.goto("/forgot-password");
+  const since = new Date(Date.now() - 1000);
+  await other.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(email);
+  await other.getByRole("button", { name: "Link zum Zurücksetzen senden" }).click();
+  await expect(other.getByText(/Falls es für rolf@/)).toBeVisible();
+  await other.goto(await linkFromMail(email, RESET_LINK, since));
+  await other.getByLabel("Neues Passwort").fill("frisch-gesetzt-88");
+  await other.getByLabel("Passwort wiederholen").fill("frisch-gesetzt-88");
+  await other.getByRole("button", { name: "Passwort speichern" }).click();
+  await expect(other.getByText(/Dein Passwort ist gespeichert/)).toBeVisible();
+
+  expect((await rpc(api, token, "tools/list")).status).toBe(401);
 });

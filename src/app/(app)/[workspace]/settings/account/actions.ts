@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { revokeAllConnections } from "@/db/queries/connections";
 import { auth } from "@/lib/auth";
 import { getT } from "@/lib/i18n/server";
 import { authErrorCode, translatedErrors, type PasswordFormState } from "@/lib/password-actions";
@@ -14,6 +15,7 @@ const RESET_MAILS_PER_WINDOW = 3;
 const WINDOW_MS = 15 * 60_000;
 
 export type ResetLinkState = { sent?: string; error?: string };
+export type DisconnectAllState = { done?: string; error?: string };
 
 /** Change with the current password; all other sessions of the person end, this one continues. */
 export async function changePasswordAction(_: PasswordFormState, formData: FormData): Promise<PasswordFormState> {
@@ -49,4 +51,13 @@ export async function sendResetLinkAction(): Promise<ResetLinkState> {
     return { error: t.login.mailFailed };
   }
   return { sent: t.account.resetSent(user.email) };
+}
+
+/** "Alle Verbindungen trennen": every API token and connector (OAuth) access of the person ends now. */
+export async function disconnectAllAction(): Promise<DisconnectAllState> {
+  const t = await getT();
+  const user = await requireUser();
+  if (!rateLimit(`disconnect-all:${user.id}`, CHANGES_PER_WINDOW, WINDOW_MS).ok) return { error: t.account.tooMany };
+  const { apiTokens, oauthClients } = await revokeAllConnections(user.id);
+  return { done: t.account.disconnectAllDone(apiTokens, oauthClients) };
 }

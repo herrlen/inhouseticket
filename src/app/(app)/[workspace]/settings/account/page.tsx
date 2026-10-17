@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { requireMember } from "@/lib/authz";
 import { getT } from "@/lib/i18n/server";
-import { ChangePasswordForm, ResetPasswordButton } from "./password-forms";
+import { ChangePasswordForm, DisconnectAllButton, ResetPasswordButton } from "./password-forms";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getT()).account.title };
@@ -36,6 +36,14 @@ export default async function AccountPage({ params }: Props) {
           <p className="mb-3 text-[13px] text-muted">{t.account.resetText}</p>
           <ResetPasswordButton />
         </div>
+      </section>
+
+      <section aria-labelledby="connections-heading" className="flex flex-col gap-3 rounded-[var(--radius-card)] border border-border bg-surface p-4">
+        <h2 id="connections-heading" className="font-semibold">
+          {t.account.disconnectTitle}
+        </h2>
+        <p className="text-[13px] text-muted">{t.account.disconnectText}</p>
+        <DisconnectAllButton />
       </section>
     </div>
   );

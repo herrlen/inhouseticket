@@ -737,9 +737,17 @@ export const en: Messages = {
     changed: "Password changed. Other devices have been signed out.",
     wrongCurrent: "The current password is not correct.",
     resetTitle: "Reset password",
-    resetText: "We'll send a link to your email address. With it you set a new password; afterwards you will be signed out on all devices.",
+    resetText: "We'll send a link to your email address. With it you set a new password; afterwards you will be signed out on all devices, and all API tokens and connected apps are disconnected.",
     resetButton: "Reset password",
     resetSent: (email: string) => `Link sent to ${email}. It is valid for 30 minutes.`,
+    disconnectTitle: "Connections",
+    disconnectText: "Immediately cuts off all API tokens and all apps connected via “Add connector” (e.g. Claude) – in all your workspaces. Scripts and connectors have to be set up again afterwards. Resetting your password does this automatically.",
+    disconnectAllButton: "Disconnect everything",
+    disconnectAllPending: "Disconnecting …",
+    disconnectAllConfirm: "Really disconnect all API tokens and apps?",
+    disconnectAllYes: "Yes, disconnect all",
+    disconnectAllDone: (tokens: number, apps: number) =>
+      `Disconnected: ${tokens === 1 ? "1 API token" : `${tokens} API tokens`}, ${apps === 1 ? "1 app" : `${apps} apps`}.`,
     tooMany: "Too many attempts. Please wait a few minutes and then try again.",
   },
   shell: {
