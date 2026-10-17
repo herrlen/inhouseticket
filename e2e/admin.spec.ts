@@ -35,8 +35,12 @@ test("/admin: metrics only, lock and delete a workspace; hidden from everyone el
   const customer = await browser.newPage();
   const path = await createWorkspace(customer, `kai@${uniqueDomain("kunde")}`, "Kunde GmbH");
   const slug = path.slice(1);
-  // Customers do not even learn that /admin exists.
+  // Customers do not even learn that /admin exists – and signed-out visitors get no login redirect.
   expect((await customer.goto("/admin"))?.status()).toBe(404);
+  const anonymous = await (await browser.newContext()).newPage();
+  const res = await anonymous.goto("/admin");
+  expect(res?.status()).toBe(404);
+  expect(new URL(anonymous.url()).pathname).toBe("/admin");
 
   await signInOperator(page);
   await page.goto("/admin");
