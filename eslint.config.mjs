@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored Matomo tracker (BSD-3), unchanged from the release – see docs/betrieb.md.
+    "public/stat.js",
   ]),
 ]);
 

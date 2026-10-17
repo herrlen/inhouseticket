@@ -96,6 +96,23 @@ websecureaudit). Der Browser spricht nur mit `/stat` und `/stat.js` auf inhouset
 reicht weiter, kürzt die IP vorher (IPv4 /16, IPv6 /48) und setzt `idsite` selbst. Ohne Cookies, mit Do-Not-Track.
 Ohne `MATOMO_SITE_ID` und `MATOMO_TOKEN` ist alles aus (kein Schnipsel, `/stat` antwortet 404).
 
+Absicherung (Security-Review 2026-10-17):
+- `/stat` nimmt nur Parameter aus einer **Allowlist** an (`src/lib/matomo-params.ts`): Seitenaufruf, Timings,
+  Events, Suche, Links, Content, Ziele, Custom Dimensions. `token_auth`, `cip`, `cid`, `uid`, `cdt`, `ua`,
+  `country`/`region`/`city`/`lat`/`long`, `idsite`, `rec`, `new_visit`, `lang` und `_*` setzt nie der Browser.
+- Body höchstens 16 KB (gezählt gelesen), 120 Treffer pro IP und Minute (im Speicher), `/stat` und `/stat.js`
+  laufen nicht durch den Proxy (kein Puffern, kein CSP-Kopf nötig); `proxyClientMaxBodySize` 1 MB.
+- **`/stat.js` ist eingecheckt** (`public/stat.js`), nicht mehr live von Matomo geholt: `matomo.js` aus dem
+  offiziellen Release **5.13.0** (BSD-3, unverändert, SHA-256 `40c1b9a1c297746e02cd5614390adf6a51e9f0a024c77567a114eceb7a581895`,
+  am 2026-10-17 byte-gleich mit dem, was `analytics.klatxt.de` ausliefert). Ein kompromittierter Matomo-Server
+  kann so keinen Code auf inhouseticket.com ausführen. Aktualisieren nach einem Matomo-Update (optional, der
+  Tracker ist abwärtskompatibel):
+  `curl -fsSL https://raw.githubusercontent.com/matomo-org/matomo/<version>/matomo.js -o public/stat.js`,
+  Hash und Version hier nachtragen.
+- **`MATOMO_TOKEN` muss einem eigenen Benutzer nur mit Recht „Schreiben“ auf diese eine Site gehören** (Schritt 2
+  unten) – nie ein Superuser-Token. Das Token wird nur serverseitig gesetzt (für `cip`), der Browser sieht es nie.
+  *Len: prüfen, dass das live gesetzte Token so eingeschränkt ist.*
+
 Einrichten in Matomo (Superuser):
 1. Website anlegen: `inhouseticket.com`, Zeitzone Europe/Berlin, eigene IP ausschließen.
 2. Eigenen Benutzer für den Proxy anlegen (z. B. `iht-proxy`), **kein** Superuser, Recht **Schreiben** nur auf

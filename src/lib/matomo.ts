@@ -3,14 +3,13 @@ import { env } from "@/lib/env";
 import { anonymizeIp, trackingParams } from "@/lib/matomo-params";
 
 // Self-hosted Matomo (analytics.klatxt.de, same operator, mittwald) behind our own domain: the
-// browser only talks to /stat and /stat.js, we forward server-side. Cookieless; the IP is truncated
+// browser only talks to /stat and /stat.js, we forward server-side. /stat.js is the tracker,
+// vendored and pinned in public/stat.js (official Matomo release, see docs/betrieb.md) – no code is
+// loaded from the Matomo server at runtime. Cookieless; the IP is truncated
 // here before it reaches Matomo, so the privacy promise does not depend on a Matomo setting.
-// Without MATOMO_URL, MATOMO_SITE_ID and MATOMO_TOKEN everything stays off (no snippet, routes 404).
+// Without MATOMO_URL, MATOMO_SITE_ID and MATOMO_TOKEN everything stays off (no snippet, /stat answers 404; the static /stat.js is unused).
 
 const TIMEOUT_MS = 4_000;
-const JS_TTL_MS = 24 * 60 * 60 * 1000;
-
-let cachedJs: { body: string; at: number } | undefined;
 
 export function matomoEnabled(): boolean {
   return Boolean(env.MATOMO_URL && env.MATOMO_SITE_ID && env.MATOMO_TOKEN);
@@ -18,20 +17,6 @@ export function matomoEnabled(): boolean {
 
 export function matomoSiteId(): string {
   return env.MATOMO_SITE_ID ?? "";
-}
-
-/** The tracker script, fetched once a day; a stale copy beats no copy when Matomo is down. */
-export async function matomoJs(): Promise<string | undefined> {
-  if (!matomoEnabled()) return undefined;
-  if (cachedJs && Date.now() - cachedJs.at < JS_TTL_MS) return cachedJs.body;
-  try {
-    const res = await fetch(`${env.MATOMO_URL}/matomo.js`, { signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    cachedJs = { body: await res.text(), at: Date.now() };
-  } catch (e) {
-    console.error("matomo: matomo.js unavailable", e instanceof Error ? e.message : e);
-  }
-  return cachedJs?.body;
 }
 
 /** Forwards one tracking request. Never throws – a lost page view must not break anything. */
