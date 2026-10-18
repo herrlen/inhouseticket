@@ -148,7 +148,7 @@ Absicherung (Security-Review 2026-10-17):
 - Body höchstens 16 KB (gezählt gelesen), 120 Treffer pro IP und Minute (im Speicher), `/stat` und `/stat.js`
   laufen nicht durch den Proxy (kein Puffern, kein CSP-Kopf nötig); `proxyClientMaxBodySize` 1 MB.
 - **`/stat.js` ist eingecheckt** (`public/stat.js`), nicht mehr live von Matomo geholt: `matomo.js` aus dem
-  offiziellen Release **5.13.0** (BSD-3, unverändert, SHA-256 `40c1b9a1c297746e02cd5614390adf6a51e9f0a024c77567a114eceb7a581895`,
+  offiziellen Release **5.14.1** (BSD-3, unverändert, SHA-256 `cf75a64173bf9134e5013b1d6c5e00a63c5d5239cc952e3a0a99529facd0b344`,
   am 2026-10-17 byte-gleich mit dem, was `analytics.klatxt.de` ausliefert). Ein kompromittierter Matomo-Server
   kann so keinen Code auf inhouseticket.com ausführen. Aktualisieren nach einem Matomo-Update (optional, der
   Tracker ist abwärtskompatibel):
