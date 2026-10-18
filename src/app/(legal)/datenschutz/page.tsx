@@ -5,13 +5,14 @@ import { OPERATOR } from "@/lib/legal";
 export const metadata: Metadata = { title: "Datenschutz" };
 
 // Describes what the app actually does; reviewed by a lawyer (2026-10-10). Added afterwards and not yet reviewed: section 5 (Matomo),
-// and on 2026-10-17 password, reset, no-password link, rate limits (section 3/4), the lang cookie (section 7).
+// and on 2026-10-17 password, reset, no-password link, rate limits (section 3/4), the lang cookie (section 7),
+// and on 2026-10-18 registration with password and its pending data (sections 3, 4, 9; ADR 005).
 // Keep in sync with new features.
 export default function DatenschutzPage() {
   return (
     <GermanOnly>
       <h1>Datenschutzerklärung</h1>
-      <p className="text-[13px] text-muted">Stand: 17. Oktober 2026</p>
+      <p className="text-[13px] text-muted">Stand: 18. Oktober 2026</p>
 
       <h2>1. Verantwortlicher</h2>
       <p>
@@ -27,12 +28,13 @@ export default function DatenschutzPage() {
 
       <h2>3. Welche Daten wir verarbeiten</h2>
       <ul>
-        <li><strong>Konto:</strong> Firmen-E-Mail-Adresse, Name (aus der E-Mail-Adresse vorgeschlagen, änderbar), Rolle und Mitgliedschaft im Workspace.</li>
+        <li><strong>Konto:</strong> Firmen-E-Mail-Adresse, Name (bei der Registrierung angegeben, sonst aus der E-Mail-Adresse vorgeschlagen), Rolle und Mitgliedschaft im Workspace.</li>
+        <li><strong>Registrierung:</strong> Registrierst du dich mit Name, Firmen-E-Mail-Adresse und Passwort, legen wir noch kein Konto an. Wir speichern die Angaben als offene Registrierung – das Passwort nur als Hash (scrypt), dazu einen einmal nutzbaren Bestätigungscode als Hash (SHA-256) und die Zahl falscher Bestätigungsversuche – und schicken dir einen Bestätigungslink. Erst wenn du ihn öffnest und dein Passwort noch einmal eingibst, entsteht das Konto. Gibt es für die Adresse schon ein Konto, legen wir nichts an und schicken stattdessen einen Hinweis mit Link zur Anmeldung; die Seite antwortet in beiden Fällen gleich.</li>
         <li><strong>Inhalte im Workspace:</strong> Projekte, Tickets, Beschreibungen, Labels und das Aktivitätsprotokoll („wer hat was wann geändert“).</li>
         <li><strong>Anmeldung:</strong> Jedes Konto hat ein Passwort. Wir speichern nicht das Passwort selbst, sondern nur einen Hash (Verfahren scrypt mit zufälligem Salt), aus dem es sich nicht zurückrechnen lässt. Alternativ ist die Anmeldung per Link an deine E-Mail-Adresse möglich; dafür speichern wir einen einmal nutzbaren, gehasht abgelegten Code für 15 Minuten. Wer sich per Link anmeldet und noch kein Passwort hat, legt danach eines fest.</li>
         <li><strong>Passwort zurücksetzen:</strong> Forderst du einen Link zum Zurücksetzen an (unter „Passwort vergessen“ oder in deinen Kontoeinstellungen), speichern wir einen einmal nutzbaren Code nur als Hash (SHA-256); er gilt 30 Minuten. Nach dem Zurücksetzen werden alle Sitzungen beendet.</li>
         <li><strong>Anmeldeversuch ohne Passwort:</strong> Versucht jemand, sich mit einem Passwort bei einem Konto anzumelden, das noch keins hat, schicken wir an dessen E-Mail-Adresse einen Anmeldelink, mit dem sich ein Passwort festlegen lässt – höchstens einmal je 15 Minuten. Die Anmeldeseite antwortet dabei genauso wie bei einem falschen Passwort.</li>
-        <li><strong>Begrenzung von Anfragen:</strong> Gegen das Erraten von Passwörtern und massenhaften Mailversand zählen wir Anmeldeversuche und angeforderte E-Mails je IP-Adresse und je E-Mail-Adresse; die E-Mail-Adresse dabei nur pseudonymisiert (Hash der Adresse). Die Zähler liegen nur im Arbeitsspeicher des Servers, werden nicht dauerhaft gespeichert und zählen spätestens nach 15 Minuten nicht mehr.</li>
+        <li><strong>Begrenzung von Anfragen:</strong> Gegen das Erraten von Passwörtern und massenhaften Mailversand zählen wir Anmelde-, Registrierungs- und Bestätigungsversuche sowie angeforderte E-Mails je IP-Adresse und je E-Mail-Adresse; die E-Mail-Adresse dabei nur pseudonymisiert (Hash der Adresse). Die Zähler liegen nur im Arbeitsspeicher des Servers, werden nicht dauerhaft gespeichert und zählen spätestens nach 15 Minuten nicht mehr.</li>
         <li><strong>Sitzungen:</strong> Für eine aktive Anmeldung speichern wir eine Sitzung mit IP-Adresse und Browser-Kennung (User-Agent), um Missbrauch erkennen zu können. Sitzungen laufen nach 30 Tagen ab und werden dann gelöscht.</li>
         <li><strong>Einladungen:</strong> E-Mail-Adresse der eingeladenen Person, wer eingeladen hat, Gültigkeit 7 Tage.</li>
         <li><strong>Kommentare, Unteraufgaben und Bild-Anhänge</strong> in Tickets sowie Erwähnungen (@Name).</li>
@@ -44,7 +46,7 @@ export default function DatenschutzPage() {
       <ul>
         <li>Bereitstellung des Dienstes und der Zusammenarbeit im Workspace: Art. 6 Abs. 1 lit. b DSGVO (Vertrag bzw. Nutzungsverhältnis).</li>
         <li>Sicherheit (Sitzungsdaten, Begrenzung von Anmeldeversuchen und E-Mails je IP- und je E-Mail-Adresse): Art. 6 Abs. 1 lit. f DSGVO, unser berechtigtes Interesse an einem sicheren Betrieb.</li>
-        <li>Anmeldung mit Passwort sowie Versand von Anmeldelinks, Links zum Zurücksetzen des Passworts und Einladungen per E-Mail: Art. 6 Abs. 1 lit. b DSGVO.</li>
+        <li>Registrierung, Anmeldung mit Passwort sowie Versand von Bestätigungslinks, Anmeldelinks, Links zum Zurücksetzen des Passworts und Einladungen per E-Mail: Art. 6 Abs. 1 lit. b DSGVO (Anbahnung und Durchführung des Nutzungsverhältnisses).</li>
       </ul>
       <p>
         Für die Inhalte, die ein Unternehmen in seinem Workspace anlegt, ist das jeweilige Unternehmen verantwortlich; wir verarbeiten sie in
@@ -95,7 +97,9 @@ export default function DatenschutzPage() {
       <h2>9. Speicherdauer</h2>
       <p>
         Kontodaten und Workspace-Inhalte speichern wir, solange das Konto bzw. der Workspace besteht. Wird ein Mitglied aus einem Workspace
-        entfernt, bleibt die Zuordnung früherer Tickets und Aktivitäten erhalten, damit der Verlauf nachvollziehbar bleibt. Sitzungen,
+        entfernt, bleibt die Zuordnung früherer Tickets und Aktivitäten erhalten, damit der Verlauf nachvollziehbar bleibt. Offene
+        Registrierungen löschen wir, sobald das Konto bestätigt ist, spätestens aber nach 24 Stunden; nach fünf falschen Passworteingaben
+        oder einer neuen Registrierung für dieselbe Adresse sofort. Sitzungen,
         Anmeldecodes und Codes zum Zurücksetzen des Passworts werden mit Ablauf ungültig und automatisch gelöscht. Löscht der Besitzer einen Workspace, sind dessen Daten sofort aus der Anwendung entfernt;
         in Sicherungskopien, die wir zum Schutz vor Datenverlust täglich anlegen, verbleiben sie höchstens 30 Tage. Admins können alle Daten eines
         Workspace jederzeit exportieren.
