@@ -31,8 +31,14 @@ import {
   MAX_NEXT_PATH,
   MAX_PROJECT_KEY,
   MAX_REGISTRATION_ATTEMPTS,
+  MAX_SOURCE_OTHER,
+  MAX_TIMEZONE,
   MAX_TITLE,
 } from "../lib/limits";
+import { PREVIOUS_TOOLS, SOURCES, TEAM_TYPES, VIEWS } from "../lib/onboarding/options";
+
+/** `col IN ('a', 'b', …)` for CHECK constraints from a constant list (no user input). */
+const oneOf = (values: readonly string[]) => sql.raw(values.map((v) => `'${v}'`).join(", "));
 
 const tsvector = customType<{ data: string }>({
   dataType: () => "tsvector",
@@ -60,6 +66,10 @@ export const user = pgTable("user", {
   emailVerified: boolean().notNull().default(false),
   /** Avatar URL (KONZEPT: avatar_url). */
   image: text(),
+  /** IANA time zone from the onboarding profile step (browser's Intl value, changeable). */
+  timezone: varchar({ length: MAX_TIMEZONE }).notNull().default("Europe/Berlin"),
+  /** Set when the person finished (or postponed) the onboarding wizard; null → /onboarding. */
+  onboardedAt: timestamp({ withTimezone: true }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
@@ -166,8 +176,15 @@ export const workspace = pgTable("workspace", {
   workloadThreshold: smallint().notNull().default(12),
   /** Set by the platform operator (/admin): members, API tokens and digests are shut out. */
   lockedAt: timestamp({ withTimezone: true }),
+  /** Team area chosen in the onboarding wizard (step 3) – decides the project template. */
+  teamType: text(),
+  /** Set when the owner finished the wizard (template project created); null → banner. */
+  onboardingCompletedAt: timestamp({ withTimezone: true }),
   createdAt: createdAt(),
-}, (t) => [check("workspace_slug_format", sql`${t.slug} ~ '^[a-z0-9]([a-z0-9-]*[a-z0-9])?$'`)]);
+}, (t) => [
+  check("workspace_slug_format", sql`${t.slug} ~ '^[a-z0-9]([a-z0-9-]*[a-z0-9])?$'`),
+  check("workspace_team_type", sql`${t.teamType} is null or ${t.teamType} in (${oneOf(TEAM_TYPES)})`),
+]);
 
 export const membership = pgTable(
   "membership",
@@ -527,8 +544,43 @@ export const userPref = pgTable(
     emailDigest: boolean().notNull().default(true),
     /** Berlin date of the last digest sent – makes the daily job idempotent. */
     lastDigestOn: varchar({ length: 10 }),
+    /** Start view chosen in the onboarding wizard; project links open it. */
+    defaultView: text().notNull().default("board"),
+    /** Next onboarding step (docs/ONBOARDING.md §2.1 numbering) – the wizard resumes here. */
+    onboardingStep: smallint(),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.workspaceId] })],
+  (t) => [
+    primaryKey({ columns: [t.userId, t.workspaceId] }),
+    check("user_pref_default_view", sql`${t.defaultView} in (${oneOf(VIEWS)})`),
+    check("user_pref_onboarding_step", sql`${t.onboardingStep} is null or ${t.onboardingStep} between 1 and 6`),
+  ],
+);
+
+/**
+ * Answers to "Zwei kurze Fragen" (onboarding step 5) – optional, first-party, evaluated only in
+ * aggregate. Hangs on the workspace: deleting the workspace deletes the answers (GDPR).
+ */
+export const onboardingAnswer = pgTable(
+  "onboarding_answer",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspace.id, { onDelete: "cascade" }),
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    previousTools: text().array().notNull().default(sql`'{}'::text[]`),
+    source: text(),
+    sourceOther: varchar({ length: MAX_SOURCE_OTHER }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    unique().on(t.workspaceId, t.userId),
+    check("onboarding_answer_tools", sql`cardinality(${t.previousTools}) <= ${sql.raw(String(PREVIOUS_TOOLS.length))} and ${t.previousTools} <@ array[${oneOf(PREVIOUS_TOOLS)}]::text[]`),
+    check("onboarding_answer_source", sql`${t.source} is null or ${t.source} in (${oneOf(SOURCES)})`),
+    check("onboarding_answer_source_other", sql`${t.sourceOther} is null or ${t.source} = 'other'`),
+  ],
 );
 
 export const apiToken = pgTable(

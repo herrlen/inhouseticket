@@ -24,7 +24,8 @@ export const requireMember = cache(async (ref: { slug: string } | { workspaceId:
   if (!limit.ok) throw new RateLimitedError(limit.retryAfterSec);
   const row = "slug" in ref ? await findMembershipBySlug(ref.slug, user.id) : await findMembershipById(ref.workspaceId, user.id);
   if (!row) notFound();
-  return { user, workspace: row.workspace, membership: row.membership };
+  // onboardedAt comes fresh from the database (the session's user is cached for minutes).
+  return { user, workspace: row.workspace, membership: row.membership, onboardedAt: row.onboardedAt };
 });
 
 export type MemberContext = Awaited<ReturnType<typeof requireMember>>;

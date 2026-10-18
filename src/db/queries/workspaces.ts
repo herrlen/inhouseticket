@@ -11,9 +11,10 @@ export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 /** Active membership of a user in the workspace with this slug, or null. */
 export async function findMembershipBySlug(slug: string, userId: string) {
   const [row] = await db
-    .select({ workspace, membership })
+    .select({ workspace, membership, onboardedAt: user.onboardedAt })
     .from(membership)
     .innerJoin(workspace, eq(workspace.id, membership.workspaceId))
+    .innerJoin(user, eq(user.id, membership.userId))
     .where(and(eq(workspace.slug, slug), eq(membership.userId, userId), eq(membership.status, "active"), isNull(workspace.lockedAt)))
     .limit(1);
   return row ?? null;
@@ -21,9 +22,10 @@ export async function findMembershipBySlug(slug: string, userId: string) {
 
 export async function findMembershipById(workspaceId: string, userId: string) {
   const [row] = await db
-    .select({ workspace, membership })
+    .select({ workspace, membership, onboardedAt: user.onboardedAt })
     .from(membership)
     .innerJoin(workspace, eq(workspace.id, membership.workspaceId))
+    .innerJoin(user, eq(user.id, membership.userId))
     .where(and(eq(membership.workspaceId, workspaceId), eq(membership.userId, userId), eq(membership.status, "active"), isNull(workspace.lockedAt)))
     .limit(1);
   return row ?? null;

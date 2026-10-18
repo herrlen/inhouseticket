@@ -94,15 +94,72 @@ export async function signInWithPassword(page: Page, email: string, password = E
   await page.getByRole("button", { name: "Anmelden", exact: true }).click();
 }
 
-/** Signs in a new user and creates a workspace via onboarding; returns the workspace URL path. */
-export async function createWorkspace(page: Page, email: string, name: string, invites = "") {
+/** URL of the onboarding wizard, with or without the step the wizard keeps in the query string. */
+export const ONBOARDING_URL = /\/onboarding(\?step=\d)?$/;
+
+export type WizardOptions = {
+  /** Addresses for step 6 (comma separated); empty = "Überspringen". */
+  invites?: string;
+  /** Auto-join switch in step 2 – pre-selected on in the wizard, the helper's default is off. */
+  autoJoin?: boolean;
+  /** Team area pill in step 3 (German label). */
+  team?: string;
+  /** Start view in step 4. */
+  view?: "Liste" | "Board";
+};
+
+/** Clicks through the owner wizard (docs/ONBOARDING.md §2.1) from step 1; ends in the template project. */
+export async function completeOwnerWizard(page: Page, workspaceName: string, opts: WizardOptions = {}) {
+  await expect(page).toHaveURL(ONBOARDING_URL);
+  await expect(page.getByRole("heading", { name: "Willkommen! Wie heißt du?" })).toBeVisible();
+  await page.getByRole("button", { name: "Weiter" }).click();
+
+  await expect(page.getByRole("heading", { name: "Dein Workspace" })).toBeVisible();
+  await page.getByRole("textbox", { name: "Name des Workspace" }).fill(workspaceName);
+  const autoJoin = page.getByRole("checkbox", { name: /dürfen beitreten/ });
+  if (await autoJoin.count()) await autoJoin.setChecked(opts.autoJoin ?? false);
+  await page.getByRole("button", { name: "Weiter" }).click();
+
+  await expect(page.getByRole("heading", { name: "Wofür nutzt ihr inhouseticket?" })).toBeVisible();
+  await page.getByRole("radio", { name: opts.team ?? "Marketing" }).click();
+  await page.getByRole("button", { name: "Weiter" }).click();
+
+  await expect(page.getByRole("heading", { name: "Wie möchtest du deine Tickets sehen?" })).toBeVisible();
+  await page.getByRole("radio", { name: new RegExp(`^${opts.view ?? "Liste"}`) }).click();
+  await page.getByRole("button", { name: "Weiter" }).click();
+
+  await expect(page.getByRole("heading", { name: "Zwei kurze Fragen" })).toBeVisible();
+  await page.getByRole("button", { name: "Überspringen" }).click();
+
+  await expect(page.getByRole("heading", { name: "Lade dein Team ein" })).toBeVisible();
+  if (opts.invites) {
+    await page.getByRole("textbox", { name: "E-Mail-Adressen" }).fill(opts.invites);
+    await page.getByRole("button", { name: "Los geht's" }).click();
+  } else {
+    await page.getByRole("button", { name: "Überspringen" }).click();
+  }
+  await page.waitForURL((url) => /^\/[a-z0-9-]+\/p\/[A-Z0-9]+$/.test(url.pathname));
+}
+
+/** Signs in a new user and creates a workspace via the wizard; returns the workspace URL path (overview open). */
+export async function createWorkspace(page: Page, email: string, name: string, invites = "", opts: Omit<WizardOptions, "invites"> = {}) {
   await signIn(page, email);
-  await expect(page).toHaveURL(/\/onboarding$/);
-  await page.getByRole("textbox", { name: "Name des Workspace" }).fill(name);
-  if (invites) await page.getByRole("textbox", { name: /Kollegen einladen/ }).fill(invites);
-  await page.getByRole("button", { name: "Workspace anlegen" }).click();
+  await completeOwnerWizard(page, name, { ...opts, invites });
+  const path = `/${new URL(page.url()).pathname.split("/")[1]}`;
+  await page.goto(path);
   await expect(page.getByRole("heading", { name: `Willkommen bei ${name}` })).toBeVisible();
-  return new URL(page.url()).pathname;
+  return path;
+}
+
+/** The short wizard of an invited or auto-joined person: profile and start view → "Meine Aufgaben". */
+export async function completeJoinerWizard(page: Page, view: "Liste" | "Board" = "Liste") {
+  await expect(page).toHaveURL(ONBOARDING_URL);
+  await expect(page.getByRole("heading", { name: "Willkommen! Wie heißt du?" })).toBeVisible();
+  await page.getByRole("button", { name: "Weiter" }).click();
+  await expect(page.getByRole("heading", { name: "Wie möchtest du deine Tickets sehen?" })).toBeVisible();
+  await page.getByRole("radio", { name: new RegExp(`^${view}`) }).click();
+  await page.getByRole("button", { name: "Los geht's" }).click();
+  await page.waitForURL((url) => /^\/[a-z0-9-]+\/me$/.test(url.pathname));
 }
 
 export const REGISTER_LINK = /http:\/\/localhost:3100\/register\/confirm\?token=[\w-]+/;

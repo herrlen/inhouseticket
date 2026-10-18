@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inviteSchema, onboardingSchema, parseEmailList } from "./workspace";
+import { inviteSchema, parseEmailList } from "./workspace";
 
 describe("parseEmailList", () => {
   it("splits on commas, semicolons and whitespace and dedupes", () => {
@@ -14,29 +14,6 @@ describe("parseEmailList", () => {
       valid: ["a@firma.de"],
       invalid: ["max@gmail.com", "kaputt"],
     });
-  });
-});
-
-describe("onboardingSchema", () => {
-  const base = { name: "Firma GmbH", color: "#FF6B5B", template: "marketing" };
-
-  it("accepts a valid form without invites", () => {
-    expect(onboardingSchema.parse(base)).toEqual({ ...base, invites: [] });
-  });
-
-  it("carries the import checkbox only when ticked", () => {
-    expect(onboardingSchema.parse({ ...base, thenImport: "on" }).thenImport).toBe("on");
-    expect(onboardingSchema.parse(base).thenImport).toBeUndefined();
-  });
-
-  it("rejects colors outside the palette", () => {
-    expect(onboardingSchema.safeParse({ ...base, color: "#000000" }).success).toBe(false);
-  });
-
-  it("rejects freemail invites with the address in the message", () => {
-    const r = onboardingSchema.safeParse({ ...base, invites: "max@gmx.de" });
-    expect(r.success).toBe(false);
-    expect(r.error?.issues[0]?.message).toContain("max@gmx.de");
   });
 });
 

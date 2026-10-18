@@ -85,6 +85,13 @@
       "when": 1792314927875,
       "tag": "0011_pending_registration",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792334352719,
+      "tag": "0012_onboarding_wizard",
+      "breakpoints": true
     }
   ]
 }

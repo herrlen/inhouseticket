@@ -20,7 +20,7 @@ import { MAX_NAME, MAX_PASSWORD, MIN_PASSWORD } from "@/lib/limits";
 import { setPasswordUrl } from "@/lib/password-gate";
 import { getTOrDefault } from "@/lib/i18n/server";
 import { buttonMail, sendMail } from "@/lib/mail";
-import { nameFromEmail } from "@/lib/names";
+import { nameFromEmail } from "@/lib/onboarding/names";
 import { sanitizeClientName } from "@/lib/oauth-client-trust";
 import { failedSignInEmail, shouldSendNoPasswordLink } from "@/lib/no-password-link";
 import { addressKey, rateLimit } from "@/lib/rate-limit";

@@ -140,13 +140,13 @@ Abhängigkeiten: Profil/Workspace/Einladen brauchen Sprint 1, Vorlagen brauchen 
 - [x] `SPRINTPLANNING.md` anpassen (siehe unten)
 
 ### Phase B – Sprint 1 (Wizard-Gerüst)
-- [ ] P1 Route `src/app/(app)/onboarding/` mit Wizard-Shell: Modal-Karte, Fortschritt, Zurück/Weiter, Enter, Überspringen
-- [ ] P1 Schritt 1 Profil (Name-Vorbelegung aus E-Mail, Zeitzone via `Intl`)
-- [ ] P1 Schritt 2 Workspace (Name aus Domain, Farbe, Auto-Join)
-- [ ] P1 Schritt 6 Einladen (Chips, Paste-Parser, Freemail/extern/Duplikat, Limit 100)
-- [ ] P2 Schritt 5 Zwei kurze Fragen + Tabelle `onboarding_answer`
-- [ ] P2 Fortsetzbarkeit (`onboarding_step`), Redirect-Guard: nicht onboardete User → `/onboarding`
-- [ ] P2 Beitretende-Flow (Profil + Ansicht)
+- [x] P1 Route `src/app/(app)/onboarding/` mit Wizard-Shell: Modal-Karte, Fortschritt, Zurück/Weiter, Enter, Überspringen
+- [x] P1 Schritt 1 Profil (Name-Vorbelegung aus E-Mail, Zeitzone via `Intl`)
+- [x] P1 Schritt 2 Workspace (Name aus Domain, Farbe, Auto-Join)
+- [x] P1 Schritt 6 Einladen (Chips, Paste-Parser, Freemail/extern/Duplikat, Limit 100)
+- [x] P2 Schritt 5 Zwei kurze Fragen + Tabelle `onboarding_answer`
+- [x] P2 Fortsetzbarkeit (`onboarding_step`), Redirect-Guard: nicht onboardete User → `/onboarding`
+- [x] P2 Beitretende-Flow (Profil + Ansicht)
 - [ ] Tests: Unit (Name-Parser, Paste-Parser, Domain→Name), E2E Owner-Happy-Path, E2E Beitritt
 
 ### Phase C – nach Sprint 4/5 (Vorlagen + Ansicht)

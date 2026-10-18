@@ -65,7 +65,9 @@ export default function DatenschutzPage() {
 
       <h2>3. Welche Daten wir verarbeiten</h2>
       <ul>
-        <li><strong>Konto:</strong> Firmen-E-Mail-Adresse, Name (bei der Registrierung angegeben, sonst aus der E-Mail-Adresse vorgeschlagen), Rolle und Mitgliedschaft im Workspace.</li>
+        <li><strong>Konto:</strong> Firmen-E-Mail-Adresse, Name (bei der Registrierung angegeben, sonst aus der E-Mail-Adresse vorgeschlagen), Zeitzone (bei der Einrichtung aus deinem Browser vorgeschlagen, änderbar), Rolle und Mitgliedschaft im Workspace sowie deine bevorzugte Startansicht (Liste oder Board).</li>
+        {/* ENTWURF – anwaltlich prüfen (2026-10-18: Onboarding-Wizard, freiwillige Fragen in Schritt 5, docs/ONBOARDING.md §3) */}
+        <li><strong>Einrichtung (freiwillig):</strong> Beim Anlegen eines Workspace fragen wir optional, welche Werkzeuge ihr bisher genutzt habt (z. B. Excel, Jira) und wie du von inhouseticket erfahren hast (z. B. Suche, Empfehlung, bei „Andere“ ein kurzer Freitext bis 100 Zeichen). Die Antworten speichern wir zu deinem Konto im jeweiligen Workspace auf unserem Server – nicht in deinem Browser – und werten sie nur zusammengefasst aus, um das Angebot und unsere Bekanntheit zu verstehen. Du kannst die Fragen überspringen; dann speichern wir nichts. Dazu kommen der gewählte Team-Bereich (z. B. Marketing, IT), nach dem wir das erste Projekt anlegen, und der Stand der Einrichtung, damit sie nach einem Neuladen an derselben Stelle weitergeht.</li>
         <li><strong>Registrierung:</strong> Registrierst du dich mit Name, Firmen-E-Mail-Adresse und Passwort, legen wir noch kein Konto an. Wir speichern die Angaben als offene Registrierung – das Passwort nur als Hash (scrypt), dazu einen einmal nutzbaren Bestätigungscode als Hash (SHA-256) und die Zahl falscher Bestätigungsversuche – und schicken dir einen Bestätigungslink. Erst wenn du ihn öffnest und dein Passwort noch einmal eingibst, entsteht das Konto. Gibt es für die Adresse schon ein Konto, legen wir nichts an und schicken stattdessen einen Hinweis mit Link zur Anmeldung; die Seite antwortet in beiden Fällen gleich.</li>
         <li><strong>Inhalte im Workspace:</strong> Projekte, Tickets, Beschreibungen, Labels und das Aktivitätsprotokoll („wer hat was wann geändert“).</li>
         <li><strong>Anmeldung:</strong> Jedes Konto hat ein Passwort. Wir speichern nicht das Passwort selbst, sondern nur einen Hash (Verfahren scrypt mit zufälligem Salt), aus dem es sich nicht zurückrechnen lässt. Alternativ ist die Anmeldung per Link an deine E-Mail-Adresse möglich; dafür speichern wir einen einmal nutzbaren, gehasht abgelegten Code für 15 Minuten. Wer sich per Link anmeldet und noch kein Passwort hat, legt danach eines fest.</li>
@@ -84,6 +86,8 @@ export default function DatenschutzPage() {
         <li>Bereitstellung des Dienstes und der Zusammenarbeit im Workspace: Art. 6 Abs. 1 lit. b DSGVO (Vertrag bzw. Nutzungsverhältnis).</li>
         <li>Sicherheit (Sitzungsdaten, Begrenzung von Anmeldeversuchen und E-Mails je IP- und je E-Mail-Adresse): Art. 6 Abs. 1 lit. f DSGVO, unser berechtigtes Interesse an einem sicheren Betrieb.</li>
         <li>Registrierung, Anmeldung mit Passwort sowie Versand von Bestätigungslinks, Anmeldelinks, Links zum Zurücksetzen des Passworts und Einladungen per E-Mail: Art. 6 Abs. 1 lit. b DSGVO (Anbahnung und Durchführung des Nutzungsverhältnisses).</li>
+        {/* ENTWURF – anwaltlich prüfen (2026-10-18): freiwillige Antworten der Einrichtung */}
+        <li>Freiwillige Antworten bei der Einrichtung (bisher genutzte Werkzeuge, wie du von uns erfahren hast): Art. 6 Abs. 1 lit. f DSGVO, unser berechtigtes Interesse, das Angebot zu verbessern und zu verstehen, wie Teams zu uns finden. Die Angabe ist freiwillig; du kannst der Verarbeitung jederzeit widersprechen (Art. 21 DSGVO), dann löschen wir deine Antworten.</li>
       </ul>
       <p>
         Für die Inhalte, die ein Unternehmen in seinem Workspace anlegt, ist das jeweilige Unternehmen verantwortlich; wir verarbeiten sie in
@@ -113,7 +117,8 @@ export default function DatenschutzPage() {
         nur vereinheitlicht: Namen und Kennungen von Workspaces, Projekten und Tickets sowie Tokens, E-Mail-Adressen und Suchbegriffe werden
         vorher entfernt (z. B. „/:id/p/:id“), als Seitentitel dient eine allgemeine Bezeichnung wie „Board“ oder „Ticket Detail“, nie ein
         Ticket- oder Projekttitel. Außerdem zählen wir einzelne Schritte als Ereignisse ohne personenbezogene Inhalte, etwa „Registrierung
-        abgeschlossen“, „Workspace angelegt“, „Ticket erstellt“, „Status geändert“ (nur die Kategorie offen/in Arbeit/erledigt), „Ansicht
+        abgeschlossen“, „Workspace angelegt“, „Einrichtungsschritt abgeschlossen“ (nur
+        der Name des Schritts, z. B. „Profil“) und „Einrichtung abgeschlossen“ (nur der gewählte Team-Bereich, z. B. „Marketing“), „Ticket erstellt“, „Status geändert“ (nur die Kategorie offen/in Arbeit/erledigt), „Ansicht
         gewechselt“, „Mitglieder eingeladen“ (nur die Anzahl) oder „Claude verbunden“. Namen, E-Mail-Adressen und Ticket-Inhalte gelangen nie
         zu Matomo; Zugriffe über API und MCP messen wir nicht. Einen Besuch fasst Matomo nur über einen täglich wechselnden, auf dem Server
         gebildeten Wert zusammen; über Tage hinweg erkennt es dich nicht wieder.
@@ -192,7 +197,8 @@ export default function DatenschutzPage() {
       <h2>9. Speicherdauer</h2>
       <p>
         Kontodaten und Workspace-Inhalte speichern wir, solange das Konto bzw. der Workspace besteht. Wird ein Mitglied aus einem Workspace
-        entfernt, bleibt die Zuordnung früherer Tickets und Aktivitäten erhalten, damit der Verlauf nachvollziehbar bleibt. Offene
+        entfernt, bleibt die Zuordnung früherer Tickets und Aktivitäten erhalten, damit der Verlauf nachvollziehbar bleibt. Freiwillige Antworten aus der Einrichtung löschen wir
+        mit dem Workspace oder deinem Konto. Offene
         Registrierungen löschen wir, sobald das Konto bestätigt ist, spätestens aber nach 24 Stunden; nach fünf falschen Passworteingaben
         oder einer neuen Registrierung für dieselbe Adresse sofort. Sitzungen,
         Anmeldecodes und Codes zum Zurücksetzen des Passworts werden mit Ablauf ungültig und automatisch gelöscht. Löscht der Besitzer einen Workspace, sind dessen Daten sofort aus der Anwendung entfernt;

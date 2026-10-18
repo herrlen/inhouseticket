@@ -22,7 +22,7 @@ export async function requireApiMember(workspaceId: string) {
   if (!/^[0-9a-f-]{36}$/i.test(workspaceId)) return { error: jsonError(404, "not_found", "Nicht gefunden.") } as const;
   const row = await findMembershipById(workspaceId, session.user.id);
   if (!row) return { error: jsonError(404, "not_found", "Nicht gefunden.") } as const;
-  return { ctx: { user: session.user, workspace: row.workspace, membership: row.membership } } as const;
+  return { ctx: { user: session.user, workspace: row.workspace, membership: row.membership, onboardedAt: row.onboardedAt } } as const;
 }
 
 /** Uniform error format (docs/entwicklerregeln.md §4). */

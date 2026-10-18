@@ -1,9 +1,5 @@
 import { z } from "zod";
 import { getEmailDomain, isCompanyEmail } from "@/lib/freemail";
-import { PALETTE } from "@/lib/palette";
-import { TEMPLATE_IDS } from "@/lib/project-templates";
-
-const paletteHex = Object.values(PALETTE) as [string, ...string[]];
 
 export const workspaceNameSchema = z
   .string()
@@ -40,16 +36,6 @@ export const emailListSchema = z
     }
     return valid;
   });
-
-export const onboardingSchema = z.object({
-  name: workspaceNameSchema,
-  color: z.enum(paletteHex, "Bitte eine Farbe aus der Palette wählen."),
-  template: z.enum(TEMPLATE_IDS, "Bitte eine Vorlage wählen."),
-  // prefault: the default goes through the transform, so the output is always string[].
-  invites: emailListSchema.prefault(""),
-  // Checkbox: present only when ticked → continue on the import page.
-  thenImport: z.literal("on").optional(),
-});
 
 export const inviteSchema = z.object({
   emails: emailListSchema.refine((l) => l.length > 0, "Bitte mindestens eine Adresse eingeben."),

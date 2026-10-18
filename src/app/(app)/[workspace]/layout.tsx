@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { AppShell } from "@/components/shell/app-shell";
 import { isSuperadminEmail } from "@/lib/superadmin";
 import { getExplorer } from "@/db/queries/explorer";
@@ -14,6 +15,8 @@ type Props = { children: React.ReactNode; params: Promise<{ workspace: string }>
 export default async function WorkspaceLayout({ children, params }: Props) {
   const { workspace: slug } = await params;
   const ctx = await requireMember({ slug });
+  // Not onboarded yet (new owner, invited or auto-joined person): the wizard comes first (ADR 006).
+  if (!ctx.onboardedAt) redirect("/onboarding");
   const [{ folders, projects, prefs }, unread] = await Promise.all([getExplorer(ctx.workspace.id, ctx.user.id), unreadCount(ctx.workspace.id, ctx.user.id)]);
 
   return (

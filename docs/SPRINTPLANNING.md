@@ -27,13 +27,13 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [x] P1 User-Limit 100 (DB-Trigger + UI-Hinweis ab 90)
 - [x] P2 Rollen Owner/Admin/Member, `requireMember()`-Helper
 - [x] P2 Onboarding-Flow (Workspace-Name, Farbe, erstes Projekt) – abgelöst durch den Onboarding-Wizard (`docs/ONBOARDING.md`, Phase B):
-- [ ] P1 Route `src/app/(app)/onboarding/` mit Wizard-Shell: Modal-Karte, Fortschritt, Zurück/Weiter, Enter, Überspringen
-- [ ] P1 Schritt 1 Profil (Name-Vorbelegung aus E-Mail, Zeitzone via `Intl`)
-- [ ] P1 Schritt 2 Workspace (Name aus Domain, Farbe, Auto-Join)
-- [ ] P1 Schritt 6 Einladen (Chips, Paste-Parser, Freemail/extern/Duplikat, Limit 100)
-- [ ] P2 Schritt 5 Zwei kurze Fragen + Tabelle `onboarding_answer`
-- [ ] P2 Fortsetzbarkeit (`onboarding_step`), Redirect-Guard: nicht onboardete User → `/onboarding`
-- [ ] P2 Beitretende-Flow (Profil + Ansicht)
+- [x] P1 Route `src/app/(app)/onboarding/` mit Wizard-Shell: Modal-Karte, Fortschritt, Zurück/Weiter, Enter, Überspringen
+- [x] P1 Schritt 1 Profil (Name-Vorbelegung aus E-Mail, Zeitzone via `Intl`)
+- [x] P1 Schritt 2 Workspace (Name aus Domain, Farbe, Auto-Join)
+- [x] P1 Schritt 6 Einladen (Chips, Paste-Parser, Freemail/extern/Duplikat, Limit 100)
+- [x] P2 Schritt 5 Zwei kurze Fragen + Tabelle `onboarding_answer`
+- [x] P2 Fortsetzbarkeit (`onboarding_step`), Redirect-Guard: nicht onboardete User → `/onboarding`
+- [x] P2 Beitretende-Flow (Profil + Ansicht)
 - [ ] Tests: Unit (Name-Parser, Paste-Parser, Domain→Name), E2E Owner-Happy-Path, E2E Beitritt
 
 ## Sprint 2 – App-Shell & Explorer

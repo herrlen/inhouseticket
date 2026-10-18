@@ -60,3 +60,10 @@ export const ACCOUNT_EXISTS_MAILS_PER_EMAIL = 1;
 export const REGISTRATION_CONFIRMS_PER_IP = 20;
 /** Longest stored continuation path (e.g. a connector's OAuth authorize URL). */
 export const MAX_NEXT_PATH = 2000;
+
+/** Onboarding wizard (docs/ONBOARDING.md §3): free text for "Woher kennst du uns? – Andere". */
+export const MAX_SOURCE_OTHER = 100;
+/** IANA time zone name, e.g. "America/Argentina/Buenos_Aires" (stored in user.timezone). */
+export const MAX_TIMEZONE = 64;
+/** Addresses in one paste of the wizard's invite step (the seat limit above still applies). */
+export const MAX_INVITES_PER_STEP = 50;
