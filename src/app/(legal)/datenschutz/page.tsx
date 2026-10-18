@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { GermanOnly } from "@/components/german-only";
 import { OPERATOR } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Datenschutz" };
+export const metadata: Metadata = { title: "Datenschutz", alternates: { canonical: "/datenschutz" } };
 
 // Describes what the app actually does; reviewed by a lawyer (2026-10-10). Added afterwards and not yet reviewed: section 5 (Matomo),
 // and on 2026-10-17 password, reset, no-password link, rate limits (section 3/4), the lang cookie (section 7),

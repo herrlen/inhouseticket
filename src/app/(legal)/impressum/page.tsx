@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { GermanOnly } from "@/components/german-only";
 import { OPERATOR } from "@/lib/legal";
 
-export const metadata: Metadata = { title: "Impressum" };
+export const metadata: Metadata = { title: "Impressum", alternates: { canonical: "/impressum" } };
 
 export default function ImpressumPage() {
   return (

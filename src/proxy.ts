@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { contentSecurityPolicy } from "@/lib/csp";
+import { NOINDEX, needsNoindex } from "@/lib/indexing";
 import { isBot, normalizePath, referrerHost } from "@/lib/pageview-path";
 import { recordPageView } from "@/lib/pageviews";
 
@@ -19,6 +20,9 @@ export function proxy(request: NextRequest) {
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
+  // App, sign-in, /admin, OAuth metadata: never in search results. Not via robots.txt – crawlers
+  // must be allowed to fetch the page to see this header.
+  if (needsNoindex(request.nextUrl.pathname)) response.headers.set("X-Robots-Tag", NOINDEX);
   return response;
 }
 

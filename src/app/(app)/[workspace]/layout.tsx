@@ -1,8 +1,13 @@
+import type { Metadata } from "next";
 import { AppShell } from "@/components/shell/app-shell";
 import { isSuperadminEmail } from "@/lib/superadmin";
 import { getExplorer } from "@/db/queries/explorer";
 import { unreadCount } from "@/db/queries/notifications";
 import { hasRole, requireMember } from "@/lib/authz";
+import { NOINDEX_ROBOTS } from "@/lib/indexing";
+
+// Workspaces are never indexed (header: src/proxy.ts).
+export const metadata: Metadata = { robots: NOINDEX_ROBOTS };
 
 type Props = { children: React.ReactNode; params: Promise<{ workspace: string }> };
 

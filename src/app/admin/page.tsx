@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { NOINDEX_ROBOTS } from "@/lib/indexing";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,7 @@ import { isPersonalWorkspaceDomain } from "@/lib/workspace-domain";
 import { deleteWorkspaceAction, setLockedAction } from "./actions";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: (await getT()).admin.title, robots: { index: false } };
+  return { title: (await getT()).admin.title, robots: NOINDEX_ROBOTS };
 }
 
 type Props = { searchParams: Promise<{ deleted?: string; mismatch?: string; q?: string; page?: string }> };

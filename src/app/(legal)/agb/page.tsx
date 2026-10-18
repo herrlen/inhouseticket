@@ -4,7 +4,7 @@ import Link from "next/link";
 import { OPERATOR } from "@/lib/legal";
 import { MAX_USERS_PER_WORKSPACE } from "@/lib/limits";
 
-export const metadata: Metadata = { title: "AGB" };
+export const metadata: Metadata = { title: "AGB", alternates: { canonical: "/agb" } };
 
 // Terms for a free B2B service, reviewed by a lawyer (2026-10-10). Changes need another review.
 export default function AgbPage() {

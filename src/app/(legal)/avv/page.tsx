@@ -3,7 +3,7 @@ import { GermanOnly } from "@/components/german-only";
 import { OPERATOR } from "@/lib/legal";
 import { PrintButton } from "./print-button";
 
-export const metadata: Metadata = { title: "Auftragsverarbeitungsvertrag", };
+export const metadata: Metadata = { title: "Auftragsverarbeitungsvertrag", alternates: { canonical: "/avv" } };
 
 // Data processing agreement (Art. 28 GDPR), reviewed by a lawyer (2026-10-10). The technical measures describe
 // what the code and operations actually do (docs/security-review.md, docs/betrieb.md).

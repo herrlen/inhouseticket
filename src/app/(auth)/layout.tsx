@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import { LanguageToggle } from "@/components/language-toggle";
 import { LegalLinks } from "@/components/legal-links";
 import { getLocale, getT } from "@/lib/i18n/server";
+import { NOINDEX_ROBOTS } from "@/lib/indexing";
+
+// Sign-in, registration, invitations, OAuth consent: never in search results (header: src/proxy.ts).
+export const metadata: Metadata = { robots: NOINDEX_ROBOTS };
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   const [locale, t] = await Promise.all([getLocale(), getT()]);

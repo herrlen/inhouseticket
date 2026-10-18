@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { SECURITY_HEADERS } from "./src/lib/csp";
+import { NOINDEX } from "./src/lib/indexing";
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -10,8 +11,15 @@ const nextConfig: NextConfig = {
     proxyClientMaxBodySize: "1mb",
   },
   // The CSP itself needs a per-request nonce and is set in src/proxy.ts.
+  // X-Robots-Tag for pages comes from src/proxy.ts; API and MCP skip the proxy and get it here.
   async headers() {
-    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+    const noindex = [{ key: "X-Robots-Tag", value: NOINDEX }];
+    return [
+      { source: "/:path*", headers: SECURITY_HEADERS },
+      { source: "/api/:path*", headers: noindex },
+      { source: "/mcp", headers: noindex },
+      { source: "/mcp/:path*", headers: noindex },
+    ];
   },
 };
 

@@ -11,7 +11,7 @@ import { MatomoTracker } from "@/components/matomo-tracker";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = (await getT()).landing;
-  return { title: { absolute: t.metaTitle }, description: t.subtitle };
+  return { title: { absolute: t.metaTitle }, description: t.subtitle, alternates: { canonical: "/" } };
 }
 
 // Screenshots come from e2e/landing-screenshots.spec.ts (demo workspace, light and dark).
