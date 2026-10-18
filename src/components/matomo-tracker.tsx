@@ -1,18 +1,24 @@
 import { headers } from "next/headers";
+import { Suspense } from "react";
+import { AnalyticsTracker } from "@/components/analytics-tracker";
+import { initMatomo } from "@/lib/analytics";
 import { matomoEnabled, matomoSiteId } from "@/lib/matomo";
 
 /**
- * Matomo page view for public pages (landing, legal, login) – never inside workspaces.
- * Cookieless; the tracker loads from /stat.js, allowed by the CSP via the nonce and 'strict-dynamic'.
+ * Matomo for the whole site – public pages, sign-in and workspaces – rendered once in the root
+ * layout. Cookieless, Do-Not-Track respected. The inline bootstrap carries the CSP nonce and loads
+ * /stat.js ('strict-dynamic'); page views come from <AnalyticsTracker> with normalised URLs and
+ * generic titles (src/lib/analytics-url.ts).
  */
 export async function MatomoTracker() {
   if (!matomoEnabled()) return null;
   const nonce = (await headers()).get("x-nonce") ?? undefined;
-  const code =
-    "var _paq=window._paq=window._paq||[];" +
-    "_paq.push(['disableCookies']);_paq.push(['setDoNotTrack',true]);" +
-    "_paq.push(['trackPageView']);_paq.push(['enableLinkTracking']);" +
-    `_paq.push(['setTrackerUrl','/stat']);_paq.push(['setSiteId',${JSON.stringify(matomoSiteId())}]);` +
-    "var g=document.createElement('script');g.async=true;g.src='/stat.js';document.head.appendChild(g);";
-  return <script nonce={nonce} dangerouslySetInnerHTML={{ __html: code }} />;
+  return (
+    <>
+      <script nonce={nonce} dangerouslySetInnerHTML={{ __html: initMatomo(matomoSiteId()) }} />
+      <Suspense fallback={null}>
+        <AnalyticsTracker />
+      </Suspense>
+    </>
+  );
 }

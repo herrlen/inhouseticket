@@ -9,7 +9,7 @@ test("landing page: claim, screenshots, start and Claude section", async ({ page
   await page.getByRole("link", { name: "Mit Claude arbeiten" }).click();
   await expect(page.getByRole("heading", { name: "Frag einfach." })).toBeInViewport();
   await page.getByRole("link", { name: "Kostenlos starten" }).first().click();
-  await expect(page).toHaveURL(/\/login$/);
+  await expect(page).toHaveURL(/\/register$/);
 });
 
 test.describe("UI primitives preview", () => {

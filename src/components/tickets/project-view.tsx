@@ -3,9 +3,10 @@
 import { useIsMutating } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LabelRow, MemberOption, TicketRow } from "@/db/queries/tickets";
 import type { SavedViewRow } from "@/db/queries/views";
+import { trackEvent } from "@/lib/analytics";
 import { cleanViewQuery } from "@/lib/view-query";
 import { FilterBar } from "./filter-bar";
 import { applyFilters, readFilters } from "./filters";
@@ -52,6 +53,14 @@ function setParams(patch: Record<string, string | null>, mode: "push" | "replace
   window.history[mode === "push" ? "pushState" : "replaceState"](null, "", url);
 }
 
+/** List/board switch by the person (button or L/B) – reported to Matomo only when it changes. */
+function switchView(next: "list" | "board") {
+  const current = new URL(window.location.href).searchParams.get("view") === "board" ? "board" : "list";
+  if (current === next) return;
+  setParams({ view: next === "board" ? "board" : null });
+  trackEvent("View", next === "board" ? "Kanban" : "List");
+}
+
 const isEditable = (el: EventTarget | null) =>
   el instanceof HTMLElement && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) || Boolean(el.closest("[role=menu],dialog")));
 
@@ -73,9 +82,10 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
 
   const { workspaceId, project } = info;
   const { data: tickets } = useTickets(workspaceId, project.id, initialTickets);
-  const update = useUpdateTicket(workspaceId, project.id);
+  const categoryOf = useCallback((id: string) => statuses.find((s) => s.id === id)?.category, [statuses]);
+  const update = useUpdateTicket(workspaceId, project.id, categoryOf);
   const create = useCreateTicket(workspaceId, project.id);
-  const bulk = useBulkUpdate(workspaceId, project.id);
+  const bulk = useBulkUpdate(workspaceId, project.id, categoryOf);
 
   const today = todayInBerlin();
 
@@ -116,7 +126,7 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
         quickAdd.current?.focus();
       } else if (key === "l" || key === "b") {
         e.preventDefault();
-        setParams({ view: key === "b" ? "board" : null });
+        switchView(key === "b" ? "board" : "list");
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -155,7 +165,7 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
                 type="button"
                 aria-pressed={view === v}
                 aria-keyshortcuts={v === "list" ? "L" : "B"}
-                onClick={() => setParams({ view: v === "board" ? "board" : null })}
+                onClick={() => switchView(v)}
                 className={cn("h-7 rounded px-2.5 text-[13px]", view === v ? "bg-bg font-medium" : "text-muted hover:text-text")}
               >
                 {t.view[v]}

@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import { trackEvent } from "@/lib/analytics";
 import { authClient } from "@/lib/auth-client";
 import { registerHref } from "@/lib/auth-links";
 import { getEmailDomain } from "@/lib/freemail";
@@ -59,6 +60,7 @@ export function LoginForm({ next }: { next: string }) {
       });
       return setState({ kind: "idle" });
     }
+    trackEvent("Account", "Login", "password");
     // Full navigation: `next` may be the OAuth authorize endpoint of a connector login.
     window.location.assign(next);
   }

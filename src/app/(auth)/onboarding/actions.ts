@@ -7,6 +7,7 @@ import { createProjectWithDefaults, createTickets } from "@/db/queries/projects"
 import { createWorkspace, findWorkspaceByDomain } from "@/db/queries/workspaces";
 import { getLocale, getT } from "@/lib/i18n/server";
 import { takeInviteMails } from "@/lib/invite-limit";
+import { trackServerEvent } from "@/lib/matomo";
 import { projectTemplatesFor } from "@/lib/project-templates";
 import { requireUser } from "@/lib/session";
 import { slugFromDomain } from "@/lib/slug";
@@ -62,5 +63,8 @@ export async function createWorkspaceAction(_: OnboardingState, formData: FormDa
   // Same hourly budget as the settings page (a fresh workspace always has room for one batch;
   // beyond it the invitations exist but no mail goes out).
   if (mails.length > 0 && takeInviteMails(workspaceId, mails.length)) await sendInvitationMails(mails, user.name, input.name);
+  // Ends in a redirect, so the server reports it (src/lib/matomo.ts).
+  await trackServerEvent({ category: "Workspace", action: "Created", path: "/onboarding" });
+  if (mails.length > 0) await trackServerEvent({ category: "Team", action: "Member invited", name: "onboarding", value: mails.length, path: "/onboarding" });
   redirect(input.thenImport ? `/${slug}/settings/data/import` : `/${slug}`);
 }

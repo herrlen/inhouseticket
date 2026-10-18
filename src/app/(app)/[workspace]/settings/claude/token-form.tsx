@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import { DEFAULT_EXPIRY, EXPIRY_CHOICES, type ExpiryChoice } from "@/lib/token-expiry";
@@ -17,6 +18,7 @@ export function TokenForm({ workspaceId, onToken }: { workspaceId: string; onTok
     const result = await createTokenAction(prev, formData);
     if (result.token) {
       setName(""); // expiry stays selected for the next token
+      trackEvent("Integration", "MCP connected", "token");
       onToken?.(result.token);
     }
     return result;

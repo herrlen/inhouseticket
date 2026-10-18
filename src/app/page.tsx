@@ -7,7 +7,6 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { getLocale, getT } from "@/lib/i18n/server";
 import { SOURCE_IDS, SOURCE_NAMES } from "@/lib/import/source";
 import { getSession } from "@/lib/session";
-import { MatomoTracker } from "@/components/matomo-tracker";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = (await getT()).landing;
@@ -48,7 +47,7 @@ export default async function Home() {
         </span>
         <div className="flex items-center gap-4">
           <LanguageToggle locale={locale} label={all.common.language} />
-          <Link href="/login" className="text-[13px] font-medium hover:underline">
+          <Link href="/login" data-cta="header" className="text-[13px] font-medium hover:underline">
             {t.login}
           </Link>
         </div>
@@ -59,7 +58,7 @@ export default async function Home() {
           <h1 className="mx-auto max-w-3xl text-3xl font-semibold tracking-tight text-balance md:text-5xl">{t.title}</h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-muted md:text-lg">{t.subtitle}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/login" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:opacity-90">
+            <Link href="/register" data-cta="hero" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:opacity-90">
               {t.start}
             </Link>
             <a href="#claude" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] border border-border bg-surface px-4 font-medium hover:bg-bg">
@@ -182,7 +181,7 @@ export default async function Home() {
             ))}
           </div>
           <div className="mt-10 text-center">
-            <Link href="/login" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:opacity-90">
+            <Link href="/register" data-cta="bottom" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:opacity-90">
               {t.start}
             </Link>
             <p className="mt-4 text-[13px] text-muted">
@@ -222,7 +221,6 @@ export default async function Home() {
         <span>© 2026 {OPERATOR.name}</span>
         <LegalLinks />
       </footer>
-      <MatomoTracker />
     </div>
   );
 }

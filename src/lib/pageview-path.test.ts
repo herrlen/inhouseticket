@@ -9,6 +9,9 @@ describe("normalizePath", () => {
     expect(normalizePath("/umziehen")).toBe("/umziehen");
     expect(normalizePath("/set-password")).toBe("/set-password");
     expect(normalizePath("/reset-password")).toBe("/reset-password");
+    expect(normalizePath("/register")).toBe("/register");
+    expect(normalizePath("/register/confirm")).toBe("/register/confirm");
+    expect(normalizePath("/login/link")).toBe("/login/link");
   });
 
   it("never stores workspace slugs, keys or tokens", () => {

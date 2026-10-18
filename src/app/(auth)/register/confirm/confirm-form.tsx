@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { PasswordInput } from "@/components/ui/password-input";
+import { trackEvent } from "@/lib/analytics";
 import { useT } from "@/lib/i18n/client";
 import { MAX_PASSWORD } from "@/lib/limits";
 import { confirmRegistrationAction, type ConfirmState } from "./actions";
@@ -47,7 +48,9 @@ export function ConfirmRegistration({ token, email }: { token: string; email: st
   }, []);
   // Full navigation: the target may be a connector's OAuth authorize URL (a route handler).
   useEffect(() => {
-    if (state.done) window.location.assign(state.done);
+    if (!state.done) return;
+    trackEvent("Account", "Signup completed");
+    window.location.assign(state.done);
   }, [state.done]);
   useEffect(() => {
     if (state.attempt) password.current?.focus();

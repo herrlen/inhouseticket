@@ -12,7 +12,8 @@ import { inviteSchema, roleChangeSchema } from "@/lib/validation/workspace";
 import { takeInviteMails } from "@/lib/invite-limit";
 import { isPersonalWorkspaceDomain } from "@/lib/workspace-domain";
 
-export type ActionState = { error?: string; success?: string };
+/** `invited`: number of new invitations, reported to Matomo by the form. */
+export type ActionState = { error?: string; success?: string; invited?: number };
 
 const workspaceRef = z.object({ workspaceId: z.uuid() });
 const path = (slug: string) => `/${slug}/settings/members`;
@@ -39,7 +40,7 @@ export async function inviteAction(_: ActionState, formData: FormData): Promise<
     result.alreadyMember.length ? t.members.alreadyMember(result.alreadyMember.join(", ")) : null,
     result.overLimit.length ? t.members.overLimit(result.overLimit.join(", ")) : null,
   ].filter(Boolean);
-  return result.invited.length ? { success: notes.join(" ") } : { error: notes.join(" ") };
+  return result.invited.length ? { success: notes.join(" "), invited: result.invited.length } : { error: notes.join(" ") };
 }
 
 export async function changeRoleAction(_: ActionState, formData: FormData): Promise<ActionState> {

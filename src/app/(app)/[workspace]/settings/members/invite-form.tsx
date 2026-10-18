@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import { inviteAction, type ActionState } from "./actions";
@@ -13,6 +14,8 @@ export function InviteForm({ workspaceId, canInviteAdmins, disabled }: { workspa
 
   useEffect(() => {
     if (state.success) form.current?.reset();
+    // Runs once per answer (state changes per submit), not on mount.
+    if (state.invited) trackEvent("Team", "Member invited", "settings", state.invited);
   }, [state]);
 
   return (

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import type { ActivityRow, TicketRow } from "@/db/queries/tickets";
 import { useToast } from "@/components/ui/toast";
+import { trackEvent } from "@/lib/analytics";
 import { keyBetween } from "@/lib/fractional";
 import { useT } from "@/lib/i18n/client";
 import type { TicketPatch } from "@/lib/validation/ticket";
@@ -62,8 +63,16 @@ function applyPatch(t: TicketRow, patch: TicketPatch): TicketRow {
   return { ...t, ...rest, ...(labelIds ? { labelIds } : {}), updatedAt: new Date().toISOString() } as TicketRow;
 }
 
+/** Status id → its category (open/active/done): Matomo gets the category, never the custom name. */
+export type StatusCategoryOf = (statusId: string) => string | undefined;
+
+function trackStatusChange(statusId: string | undefined, categoryOf?: StatusCategoryOf) {
+  const category = statusId ? categoryOf?.(statusId) : undefined;
+  if (category) trackEvent("Ticket", "Status changed", category);
+}
+
 /** Optimistic single-ticket update with rollback, toast and retry (KONZEPT §5.5). */
-export function useUpdateTicket(workspaceId: string, projectId: string) {
+export function useUpdateTicket(workspaceId: string, projectId: string, categoryOf?: StatusCategoryOf) {
   const t = useT();
   const qc = useQueryClient();
   const toast = useToast();
@@ -90,6 +99,7 @@ export function useUpdateTicket(workspaceId: string, projectId: string) {
     onSuccess: (row, { patch }) => {
       qc.setQueryData<TicketRow[]>(ticketsKey(projectId), (list) => list?.map((t) => (t.id === row.id ? row : t)));
       void qc.invalidateQueries({ queryKey: activityKey(row.id) });
+      trackStatusChange(patch.statusId, categoryOf);
       if (patch.statusId) router.refresh(); // explorer counts
     },
     onSettled: () => settle(qc, projectId),
@@ -140,13 +150,14 @@ export function useCreateTicket(workspaceId: string, projectId: string) {
     },
     onSuccess: (row, _input, context) => {
       qc.setQueryData<TicketRow[]>(ticketsKey(projectId), (list) => list?.map((t) => (t.id === context?.tempId ? row : t)));
+      trackEvent("Ticket", "Created");
       router.refresh(); // explorer counts
     },
     onSettled: () => settle(qc, projectId),
   });
 }
 
-export function useBulkUpdate(workspaceId: string, projectId: string) {
+export function useBulkUpdate(workspaceId: string, projectId: string, categoryOf?: StatusCategoryOf) {
   const t = useT();
   const qc = useQueryClient();
   const toast = useToast();
@@ -169,6 +180,7 @@ export function useBulkUpdate(workspaceId: string, projectId: string) {
       const byId = new Map(rows.map((r) => [r.id, r]));
       qc.setQueryData<TicketRow[]>(ticketsKey(projectId), (list) => list?.map((t) => byId.get(t.id) ?? t));
       toast({ message: t.list.bulkDone(rows.length), tone: "success" });
+      trackStatusChange(patch.statusId, categoryOf);
       if (patch.statusId) router.refresh();
     },
     onSettled: () => settle(qc, projectId),

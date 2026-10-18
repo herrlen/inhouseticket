@@ -9,6 +9,7 @@ import { listWorkspacesForUser } from "@/db/queries/workspaces";
 import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { getT } from "@/lib/i18n/server";
+import { trackServerEvent } from "@/lib/matomo";
 import { consentClient } from "@/lib/oauth-consent";
 import { requireUser } from "@/lib/session";
 
@@ -65,5 +66,6 @@ export async function consentAction(_: ConsentState, formData: FormData): Promis
     console.error("oauth consent failed", res.status);
     return { error: t.oauth.invalid };
   }
+  if (accept === "yes") await trackServerEvent({ category: "Integration", action: "MCP connected", name: "oauth", path: "/oauth/consent" });
   redirect(target);
 }

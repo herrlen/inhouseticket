@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { connection } from "next/server";
+import { MatomoTracker } from "@/components/matomo-tracker";
 import { env } from "@/lib/env";
 import { LocaleProvider } from "@/lib/i18n/locale-provider";
 import { getLocale, getT } from "@/lib/i18n/server";
@@ -43,6 +44,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang={locale} className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body>
         <LocaleProvider locale={locale}>{children}</LocaleProvider>
+        <MatomoTracker />
       </body>
     </html>
   );

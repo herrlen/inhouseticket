@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { LanguageToggle } from "@/components/language-toggle";
-import { MatomoTracker } from "@/components/matomo-tracker";
 import { getLocale, getT } from "@/lib/i18n/server";
 
 export default async function LegalLayout({ children }: { children: React.ReactNode }) {
@@ -18,7 +17,6 @@ export default async function LegalLayout({ children }: { children: React.ReactN
       <main id="main" className="mx-auto max-w-3xl px-4 py-10 [&_h1]:mb-6 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:mt-8 [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3">
         {children}
       </main>
-      <MatomoTracker />
     </div>
   );
 }
