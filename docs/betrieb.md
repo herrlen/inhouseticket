@@ -90,11 +90,29 @@ Liegt der benötigte Dump nicht mehr im Volume: in mStudio das Projekt-Backup de
 
 ## Matomo
 
-Reichweite der öffentlichen Seiten (Startseite, Rechtstexte – nie Workspaces, nie Login) zusätzlich zur
-eigenen Zählung in `/admin`. Matomo läuft unter `analytics.klatxt.de` (Projekt `p-mdg6ae`, wie bei
+Reichweite und Funnel – öffentliche Seiten, Anmeldung/Registrierung und App (seit 2026-10-18) – zusätzlich
+zur eigenen Zählung in `/admin`. Matomo läuft unter `analytics.klatxt.de` (Projekt `p-mdg6ae`, wie bei
 websecureaudit). Der Browser spricht nur mit `/stat` und `/stat.js` auf inhouseticket.com; `src/lib/matomo.ts`
 reicht weiter, kürzt die IP vorher (IPv4 /16, IPv6 /48) und setzt `idsite` selbst. Ohne Cookies, mit Do-Not-Track.
 Ohne `MATOMO_SITE_ID` und `MATOMO_TOKEN` ist alles aus (kein Schnipsel, `/stat` antwortet 404).
+
+Was gemessen wird (Funnel, 2026-10-18):
+- **Ein Tracker für alles**: `src/components/matomo-tracker.tsx` im Root-Layout (Inline-Bootstrap mit Nonce, lädt
+  `/stat.js`), Seitenaufrufe aus `src/components/analytics-tracker.tsx` bei jedem Routenwechsel (auch reine
+  Query-Wechsel wie Liste/Board oder geöffnetes Ticket). Zentrale Client-Funktionen: `src/lib/analytics.ts`
+  (`initMatomo`, `trackPage`, `trackEvent`). Kein `enableLinkTracking` (Links in Tickets könnten fremde URLs mit
+  Tokens enthalten), kein `setCookieDomain`.
+- **URLs normalisiert** (`src/lib/analytics-url.ts`): Workspace-Slug, Projekt-Key, Ticket-Key, Token, IDs → `:id`
+  (`/acme/p/MKT?t=MKT-12` → `/:id/p/:id`). Query nur `view=board` (Projektseite) und `utm_*` (nur öffentliche
+  Seiten, nur einfache Werte); alles andere – `q`, `token`, `email`, `next`, `code` … – fällt weg. Titel generisch:
+  `inhouseticket.com/Liste`, `…/Board`, `…/Ticket Detail`, `…/Dashboard`, `…/Einstellungen/Mitglieder` usw.
+- **Ereignisse** (Kategorie/Aktion/Name): `Marketing/CTA Click/<header|hero|bottom|umziehen>` (Links mit
+  `data-cta`), `Account/Signup completed`, `Account/Login/password`, `Workspace/Created`*,
+  `Team/Member invited/<settings|onboarding>` (Wert = Anzahl, Onboarding*), `Ticket/Created`,
+  `Ticket/Status changed/<open|active|done>`, `View/Kanban`, `View/List`, `Integration/MCP connected/<oauth*|token>`.
+  \* = vom Server gesendet (`trackServerEvent()` in `src/lib/matomo.ts`, Server Action endet in einem Redirect):
+  gleiche Allowlist, IP gekürzt, `DNT: 1` respektiert; Matomo zählt diese Treffer als eigenen Besuch.
+  Magic-Link-Login wird nicht gezählt (Erfolg im Browser nicht erkennbar), API- und MCP-Aufrufe nie.
 
 Absicherung (Security-Review 2026-10-17):
 - `/stat` nimmt nur Parameter aus einer **Allowlist** an (`src/lib/matomo-params.ts`): Seitenaufruf, Timings,
@@ -120,6 +138,29 @@ Einrichten in Matomo (Superuser):
 3. `MATOMO_SITE_ID=<id> MATOMO_TOKEN=<token> scripts/deploy.sh`.
 4. Löschung nach 12 Monaten (Zusage in der Datenschutzerklärung) nur für diese Site, wie `cron-wsa-bereinigen.sh`
    (`core:delete-logs-data --idsite=<id>`), nicht über die globale Einstellung.
+
+## Suchmaschinen
+
+- `X-Robots-Tag: noindex, nofollow` auf allem außer `/`, `/umziehen`, `/impressum`, `/datenschutz`, `/agb`, `/avv`
+  und statischen Dateien: Seiten über `src/proxy.ts` (`needsNoindex()` in `src/lib/indexing.ts`), `/api/*` und
+  `/mcp` über `next.config.ts` (laufen nicht durch den Proxy). Zusätzlich `<meta name="robots" content="noindex, nofollow">`
+  in den Layouts von Auth, Workspace und `/admin`.
+- `robots.txt` sperrt nach dem Launch (`SITE_INDEXABLE=true`) nichts mehr – Google muss die Seiten abrufen dürfen,
+  um das `noindex` zu sehen. Nur der `Sitemap:`-Verweis bleibt; die Sitemap enthält nur die öffentlichen Seiten.
+- Canonicals (`https://inhouseticket.com/…` über `APP_URL`) auf allen öffentlichen Seiten.
+- `www.inhouseticket.com` → `inhouseticket.com` (301) macht der mittwald-vHost, nicht die App.
+
+Prüfen nach einem Deploy:
+
+```bash
+curl -sI https://inhouseticket.com/login | grep -i x-robots-tag        # noindex, nofollow
+curl -sI https://inhouseticket.com/api/health | grep -i x-robots-tag   # noindex, nofollow
+curl -sI https://inhouseticket.com/ | grep -i x-robots-tag             # (leer)
+curl -s https://inhouseticket.com/robots.txt                           # Allow: / + Sitemap
+curl -s https://inhouseticket.com/sitemap.xml                          # nur öffentliche Seiten
+curl -sI https://www.inhouseticket.com/ | grep -i -E "^(HTTP|location)" # 301 → https://inhouseticket.com/
+dig +short TXT inhouseticket.com                                       # Search-Console-Verifizierung
+```
 
 ## Deploys
 

@@ -4,7 +4,7 @@ import { OPERATOR } from "@/lib/legal";
 
 export const metadata: Metadata = { title: "Datenschutz", alternates: { canonical: "/datenschutz" } };
 
-// Describes what the app actually does; reviewed by a lawyer (2026-10-10). Added afterwards and not yet reviewed: section 5 (Matomo),
+// Describes what the app actually does; reviewed by a lawyer (2026-10-10). Added afterwards and not yet reviewed: section 5 (Matomo; extended to the app and events on 2026-10-18),
 // and on 2026-10-17 password, reset, no-password link, rate limits (section 3/4), the lang cookie (section 7),
 // and on 2026-10-18 registration with password and its pending data (sections 3, 4, 9; ADR 005).
 // Keep in sync with new features.
@@ -60,13 +60,26 @@ export default function DatenschutzPage() {
         weder IP-Adresse noch Browser-Kennung, setzen keine Cookies und können Aufrufe keiner Person zuordnen. Die Zählung findet auf unserem
         eigenen Server statt; Drittanbieter sind nicht beteiligt.
       </p>
+      {/* ENTWURF – anwaltlich prüfen (2026-10-18: Matomo auch in der Anwendung, Ereignisse) */}
       <p>
-        Auf den öffentlichen Seiten (Startseite und Rechtstexte, nicht in Workspaces) messen wir die Reichweite zusätzlich mit Matomo, einer
-        Open-Source-Software, die wir selbst bei Mittwald in Deutschland betreiben. Matomo läuft ohne Cookies und speichert nichts auf deinem
-        Gerät. Dein Browser spricht dabei nur mit inhouseticket.com; unser Server kürzt deine IP-Adresse (IPv4 auf die ersten zwei, IPv6 auf die
-        ersten sechs Bytes), bevor er den Aufruf an Matomo weitergibt. Erfasst werden die aufgerufene Seite, die verweisende Website, Uhrzeit,
-        Browser, Betriebssystem, Bildschirmgröße, Sprache und das grob aus der gekürzten Adresse abgeleitete Land. Ist in deinem Browser „Do
-        Not Track“ aktiviert, messen wir nicht. Rechtsgrundlage ist unser berechtigtes Interesse, das Angebot zu verbessern (Art. 6 Abs. 1
+        Zusätzlich messen wir mit Matomo, einer Open-Source-Software, die wir selbst unter analytics.klatxt.de bei Mittwald in Deutschland
+        betreiben, wie die Website und die Anwendung genutzt werden – auf den öffentlichen Seiten ebenso wie bei Anmeldung, Registrierung und
+        in Workspaces. Matomo läuft ohne Cookies und speichert nichts auf deinem Gerät. Dein Browser spricht dabei nur mit inhouseticket.com;
+        unser Server kürzt deine IP-Adresse (IPv4 auf die ersten zwei, IPv6 auf die ersten sechs Bytes), bevor er den Aufruf an Matomo
+        weitergibt.
+      </p>
+      <p>
+        Erfasst werden die aufgerufene Seite, die verweisende Website, Uhrzeit, Browser, Betriebssystem, Bildschirmgröße, Sprache und das grob
+        aus der gekürzten Adresse abgeleitete Land. Adressen erfassen wir nur vereinheitlicht: Namen und Kennungen von Workspaces, Projekten
+        und Tickets sowie Tokens, E-Mail-Adressen und Suchbegriffe werden vorher entfernt (z. B. „/:id/p/:id“), als Seitentitel dient eine
+        allgemeine Bezeichnung wie „Board“ oder „Ticket Detail“, nie ein Ticket- oder Projekttitel. Außerdem zählen wir einzelne Schritte
+        als Ereignisse ohne personenbezogene Inhalte, etwa „Registrierung abgeschlossen“, „Workspace angelegt“, „Ticket erstellt“, „Status
+        geändert“ (nur die Kategorie offen/in Arbeit/erledigt), „Ansicht gewechselt“, „Mitglieder eingeladen“ (nur die Anzahl) oder „Claude
+        verbunden“. Namen, E-Mail-Adressen und Ticket-Inhalte gelangen nie zu Matomo; Zugriffe über API und MCP messen wir nicht.
+      </p>
+      <p>
+        Ist in deinem Browser „Do Not Track“ aktiviert, messen wir nicht – auch keine Ereignisse, die unser Server meldet. Rechtsgrundlage ist
+        unser berechtigtes Interesse, das Angebot zu verbessern und den Weg von der Startseite bis zur Nutzung zu verstehen (Art. 6 Abs. 1
         lit. f DSGVO). Die Messdaten löschen wir nach 12 Monaten.
       </p>
 
