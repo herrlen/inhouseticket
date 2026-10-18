@@ -13,6 +13,8 @@ import { applyFilters, readFilters } from "./filters";
 import { SlideOver } from "@/components/ui/dialog";
 import { useT } from "@/lib/i18n/client";
 import { usePrefs } from "@/components/shell/prefs-context";
+import { useShell } from "@/components/shell/shell-context";
+import { ListOptions } from "./list-extras";
 import { confettiBurst } from "@/lib/confetti";
 import { cn } from "@/lib/cn";
 import { BulkBar } from "./bulk-bar";
@@ -30,6 +32,9 @@ const Board = dynamic(() => import("./board").then((m) => m.Board), {
 const TicketDetail = dynamic(() => import("./ticket-detail").then((m) => m.TicketDetail), {
   loading: () => <div className="h-96 animate-pulse rounded-[var(--radius-badge)] bg-bg" aria-hidden />,
 });
+
+// Client only: a server-rendered button would ignore clicks until its chunk has loaded.
+const NewStatusRow = dynamic(() => import("./list-lazy").then((m) => m.NewStatusRow), { ssr: false });
 
 const GROUPS: GroupBy[] = ["status", "priority", "assignee", "due", "none"];
 const SORTS: SortBy[] = ["manual", "priority", "due", "created", "number"];
@@ -71,7 +76,11 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
   const sortBy = (SORTS.find((s) => s === params.get("sort")) ?? "manual") as SortBy;
   const openKey = params.get("t");
   const view = params.get("view") === "board" ? "board" : "list";
-  const { confetti } = usePrefs();
+  // List additions (docs/ONBOARDING.md §4): done tickets hidden unless switched on, subtasks unfolded on demand.
+  const showDone = params.get("done") === "1";
+  const showSubtasks = params.get("subtasks") === "1";
+  const { confetti, hiddenColumns, setHiddenColumns } = usePrefs();
+  const { canAdmin } = useShell();
 
   const [labels, setLabels] = useState(initialLabels);
   const [views, setViews] = useState(savedViews);
@@ -104,7 +113,9 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
     () => applyFilters(tickets, filters, { currentUserId: info.currentUserId, today, doneStatusIds, projectKey: project.key }),
     [tickets, filters, info.currentUserId, today, doneStatusIds, project.key],
   );
-  const groups = useMemo(() => groupTickets(filtered, { groupBy, sortBy, statuses, members, today, t }), [filtered, groupBy, sortBy, statuses, members, today, t]);
+  const listed = useMemo(() => (showDone ? filtered : filtered.filter((x) => !doneStatusIds.has(x.statusId))), [filtered, showDone, doneStatusIds]);
+  const hiddenDone = filtered.length - listed.length;
+  const groups = useMemo(() => groupTickets(listed, { groupBy, sortBy, statuses, members, today, t }), [listed, groupBy, sortBy, statuses, members, today, t]);
   const visibleOrder = groups.flatMap((g) => g.tickets).filter((t) => !t.id.startsWith("temp-"));
   const openTicket = openKey ? tickets.find((t) => `${project.key}-${t.number}` === openKey) ?? null : null;
 
@@ -192,6 +203,14 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
               {SORTS.map((s) => <option key={s} value={s}>{t.list.sorts[s]}</option>)}
             </select>
           </label>
+          <ListOptions
+            showDone={showDone}
+            onShowDone={(on) => setParams({ done: on ? "1" : null })}
+            showSubtasks={showSubtasks}
+            onShowSubtasks={(on) => setParams({ subtasks: on ? "1" : null })}
+            hidden={hiddenColumns}
+            onHidden={setHiddenColumns}
+          />
           </>
           ) : null}
         </div>
@@ -226,7 +245,7 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
               }
             }}
           />
-        ) : filtered.length === 0 ? (
+        ) : listed.length === 0 && hiddenDone === 0 ? (
           <p className="rounded-[var(--radius-card)] border border-dashed border-border p-8 text-center text-muted">{tickets.length === 0 ? t.list.empty : t.filters.noMatch}</p>
         ) : (
           <TicketList
@@ -237,6 +256,9 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
             openTicketId={openTicket?.id ?? null}
             onOpen={open}
             onPatch={(ticketId, patch) => update.mutate({ ticketId, patch })}
+            hidden={hiddenColumns}
+            showSubtasks={showSubtasks}
+            onAddToGroup={groupBy === "status" ? (statusId, title) => create.mutate({ title, statusId }) : undefined}
             onToggleSelect={(ids, select) =>
               setSelected((prev) => {
                 const next = new Set(prev);
@@ -249,6 +271,19 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
             }
           />
         )}
+        {view === "list" ? (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {canAdmin ? <NewStatusRow key={statuses.length} workspaceId={workspaceId} projectKey={project.key} /> : null}
+            {hiddenDone > 0 ? (
+              <p className="text-xs text-muted" role="status">
+                {t.list.doneHidden(hiddenDone)}{" "}
+                <button type="button" onClick={() => setParams({ done: "1" })} className="text-accent underline underline-offset-2">
+                  {t.list.showDone}
+                </button>
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         <BulkBar
           count={selected.size}

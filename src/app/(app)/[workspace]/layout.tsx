@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { SetupBanner } from "@/components/onboarding/setup-banner";
 import { AppShell } from "@/components/shell/app-shell";
+import { cleanHiddenColumns } from "@/components/tickets/list-columns";
 import { isSuperadminEmail } from "@/lib/superadmin";
 import { getExplorer } from "@/db/queries/explorer";
 import { unreadCount } from "@/db/queries/notifications";
@@ -41,6 +42,7 @@ export default async function WorkspaceLayout({ children, params }: Props) {
       }}
       initialCollapsed={prefs.sidebarCollapsed}
       initialConfetti={prefs.confetti}
+      initialHiddenColumns={cleanHiddenColumns(prefs.hiddenColumns)}
       unread={unread}
     >
       {ctx.membership.role === "owner" && !ctx.workspace.onboardingCompletedAt ? <SetupBanner /> : null}

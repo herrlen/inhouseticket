@@ -268,6 +268,7 @@ notification     id, user_id, workspace_id, ticket_id, type, read_at?, created_a
 saved_view       id, user_id, workspace_id, project_id?, name, filters jsonb
 user_pref        user_id, sidebar_collapsed bool, expanded_folders jsonb, favorites jsonb, theme,
                  default_view ('list'|'board', default 'board'), onboarding_step smallint?   -- Wizard fortsetzen
+                 hidden_columns jsonb (ausgeblendete Listenspalten)
 onboarding_answer id, workspace_id, user_id, previous_tools text[] (max 9), source?, source_other varchar(100)?,
                  created_at · UNIQUE(workspace_id, user_id) · gelöscht mit dem Workspace (docs/ONBOARDING.md §3)
 api_token        id, user_id, workspace_id, name, token_hash, last_used_at, created_at, revoked_at?

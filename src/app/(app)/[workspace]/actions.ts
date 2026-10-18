@@ -1,5 +1,6 @@
 "use server";
 
+import { LIST_COLUMNS } from "@/components/tickets/list-columns";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -161,6 +162,7 @@ const prefsInput = z.object({
   expandedFolders: z.array(id).max(500).optional(),
   favorites: z.array(id).max(500).optional(),
   confetti: z.boolean().optional(),
+  hiddenColumns: z.array(z.enum(LIST_COLUMNS)).max(LIST_COLUMNS.length).optional(),
 });
 
 export async function savePrefsAction(input: z.input<typeof prefsInput>): Promise<Result> {

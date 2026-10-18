@@ -121,12 +121,18 @@ onboarding_answer   id, workspace_id, user_id,
 
 ## 4. Ergänzungen aus dem ClickUp-App-Screenshot (Listenansicht)
 Kleine Dinge, die unsere Liste noch nicht hat:
-- [ ] „+ Ticket hinzufügen“-Zeile am Ende **jeder Gruppe** (legt Ticket mit diesem Status an)
-- [ ] Schalter „Erledigte anzeigen“ (Default aus)
-- [ ] Schalter „Unteraufgaben anzeigen“ (aufklappbar unter dem Ticket)
-- [ ] Spalten ein-/ausblenden (pro User in `user_pref` gespeichert)
-- [ ] „+ Neuer Status“ am Listenende (nur Admin/Owner)
-- [ ] Kommentar-Zähler als Spalte
+- [x] „+ Ticket hinzufügen“-Zeile am Ende **jeder Gruppe** (legt Ticket mit diesem Status an)
+- [x] Schalter „Erledigte anzeigen“ (Default aus)
+- [x] Schalter „Unteraufgaben anzeigen“ (aufklappbar unter dem Ticket)
+- [x] Spalten ein-/ausblenden (pro User in `user_pref` gespeichert)
+- [x] „+ Neuer Status“ am Listenende (nur Admin/Owner)
+- [x] Kommentar-Zähler als Spalte
+
+Umgesetzt 2026-10-18: „+ Ticket hinzufügen“ bei Gruppierung nach Status; „Erledigte anzeigen“ und „Unteraufgaben
+anzeigen“ als URL-Parameter (`done=1`, `subtasks=1`, landen damit auch in gespeicherten Ansichten), Hinweis
+„n erledigte Tickets ausgeblendet“ unter der Liste; ausgeblendete Spalten in `user_pref.hidden_columns`
+(Migration `0013_list_columns`); „+ Neuer Status“ zeigt die Liste nur Admins/Owner – die Server Action ist
+dieselbe wie in den Projekteinstellungen (dort dürfen Mitglieder heute schon Status anlegen).
 
 ---
 
@@ -154,7 +160,7 @@ Abhängigkeiten: Profil/Workspace/Einladen brauchen Sprint 1, Vorlagen brauchen 
 - [x] P1 Anlage in **einer Transaktion**: Projekt, Status, Labels, Tutorial-Tickets inkl. Unteraufgaben
 - [x] P1 Schritt 4 Startansicht → `user_pref.default_view`, Projektlink öffnet diese Ansicht
 - [x] P2 Banner „Einrichtung fertigstellen“ bei abgebrochenem Wizard
-- [ ] P2 Listen-Ergänzungen aus Abschnitt 4
+- [x] P2 Listen-Ergänzungen aus Abschnitt 4
 - [x] Tests: jede Vorlage erzeugt gültige Daten (Limits, max. 5 Unteraufgaben), E2E Board/Liste-Wahl
 
 ### SPRINTPLANNING-Änderungen

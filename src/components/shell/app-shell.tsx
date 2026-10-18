@@ -17,6 +17,7 @@ import { cn } from "@/lib/cn";
 import { LanguageToggle } from "@/components/language-toggle";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { PrefsProvider } from "./prefs-context";
+import type { ListColumn } from "@/components/tickets/list-columns";
 import { QueryProvider } from "./query-provider";
 import { projectHref, ShellProvider, useShell, type ShellInfo } from "./shell-context";
 
@@ -26,6 +27,7 @@ type Props = {
   explorer: ExplorerData;
   initialCollapsed: boolean;
   initialConfetti: boolean;
+  initialHiddenColumns: ListColumn[];
   unread: number;
   children: ReactNode;
 };
@@ -45,7 +47,7 @@ function useShortcutLabel() {
   );
 }
 
-export function AppShell({ shell, user, explorer, initialCollapsed, initialConfetti, unread, children }: Props) {
+export function AppShell({ shell, user, explorer, initialCollapsed, initialConfetti, initialHiddenColumns, unread, children }: Props) {
   const t = useT();
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const [, startTransition] = useTransition();
@@ -54,6 +56,14 @@ export function AppShell({ shell, user, explorer, initialCollapsed, initialConfe
     (on: boolean) => {
       setConfettiState(on);
       startTransition(() => void savePrefsAction({ workspaceId: shell.workspaceId, confetti: on }));
+    },
+    [shell.workspaceId],
+  );
+  const [hiddenColumns, setHiddenColumnsState] = useState(initialHiddenColumns);
+  const setHiddenColumns = useCallback(
+    (columns: ListColumn[]) => {
+      setHiddenColumnsState(columns);
+      startTransition(() => void savePrefsAction({ workspaceId: shell.workspaceId, hiddenColumns: columns }));
     },
     [shell.workspaceId],
   );
@@ -112,7 +122,7 @@ export function AppShell({ shell, user, explorer, initialCollapsed, initialConfe
   return (
     <ShellProvider value={shell}>
       <QueryProvider>
-      <PrefsProvider value={{ confetti, setConfetti }}>
+      <PrefsProvider value={{ confetti, setConfetti, hiddenColumns, setHiddenColumns }}>
       <ToastProvider>
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-surface focus:p-2">
           {t.common.skipToContent}

@@ -14,10 +14,10 @@ export type ExplorerProject = {
   sort: string;
   openCount: number;
 };
-export type Prefs = { sidebarCollapsed: boolean; expandedFolders: string[]; favorites: string[]; theme: "system" | "light" | "dark"; confetti: boolean; defaultView: "list" | "board" };
+export type Prefs = { sidebarCollapsed: boolean; expandedFolders: string[]; favorites: string[]; theme: "system" | "light" | "dark"; confetti: boolean; defaultView: "list" | "board"; hiddenColumns: string[] };
 
 // Without a stored choice project links open the list, as before the wizard (ADR 006).
-export const DEFAULT_PREFS: Prefs = { sidebarCollapsed: false, expandedFolders: [], favorites: [], theme: "system", confetti: true, defaultView: "list" };
+export const DEFAULT_PREFS: Prefs = { sidebarCollapsed: false, expandedFolders: [], favorites: [], theme: "system", confetti: true, defaultView: "list", hiddenColumns: [] };
 
 export async function getExplorer(workspaceId: string, userId: string) {
   const [folders, projects, prefs] = await Promise.all([
@@ -58,6 +58,7 @@ export async function getPrefs(workspaceId: string, userId: string): Promise<Pre
       theme: userPref.theme,
       confetti: userPref.confetti,
       defaultView: userPref.defaultView,
+      hiddenColumns: userPref.hiddenColumns,
     })
     .from(userPref)
     .where(and(eq(userPref.workspaceId, workspaceId), eq(userPref.userId, userId)))

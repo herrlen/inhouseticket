@@ -56,12 +56,12 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [x] P2 Mehrfachauswahl + Bulk-Aktionen
 - [x] P2 Aktivitätslog
 - Listen-Ergänzungen (`docs/ONBOARDING.md` Abschnitt 4):
-  - [ ] P2 „+ Ticket hinzufügen“-Zeile am Ende jeder Gruppe (legt Ticket mit diesem Status an)
-  - [ ] P2 Schalter „Erledigte anzeigen“ (Default aus)
-  - [ ] P2 Kommentar-Zähler als Spalte
-  - [ ] P3 Schalter „Unteraufgaben anzeigen“ (aufklappbar unter dem Ticket)
-  - [ ] P3 Spalten ein-/ausblenden (pro User in `user_pref`)
-  - [ ] P3 „+ Neuer Status“ am Listenende (nur Admin/Owner)
+  - [x] P2 „+ Ticket hinzufügen“-Zeile am Ende jeder Gruppe (legt Ticket mit diesem Status an)
+  - [x] P2 Schalter „Erledigte anzeigen“ (Default aus)
+  - [x] P2 Kommentar-Zähler als Spalte
+  - [x] P3 Schalter „Unteraufgaben anzeigen“ (aufklappbar unter dem Ticket)
+  - [x] P3 Spalten ein-/ausblenden (pro User in `user_pref`)
+  - [x] P3 „+ Neuer Status“ am Listenende (nur Admin/Owner)
 
 ## Sprint 3b – Geschlossene Beta live (entschieden 2026-10-04)
 **Ziel:** inhouseticket.com läuft, nur für freigegebene Firmen-Domains.
@@ -95,7 +95,7 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
   - [x] P1 Anlage in **einer Transaktion**: Projekt, Status, Labels, Tutorial-Tickets inkl. Unteraufgaben
   - [x] P1 Schritt 4 Startansicht → `user_pref.default_view`, Projektlink öffnet diese Ansicht
   - [x] P2 Banner „Einrichtung fertigstellen“ bei abgebrochenem Wizard
-  - [ ] P2 Listen-Ergänzungen (Sprint 3, `docs/ONBOARDING.md` Abschnitt 4)
+  - [x] P2 Listen-Ergänzungen (Sprint 3, `docs/ONBOARDING.md` Abschnitt 4)
   - [x] Tests: jede Vorlage erzeugt gültige Daten (Limits, max. 5 Unteraufgaben), E2E Board/Liste-Wahl
 
 ## Sprint 6 – Speed-Features & Meine Aufgaben

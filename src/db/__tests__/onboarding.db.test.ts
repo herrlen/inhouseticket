@@ -16,7 +16,7 @@ const ids = { users: [] as string[], workspaces: [] as string[] };
 
 async function setup(label: string, teamType: string | null, view: "board" | "list") {
   const userId = `${run}-${label}`;
-  await db.insert(schema.user).values({ id: userId, name: label, email: `${label}@${run}.de`, timezone: "Pacific/Kiritimati" });
+  await db.insert(schema.user).values({ id: userId, name: label, email: `${label}@${run}.de`, timezone: "Atlantic/Reykjavik" });
   const [ws] = await db.insert(schema.workspace).values({ name: label, domain: `${label}-${run}.de`, slug: `${label}-${run}`, teamType }).returning();
   await db.insert(schema.membership).values({ workspaceId: ws!.id, userId, role: "owner" });
   await saveWizardPrefs(ws!.id, userId, { defaultView: view, advanceTo: 6 });
@@ -58,8 +58,9 @@ describe("completeOnboarding", () => {
       "Kunde fragt nach einer Rechnungskopie",
     ]);
     expect(new Set(tickets.map((t) => t.statusId))).toEqual(new Set([statuses[0]!.id]));
-    // Ticket 1: mine, high, due today in the person's time zone (Kiritimati is UTC+14).
-    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Pacific/Kiritimati" }).format(new Date());
+    // Ticket 1: mine, high, due today in the person's time zone. (Not a zone ahead of UTC: a ticket due
+    // "tomorrow" in UTC would be picked up by the digest test running in parallel.)
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Atlantic/Reykjavik" }).format(new Date());
     expect(tickets[0]).toMatchObject({ assigneeId: a.userId, priority: 3 });
     expect(tickets[0]!.dueAt?.toISOString().slice(0, 10)).toBe(today);
     expect(tickets.slice(1).every((t) => t.assigneeId === null)).toBe(true);

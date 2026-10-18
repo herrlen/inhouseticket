@@ -45,6 +45,11 @@ test("create with C, counter, inline edits persist", async ({ page }) => {
   // Status change moves the ticket to another group and updates the sidebar count.
   await page.getByRole("button", { name: /^Status von MKT-6/ }).click();
   await Promise.all([ticketSaved(page), page.getByRole("menuitem", { name: "Erledigt" }).click()]);
+  // Done tickets are hidden in the list until switched on (docs/ONBOARDING.md §4).
+  await expect(row(page, "MKT-6")).toHaveCount(0);
+  await expect(page.getByText("1 erledigtes Ticket ausgeblendet.")).toBeVisible();
+  await page.getByRole("button", { name: "Erledigte anzeigen" }).click();
+  await expect(page).toHaveURL(/done=1/);
   await expect(page.getByRole("button", { name: "Status von MKT-6: Erledigt" })).toBeVisible();
   // Everything saved before leaving (the page shows "Speichert …" while requests are in flight).
   await expect(page.getByText("Speichert …")).toHaveCount(0);
@@ -207,4 +212,41 @@ test("on phones the list shows status and priority under the title, without side
   await row.getByRole("button", { name: /^MKT-1 öffnen/ }).click();
   await expect(page.getByRole("dialog").getByRole("button", { name: /^Status/ }).first()).toBeVisible();
   await expect(page.getByText(/nächstes Ticket/)).toBeHidden(); // no keyboard hints on touch screens
+});
+
+test("list additions: add in a group, subtasks, columns, new status", async ({ page }) => {
+  const path = await openProject(page, "listplus");
+
+  // "+ Ticket hinzufügen" at the end of the "Review" group creates the ticket in that status.
+  await page.getByRole("button", { name: /^Neues Ticket in „Review“/ }).click();
+  const add = page.getByRole("textbox", { name: /^Neues Ticket in „Review“/ });
+  await add.fill("Freigabe einholen");
+  await Promise.all([ticketSaved(page), add.press("Enter")]);
+  await expect(page.getByRole("button", { name: "Status von MKT-6: Review" })).toBeVisible();
+
+  // Subtasks unfold under their ticket (the tutorial ticket MKT-3 has three).
+  // The switch reflects the URL (?subtasks=1), which updates right after the click.
+  await page.getByRole("checkbox", { name: "Unteraufgaben anzeigen" }).click();
+  await expect(page.getByRole("checkbox", { name: "Unteraufgaben anzeigen" })).toBeChecked();
+  await expect(page).toHaveURL(/subtasks=1/);
+  await expect(page.getByRole("list", { name: "Unteraufgaben von MKT-3" }).getByRole("listitem")).toHaveCount(3);
+
+  // Columns: comments shown as a column; switching "Fällig" off is remembered per person.
+  await expect(table(page).getByRole("columnheader", { name: "Kommentare" })).toBeVisible();
+  await page.getByText("Spalten ▾").click();
+  await page.getByRole("checkbox", { name: "Fällig" }).uncheck();
+  await expect(table(page).getByRole("columnheader", { name: "Fällig" })).toHaveCount(0);
+  await expect(page.getByText("Speichert …")).toHaveCount(0);
+  await page.waitForTimeout(500);
+  await page.goto(`${path}/p/MKT`);
+  await expect(table(page).getByRole("columnheader", { name: "Fällig" })).toHaveCount(0);
+  await expect(table(page).getByRole("columnheader", { name: "Person" })).toBeVisible();
+
+  // "+ Neuer Status" (admins): goes before the done status and gets its own group.
+  await page.getByRole("button", { name: "Neuer Status" }).click();
+  await page.getByRole("textbox", { name: "Name des neuen Status" }).fill("Wartet");
+  await page.getByRole("button", { name: "Anlegen" }).click();
+  await expect(table(page).locator("th[scope=rowgroup]", { hasText: "Wartet" })).toBeVisible();
+  const groups = await table(page).locator("th[scope=rowgroup]").allInnerTexts();
+  expect(groups.map((g) => g.split("\n")[0]!.trim())).toEqual(["Offen", "In Arbeit", "Review", "Wartet", "Erledigt"]);
 });

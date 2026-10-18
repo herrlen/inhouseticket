@@ -92,6 +92,13 @@
       "when": 1792334352719,
       "tag": "0012_onboarding_wizard",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792337506171,
+      "tag": "0013_list_columns",
+      "breakpoints": true
     }
   ]
 }

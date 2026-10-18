@@ -1,0 +1,1 @@
+ALTER TABLE "user_pref" ADD COLUMN "hidden_columns" jsonb DEFAULT '[]'::jsonb NOT NULL;

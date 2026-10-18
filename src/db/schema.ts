@@ -548,6 +548,8 @@ export const userPref = pgTable(
     defaultView: text().notNull().default("board"),
     /** Next onboarding step (docs/ONBOARDING.md §2.1 numbering) – the wizard resumes here. */
     onboardingStep: smallint(),
+    /** List columns the person switched off (docs/ONBOARDING.md §4), e.g. ["due", "comments"]. */
+    hiddenColumns: jsonb().$type<string[]>().notNull().default([]),
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.workspaceId] }),

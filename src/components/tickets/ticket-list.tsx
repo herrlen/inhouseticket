@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import type { TicketRow } from "@/db/queries/tickets";
 import { cn } from "@/lib/cn";
 import { useLocale, useT } from "@/lib/i18n/client";
@@ -8,6 +9,11 @@ import { Avatar } from "@/components/ui/avatar";
 import { dueBucket, formatDue, priorityKey, type Group } from "./list-model";
 import { AssigneePicker, DueDateInput, PriorityIcon, PriorityPicker, StatusDot, StatusPicker } from "./pickers";
 import { TicketMeta } from "./ticket-meta";
+import type { ListColumn } from "./list-columns";
+import dynamic from "next/dynamic";
+import { AddTicketRow } from "./list-extras";
+
+const SubtaskRows = dynamic(() => import("./list-lazy").then((m) => m.SubtaskRows));
 import type { TicketPatch } from "@/lib/validation/ticket";
 
 type Props = {
@@ -19,13 +25,24 @@ type Props = {
   onPatch: (ticketId: string, patch: TicketPatch) => void;
   today: string;
   openTicketId: string | null;
+  /** Columns the person switched off. */
+  hidden?: readonly ListColumn[];
+  /** Status grouping only: "+ Ticket hinzufügen" at the end of each group. */
+  onAddToGroup?: (statusId: string, title: string) => void;
+  /** Unfold the subtasks under each ticket that has some. */
+  showSubtasks?: boolean;
 };
 
-export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect, onOpen, onPatch, today, openTicketId }: Props) {
+export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect, onOpen, onPatch, today, openTicketId, hidden = [], onAddToGroup, showSubtasks }: Props) {
   const t = useT();
   const tl = t.list; // `t` is the ticket inside the row loop
-  const { project, statuses, labels, members } = useProjectInfo();
+  const tm = t.meta;
+  const { workspaceId, project, statuses, labels, members } = useProjectInfo();
   const doneIds = new Set(statuses.filter((s) => s.category === "done").map((s) => s.id));
+  const show = (c: ListColumn) => !hidden.includes(c);
+  const dataCols = (["status", "priority", "assignee", "due", "comments"] as const).filter(show);
+  // Everything after the checkbox: key, title and the visible data columns.
+  const span = 2 + dataCols.length;
 
   return (
     <div className="overflow-x-auto rounded-[var(--radius-card)] border border-border bg-surface">
@@ -38,10 +55,11 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
             </th>
             <th scope="col" className="w-20 py-2 font-medium">{t.project.colKey}</th>
             <th scope="col" className="py-2 font-medium">{t.project.colTitle}</th>
-            <th scope="col" className="w-36 hidden py-2 font-medium md:table-cell">{t.project.colStatus}</th>
-            <th scope="col" className="w-32 hidden py-2 font-medium md:table-cell">{t.project.colPriority}</th>
-            <th scope="col" className="w-40 hidden py-2 font-medium md:table-cell">{t.list.colAssignee}</th>
-            <th scope="col" className="w-36 hidden py-2 font-medium md:table-cell">{t.list.colDue}</th>
+            {show("status") ? <th scope="col" className="w-36 hidden py-2 font-medium md:table-cell">{t.project.colStatus}</th> : null}
+            {show("priority") ? <th scope="col" className="w-32 hidden py-2 font-medium md:table-cell">{t.project.colPriority}</th> : null}
+            {show("assignee") ? <th scope="col" className="w-40 hidden py-2 font-medium md:table-cell">{t.list.colAssignee}</th> : null}
+            {show("due") ? <th scope="col" className="w-36 hidden py-2 font-medium md:table-cell">{t.list.colDue}</th> : null}
+            {show("comments") ? <th scope="col" className="w-24 hidden py-2 pr-3 text-right font-medium md:table-cell">{t.list.colComments}</th> : null}
           </tr>
         </thead>
         {groups.map((g) => {
@@ -61,7 +79,7 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
                       className="size-4 accent-[var(--accent)]"
                     />
                   </td>
-                  <th scope="rowgroup" colSpan={6} className="py-1.5 text-left text-xs font-semibold">
+                  <th scope="rowgroup" colSpan={span} className="py-1.5 text-left text-xs font-semibold">
                     <span className="inline-flex items-center gap-2">
                       {g.color ? <StatusDot color={g.color} /> : null}
                       {g.label}
@@ -73,7 +91,7 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
               {g.tickets.length === 0 && showGroupHeaders ? (
                 <tr className="border-b border-border">
                   <td />
-                  <td colSpan={6} className="py-2 text-xs text-muted">{t.list.emptyGroup}</td>
+                  <td colSpan={span} className="py-2 text-xs text-muted">{t.list.emptyGroup}</td>
                 </tr>
               ) : null}
               {g.tickets.map((t) => {
@@ -82,8 +100,8 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
                 const overdue = dueBucket(t.dueDate, today, doneIds.has(t.statusId)) === "overdue";
                 const ticketLabels = labels.filter((l) => t.labelIds.includes(l.id));
                 return (
+                  <Fragment key={t.id}>
                   <tr
-                    key={t.id}
                     data-ticket-row={t.id}
                     aria-selected={selected.has(t.id)}
                     className={cn(
@@ -121,24 +139,41 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
                             {l.name}
                           </span>
                         ))}
-                        <TicketMeta subtaskDone={t.subtaskDone} subtaskTotal={t.subtaskTotal} commentCount={t.commentCount} attachmentCount={t.attachmentCount} className="ml-auto" />
+                        <TicketMeta subtaskDone={t.subtaskDone} subtaskTotal={t.subtaskTotal} commentCount={show("comments") ? 0 : t.commentCount} attachmentCount={t.attachmentCount} className="ml-auto" />
                       </button>
                       {/* Phones: the four columns as one read-only line; editing happens in the opened ticket. */}
                       {pending ? null : <MobileMeta ticket={t} statuses={statuses} members={members} overdue={overdue} />}
                     </td>
                     {pending ? (
-                      <td colSpan={4} className="hidden py-1 text-xs text-muted md:table-cell">{tl.saving}</td>
+                      dataCols.length > 0 ? <td colSpan={dataCols.length} className="hidden py-1 text-xs text-muted md:table-cell">{tl.saving}</td> : null
                     ) : (
                       <>
-                        <td className="hidden py-1 md:table-cell"><StatusPicker value={t.statusId} ticketLabel={key} onChange={(statusId) => onPatch(t.id, { statusId })} /></td>
-                        <td className="hidden py-1 md:table-cell"><PriorityPicker value={t.priority} ticketLabel={key} onChange={(priority) => onPatch(t.id, { priority })} /></td>
-                        <td className="hidden py-1 md:table-cell"><AssigneePicker value={t.assigneeId} ticketLabel={key} onChange={(assigneeId) => onPatch(t.id, { assigneeId })} /></td>
-                        <td className="hidden py-1 md:table-cell"><DueDateInput value={t.dueDate} ticketLabel={key} overdue={overdue} onChange={(dueDate) => onPatch(t.id, { dueDate })} /></td>
+                        {show("status") ? <td className="hidden py-1 md:table-cell"><StatusPicker value={t.statusId} ticketLabel={key} onChange={(statusId) => onPatch(t.id, { statusId })} /></td> : null}
+                        {show("priority") ? <td className="hidden py-1 md:table-cell"><PriorityPicker value={t.priority} ticketLabel={key} onChange={(priority) => onPatch(t.id, { priority })} /></td> : null}
+                        {show("assignee") ? <td className="hidden py-1 md:table-cell"><AssigneePicker value={t.assigneeId} ticketLabel={key} onChange={(assigneeId) => onPatch(t.id, { assigneeId })} /></td> : null}
+                        {show("due") ? <td className="hidden py-1 md:table-cell"><DueDateInput value={t.dueDate} ticketLabel={key} overdue={overdue} onChange={(dueDate) => onPatch(t.id, { dueDate })} /></td> : null}
+                        {show("comments") ? (
+                          <td className="hidden py-1 pr-3 text-right text-xs text-muted tabular-nums md:table-cell">
+                            {t.commentCount > 0 ? (
+                              <>
+                                <span aria-hidden>{t.commentCount}</span>
+                                <span className="sr-only">{tm.comments(t.commentCount)}</span>
+                              </>
+                            ) : (
+                              <span aria-hidden>–</span>
+                            )}
+                          </td>
+                        ) : null}
                       </>
                     )}
                   </tr>
+                  {showSubtasks && !pending && t.subtaskTotal > 0 ? <SubtaskRows workspaceId={workspaceId} ticketId={t.id} ticketKey={key} colSpan={span} /> : null}
+                  </Fragment>
                 );
               })}
+              {onAddToGroup && showGroupHeaders ? (
+                <AddTicketRow statusName={g.label} colSpan={span} onCreate={(title) => onAddToGroup(g.key, title)} />
+              ) : null}
             </tbody>
           );
         })}
