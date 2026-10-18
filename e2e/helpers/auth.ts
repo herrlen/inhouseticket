@@ -117,7 +117,8 @@ export async function completeOwnerWizard(page: Page, workspaceName: string, opt
   await expect(page.getByRole("heading", { name: "Dein Workspace" })).toBeVisible();
   await page.getByRole("textbox", { name: "Name des Workspace" }).fill(workspaceName);
   const autoJoin = page.getByRole("checkbox", { name: /dürfen beitreten/ });
-  if (await autoJoin.count()) await autoJoin.setChecked(opts.autoJoin ?? false);
+  // The step slides in (180 ms); retry until the click lands on the settled checkbox.
+  if (await autoJoin.count()) await expect(async () => autoJoin.setChecked(opts.autoJoin ?? false, { timeout: 1000 })).toPass();
   await page.getByRole("button", { name: "Weiter" }).click();
 
   await expect(page.getByRole("heading", { name: "Wofür nutzt ihr inhouseticket?" })).toBeVisible();
