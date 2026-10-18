@@ -1,8 +1,13 @@
-// Workspace URL segments. Reserved words collide with top-level routes.
+// Workspace URL segments. Reserved words collide with top-level routes – every top-level segment
+// under src/app and public/ must be listed (slug.test.ts checks), plus a few kept free for later.
 export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
-  "api", "app", "auth", "login", "logout", "start", "onboarding", "invite", "dev",
-  "settings", "admin", "mcp", "docs", "help", "static", "public", "_next",
+  // routes
+  "api", "mcp", "stat", "admin", "dev",
+  "login", "register", "start", "onboarding", "invite", "oauth", "forgot-password", "reset-password", "set-password",
   "impressum", "datenschutz", "agb", "avv", "umziehen",
+  "opengraph-image", "robots", "sitemap", "favicon", "landing", "_next", "well-known",
+  // kept free
+  "app", "auth", "logout", "settings", "docs", "help", "static", "public",
 ]);
 
 const MAX_SLUG = 63;
