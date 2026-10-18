@@ -4,6 +4,7 @@ import { after } from "next/server";
 import { analyticsPath } from "@/lib/analytics-url";
 import { env } from "@/lib/env";
 import { anonymizeIp, trackingParams } from "@/lib/matomo-params";
+import { measurementRefused } from "@/lib/optout";
 import { clientIp } from "@/lib/registration";
 
 // Self-hosted Matomo (analytics.klatxt.de, same operator, mittwald) behind our own domain: the
@@ -48,14 +49,15 @@ export async function forwardHit(params: URLSearchParams, ip: string, userAgent:
 
 /**
  * A Matomo event from a Server Action that ends in a redirect (the browser never gets to report it).
- * Same path as /stat: allowlisted parameters, truncated IP, Do-Not-Track respected. `path` is the
+ * Same path as /stat: allowlisted parameters, truncated IP; nothing with Do Not Track, Global
+ * Privacy Control or the opt-out cookie (src/lib/optout.ts). `path` is the
  * page the action belongs to and is normalised like every other URL. Only fixed labels – never
  * names, addresses or content. Sent after the response; never throws.
  */
 export async function trackServerEvent(event: { category: string; action: string; name?: string; value?: number; path: string }) {
   if (!matomoEnabled()) return;
   const h = await headers();
-  if (h.get("dnt") === "1") return;
+  if (measurementRefused(h)) return;
   const params = new URLSearchParams({
     e_c: event.category,
     e_a: event.action,

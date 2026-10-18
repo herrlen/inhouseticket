@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { contentSecurityPolicy } from "@/lib/csp";
 import { NOINDEX, needsNoindex } from "@/lib/indexing";
 import { isBot, normalizePath, referrerHost } from "@/lib/pageview-path";
+import { hasOptOutCookie } from "@/lib/optout";
 import { recordPageView } from "@/lib/pageviews";
 
 /** Sets a fresh CSP nonce per page request; Next.js picks it up from the request header. */
@@ -13,8 +14,14 @@ export function proxy(request: NextRequest) {
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", csp);
 
-  // Cookieless statistics: full page loads only (no client navigations, prefetches or bots).
-  if (request.method === "GET" && request.headers.get("sec-fetch-dest") === "document" && !isBot(request.headers.get("user-agent"))) {
+  // Cookieless statistics: full page loads only (no client navigations, prefetches or bots), never
+  // with the measurement opt-out (privacy policy section 5).
+  if (
+    request.method === "GET" &&
+    request.headers.get("sec-fetch-dest") === "document" &&
+    !isBot(request.headers.get("user-agent")) &&
+    !hasOptOutCookie(request.headers.get("cookie"))
+  ) {
     recordPageView(normalizePath(request.nextUrl.pathname), referrerHost(request.headers.get("referer"), request.nextUrl.hostname));
   }
 

@@ -1,10 +1,12 @@
-// Matomo in the browser – the one place that talks to the tracker. Cookieless, Do-Not-Track
-// respected; the tracker (/stat.js, vendored) sends to /stat, which forwards server-side
+// Matomo in the browser – the one place that talks to the tracker. Cookieless, no browser
+// feature detection or performance timings, Do Not Track, Global Privacy Control and the opt-out
+// (src/lib/optout.ts) respected; the tracker (/stat.js, vendored) sends to /stat, which forwards server-side
 // (src/app/stat/route.ts). Every URL and title goes through src/lib/analytics-url.ts first, so
 // no workspace slug, ticket key, token or name ever reaches Matomo.
 // Plain module, client-safe (no Zod/DB): the root layout builds the bootstrap snippet with it.
 // Without Matomo configured there is no window._paq and every call is a no-op.
 import { analyticsReferrer, analyticsTitle, analyticsUrl } from "@/lib/analytics-url";
+import { BROWSER_REFUSES_JS, optedOutInBrowser } from "@/lib/optout";
 
 type Command = [string, ...unknown[]];
 
@@ -17,18 +19,24 @@ declare global {
 /** Last page view sent (normalised URL + title) – identical successive views are skipped. */
 let last: { key: string; url: string } | null = null;
 
-const queue = (): Command[] | null => (typeof window === "undefined" ? null : (window._paq ?? null));
+/** The tracker's queue – null without Matomo, and as soon as the opt-out is set on this device. */
+const queue = (): Command[] | null => (typeof window === "undefined" || optedOutInBrowser() ? null : (window._paq ?? null));
 
 /**
  * Inline bootstrap for the root layout (rendered with the CSP nonce): configures the tracker and
  * loads /stat.js. No page view here – trackPage() sends the first one with the normalised URL.
+ * With Global Privacy Control, Do Not Track or the opt-out cookie nothing is configured or loaded.
+ * Nothing is read from the device beyond the page itself: no cookies, no feature detection
+ * (resolution, plugins, client hints), no performance timings; no link tracking, no heartbeat.
  */
 export function initMatomo(siteId: string): string {
   return (
+    `(function(){var n=navigator;if(${BROWSER_REFUSES_JS})return;` +
     "var _paq=window._paq=window._paq||[];" +
-    "_paq.push(['disableCookies']);_paq.push(['setDoNotTrack',true]);" +
+    "_paq.push(['disableCookies']);_paq.push(['disableBrowserFeatureDetection']);_paq.push(['disablePerformanceTracking']);" +
+    "_paq.push(['setDoNotTrack',true]);" +
     `_paq.push(['setTrackerUrl','/stat']);_paq.push(['setSiteId',${JSON.stringify(siteId)}]);` +
-    "var g=document.createElement('script');g.async=true;g.src='/stat.js';document.head.appendChild(g);"
+    "var g=document.createElement('script');g.async=true;g.src='/stat.js';document.head.appendChild(g);})();"
   );
 }
 

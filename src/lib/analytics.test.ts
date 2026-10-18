@@ -65,11 +65,49 @@ describe("initMatomo", () => {
     const { initMatomo } = await load();
     const code = initMatomo("4");
     expect(code).toContain("['disableCookies']");
+    expect(code).toContain("['disableBrowserFeatureDetection']");
+    expect(code).toContain("['disablePerformanceTracking']");
+    expect(code).not.toContain("enableLinkTracking");
+    expect(code).not.toContain("enableHeartBeatTimer");
     expect(code).toContain("['setDoNotTrack',true]");
     expect(code).toContain("['setTrackerUrl','/stat']");
     expect(code).toContain("['setSiteId',\"4\"]");
     expect(code).toContain("g.src='/stat.js'");
     expect(code).not.toContain("trackPageView");
     expect(code).not.toContain("setCookieDomain");
+  });
+
+  it.each([
+    ["Global Privacy Control", { globalPrivacyControl: true }, ""],
+    ["Do Not Track", { doNotTrack: "1" }, ""],
+    ["the opt-out cookie", {}, "lang=de; iht_optout=1"],
+  ])("loads nothing with %s", async (_, nav, cookie) => {
+    const { initMatomo } = await load();
+    const head: unknown[] = [];
+    const win: Record<string, unknown> = {};
+    const doc = { cookie, head: { appendChild: (el: unknown) => head.push(el) }, createElement: () => ({}) };
+    new Function("window", "navigator", "document", initMatomo("4"))(win, nav, doc);
+    expect(win._paq).toBeUndefined();
+    expect(head).toEqual([]);
+  });
+
+  it("loads the tracker without any of them", async () => {
+    const { initMatomo } = await load();
+    const head: { src?: string }[] = [];
+    const win: Record<string, unknown> = {};
+    const doc = { cookie: "lang=de; iht_optout=0", head: { appendChild: (el: { src?: string }) => head.push(el) }, createElement: () => ({}) };
+    new Function("window", "navigator", "document", initMatomo("4"))(win, { doNotTrack: "unspecified" }, doc);
+    expect(win._paq).toEqual(expect.arrayContaining([["disableCookies"], ["disableBrowserFeatureDetection"]]));
+    expect(head.map((el) => el.src)).toEqual(["/stat.js"]);
+  });
+});
+
+describe("opt-out in the browser", () => {
+  it("stops page views and events as soon as the cookie is set", async () => {
+    const { paq, trackPage, trackEvent } = await load();
+    vi.stubGlobal("document", { referrer: "", cookie: "iht_optout=1" });
+    trackPage("/", "");
+    trackEvent("Ticket", "Created");
+    expect(paq).toEqual([]);
   });
 });

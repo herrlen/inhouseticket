@@ -33,8 +33,13 @@ describe("trackingParams", () => {
   });
 
   it("keeps what the tracker sends for a page view", () => {
-    const hit = "action_name=Start&url=https://inhouseticket.com/&urlref=&rand=123&apiv=1&h=1&m=2&s=3&res=1920x1080&pv_id=Ab12Cd&pf_net=0&pf_srv=12&uadata={}&send_image=0&ca=1&ping=1";
-    expect(trackingParams(new URLSearchParams(hit)).size).toBe(16);
+    const hit = "action_name=Start&url=https://inhouseticket.com/&urlref=&rand=123&apiv=1&pv_id=Ab12Cd&send_image=0&ca=1";
+    expect(trackingParams(new URLSearchParams(hit)).size).toBe(8);
+  });
+
+  it("drops everything read from the device and heartbeat pings", () => {
+    const device = "h=1&m=2&s=3&res=1920x1080&cookie=1&uadata={}&pdf=1&qt=0&realp=0&wma=0&fla=0&java=0&ag=0&pf_net=0&pf_srv=12&pf_tfr=1&pf_dm1=1&pf_dm2=1&pf_onl=1&gt_ms=5&ping=1";
+    expect(trackingParams(new URLSearchParams(`${device}&url=https://x/`)).toString()).toBe("url=https%3A%2F%2Fx%2F");
   });
 
   it("bounds value length and parameter count", () => {

@@ -117,6 +117,54 @@ test("app: page views on route changes without duplicates, events without person
   }
 });
 
+test("opt-out on the privacy page: nothing is sent until measurement is switched on again", async ({ page }) => {
+  const hits = recordHits(page);
+  await page.goto("/datenschutz");
+  await expect.poll(() => pageViews(hits).length).toBe(1);
+  const status = page.getByRole("status").filter({ hasText: "Messung" });
+  await expect(status).toHaveText("Die Messung ist auf diesem Gerät aktiv.");
+  const off = page.getByRole("button", { name: "Messung auf diesem Gerät deaktivieren" });
+  await waitForHydration(off);
+  await off.focus();
+  await page.keyboard.press("Enter");
+  await expect(status).toHaveText("Die Messung ist auf diesem Gerät deaktiviert.");
+  const cookie = (await page.context().cookies()).find((c) => c.name === "iht_optout");
+  expect(cookie).toMatchObject({ value: "1", httpOnly: false, sameSite: "Lax" });
+  await expect(page.getByRole("button", { name: "Messung auf diesem Gerät aktivieren" })).toBeFocused();
+
+  // Client navigation and full loads: no tracker, no hit.
+  await page.getByRole("link", { name: "inhouseticket" }).first().click();
+  await expect(page).toHaveURL("http://localhost:3100/");
+  await page.goto("/umziehen");
+  await page.goto("/login");
+  await page.waitForTimeout(500);
+  expect(hits).toHaveLength(1);
+  expect(await page.evaluate(() => typeof (window as unknown as { _paq?: unknown })._paq)).toBe("undefined");
+  // /stat drops anything that still arrives with the cookie.
+  expect((await page.request.post("/stat", { form: { url: "http://localhost:3100/", action_name: "x" } })).status()).toBe(204);
+
+  await page.goto("/datenschutz");
+  await page.getByRole("button", { name: "Messung auf diesem Gerät aktivieren" }).click();
+  await expect(status).toHaveText("Die Messung ist auf diesem Gerät aktiv.");
+  expect((await page.context().cookies()).map((c) => c.name)).not.toContain("iht_optout");
+  await page.goto("/umziehen");
+  await expect.poll(() => pageViews(hits).length).toBe(2);
+});
+
+test("Global Privacy Control: no tracker, no hit", async ({ browser }) => {
+  const context = await browser.newContext({ extraHTTPHeaders: { "Sec-GPC": "1" } });
+  await context.addInitScript(() => Object.defineProperty(Navigator.prototype, "globalPrivacyControl", { get: () => true }));
+  const page = await context.newPage();
+  const hits = recordHits(page);
+  await page.goto("/");
+  await page.goto("/datenschutz");
+  await expect(page.getByRole("status").filter({ hasText: "Global Privacy Control" })).toBeVisible();
+  await page.waitForTimeout(500);
+  expect(hits).toEqual([]);
+  expect(await page.evaluate(() => typeof (window as unknown as { _paq?: unknown })._paq)).toBe("undefined");
+  await context.close();
+});
+
 test("X-Robots-Tag: noindex on app, auth, API and MCP – not on public pages", async ({ request }) => {
   for (const path of ["/login", "/register", "/forgot-password", "/onboarding", "/invite/abc", "/oauth/consent", "/admin", "/some-workspace", "/api/health", "/.well-known/oauth-authorization-server"]) {
     const res = await request.get(path, { maxRedirects: 0 });

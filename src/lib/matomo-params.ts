@@ -7,15 +7,13 @@ import { isIP } from "node:net";
  * else is dropped – above all what only an authenticated request may set (token_auth, cip, cdt,
  * country/region/city/lat/long, ua, uid, cid, idsite, rec, new_visit) and the tracker's
  * visitor/cookie values (_id, _idn …): without them Matomo derives the visit from a server-side
- * hash that changes daily.
+ * hash that changes daily. Also dropped is everything the tracker reads from the device – screen
+ * resolution, plugin flags, client hints, cookie support, local time, performance timings – and
+ * heartbeat pings: the tracker is configured not to send them (src/lib/analytics.ts), this enforces it.
  */
 const ALLOWED = new Set([
   // page view and request basics
-  "action_name", "url", "urlref", "rand", "apiv", "h", "m", "s", "res", "cookie", "pv_id", "ca", "send_image", "ping",
-  // performance timings
-  "pf_net", "pf_srv", "pf_tfr", "pf_dm1", "pf_dm2", "pf_onl", "gt_ms",
-  // browser features (client hints, legacy plugin flags)
-  "uadata", "pdf", "qt", "realp", "wma", "fla", "java", "ag",
+  "action_name", "url", "urlref", "rand", "apiv", "pv_id", "ca", "send_image",
   // events, site search, outlinks/downloads, content tracking, goals
   "e_c", "e_a", "e_n", "e_v", "search", "search_cat", "search_count", "link", "download", "c_n", "c_p", "c_t", "c_i", "idgoal", "revenue",
 ]);

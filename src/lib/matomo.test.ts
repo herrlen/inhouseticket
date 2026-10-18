@@ -40,4 +40,13 @@ describe("trackServerEvent", () => {
     await trackServerEvent({ category: "Workspace", action: "Created", path: "/onboarding" });
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ["Global Privacy Control", "sec-gpc", "1"],
+    ["the opt-out cookie", "cookie", "lang=en; iht_optout=1"],
+  ])("respects %s", async (_, header, value) => {
+    requestHeaders.set(header, value);
+    await trackServerEvent({ category: "Workspace", action: "Created", path: "/onboarding" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });
