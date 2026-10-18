@@ -1,13 +1,50 @@
 import type { Metadata } from "next";
 import { GermanOnly } from "@/components/german-only";
+import { MeasurementToggle } from "@/components/measurement-toggle";
 import { OPERATOR } from "@/lib/legal";
 
 export const metadata: Metadata = { title: "Datenschutz", alternates: { canonical: "/datenschutz" } };
 
 // Describes what the app actually does; reviewed by a lawyer (2026-10-10). Added afterwards and not yet reviewed: section 5 (Matomo; extended to the app and events on 2026-10-18),
 // and on 2026-10-17 password, reset, no-password link, rate limits (section 3/4), the lang cookie (section 7),
-// and on 2026-10-18 registration with password and its pending data (sections 3, 4, 9; ADR 005).
+// and on 2026-10-18 registration with password and its pending data (sections 3, 4, 9; ADR 005),
+// and on 2026-10-18 the measurement opt-out, DNT/GPC, no feature detection (section 5) and the
+// cookie and storage table from e2e/storage-inventory.spec.ts (section 7).
 // Keep in sync with new features.
+/** Every cookie the site sets – checked by e2e/storage-inventory.spec.ts (ALLOWED_COOKIES). */
+const COOKIES = [
+  {
+    name: "better-auth.session_token",
+    purpose: "Hält dich angemeldet (zufällige Sitzungskennung, signiert).",
+    lifetime: "30 Tage ab der letzten Verlängerung; gelöscht beim Abmelden",
+    basis: "§ 25 Abs. 2 Nr. 2 TDDDG; Art. 6 Abs. 1 lit. b DSGVO",
+  },
+  {
+    name: "better-auth.session_data",
+    purpose: "Zwischenspeicher der Sitzung (signiert), damit nicht jeder Aufruf die Datenbank fragen muss.",
+    lifetime: "5 Minuten",
+    basis: "§ 25 Abs. 2 Nr. 2 TDDDG; Art. 6 Abs. 1 lit. b DSGVO",
+  },
+  {
+    name: "better-auth.session_token.oauth_logout_confirmation",
+    purpose: "Nur wenn eine verbundene App (z. B. Claude) eine Abmeldung anstößt: merkt sich die Rückfrage.",
+    lifetime: "5 Minuten",
+    basis: "§ 25 Abs. 2 Nr. 2 TDDDG; Art. 6 Abs. 1 lit. b DSGVO",
+  },
+  {
+    name: "lang",
+    purpose: "Nur wenn du über „DE | EN“ eine Sprache wählst: „de“ oder „en“, keine Kennung.",
+    lifetime: "1 Jahr",
+    basis: "§ 25 Abs. 2 Nr. 2 TDDDG; Art. 6 Abs. 1 lit. f DSGVO",
+  },
+  {
+    name: "iht_optout",
+    purpose: "Nur wenn du die Messung deaktivierst (Abschnitt 5): Wert „1“, keine Kennung.",
+    lifetime: "1 Jahr oder bis du die Messung wieder aktivierst",
+    basis: "§ 25 Abs. 2 Nr. 2 TDDDG; Art. 6 Abs. 1 lit. c i. V. m. Art. 21 DSGVO",
+  },
+] as const;
+
 export default function DatenschutzPage() {
   return (
     <GermanOnly>
@@ -58,29 +95,39 @@ export default function DatenschutzPage() {
         Um zu sehen, wie die Website genutzt wird, zählen wir vollständige Seitenaufrufe pro Tag – mit dem Pfad (Seiten innerhalb eines Workspace
         ohne dessen Namen, z. B. „/[workspace]/p/[key]“) und der Domain der verweisenden Website (z. B. „linkedin.com“). Wir speichern dabei
         weder IP-Adresse noch Browser-Kennung, setzen keine Cookies und können Aufrufe keiner Person zuordnen. Die Zählung findet auf unserem
-        eigenen Server statt; Drittanbieter sind nicht beteiligt.
+        eigenen Server statt; Drittanbieter sind nicht beteiligt. Hast du die Messung unten deaktiviert, zählen wir deine Aufrufe auch hier nicht.
       </p>
-      {/* ENTWURF – anwaltlich prüfen (2026-10-18: Matomo auch in der Anwendung, Ereignisse) */}
+      {/* ENTWURF – anwaltlich prüfen (2026-10-18: Matomo auch in der Anwendung, Ereignisse; ohne Auslesen von Geräteinformationen,
+          DNT/GPC, Widerspruch per Schalter; kein Einwilligungsbanner, siehe Abschnitt 7) */}
       <p>
         Zusätzlich messen wir mit Matomo, einer Open-Source-Software, die wir selbst unter analytics.klatxt.de bei Mittwald in Deutschland
         betreiben, wie die Website und die Anwendung genutzt werden – auf den öffentlichen Seiten ebenso wie bei Anmeldung, Registrierung und
-        in Workspaces. Matomo läuft ohne Cookies und speichert nichts auf deinem Gerät. Dein Browser spricht dabei nur mit inhouseticket.com;
-        unser Server kürzt deine IP-Adresse (IPv4 auf die ersten zwei, IPv6 auf die ersten sechs Bytes), bevor er den Aufruf an Matomo
-        weitergibt.
+        in Workspaces. Matomo setzt keine Cookies, speichert nichts auf deinem Gerät und liest dort nichts aus: Bildschirmauflösung, Plugins,
+        Client Hints, Ortszeit und Ladezeiten werden nicht erfasst, Klicks auf Links und die Verweildauer („Heartbeat“) ebenfalls nicht. Dein
+        Browser spricht dabei nur mit inhouseticket.com; unser Server kürzt deine IP-Adresse (IPv4 auf die ersten zwei, IPv6 auf die ersten
+        sechs Bytes), bevor er den Aufruf an Matomo weitergibt.
       </p>
       <p>
-        Erfasst werden die aufgerufene Seite, die verweisende Website, Uhrzeit, Browser, Betriebssystem, Bildschirmgröße, Sprache und das grob
-        aus der gekürzten Adresse abgeleitete Land. Adressen erfassen wir nur vereinheitlicht: Namen und Kennungen von Workspaces, Projekten
-        und Tickets sowie Tokens, E-Mail-Adressen und Suchbegriffe werden vorher entfernt (z. B. „/:id/p/:id“), als Seitentitel dient eine
-        allgemeine Bezeichnung wie „Board“ oder „Ticket Detail“, nie ein Ticket- oder Projekttitel. Außerdem zählen wir einzelne Schritte
-        als Ereignisse ohne personenbezogene Inhalte, etwa „Registrierung abgeschlossen“, „Workspace angelegt“, „Ticket erstellt“, „Status
-        geändert“ (nur die Kategorie offen/in Arbeit/erledigt), „Ansicht gewechselt“, „Mitglieder eingeladen“ (nur die Anzahl) oder „Claude
-        verbunden“. Namen, E-Mail-Adressen und Ticket-Inhalte gelangen nie zu Matomo; Zugriffe über API und MCP messen wir nicht.
+        Erfasst werden die aufgerufene Seite, die verweisende Website, Uhrzeit, sowie aus den Angaben, die jeder Browser bei einem Aufruf
+        ohnehin mitschickt, Browser, Betriebssystem und Sprache und das grob aus der gekürzten Adresse abgeleitete Land. Adressen erfassen wir
+        nur vereinheitlicht: Namen und Kennungen von Workspaces, Projekten und Tickets sowie Tokens, E-Mail-Adressen und Suchbegriffe werden
+        vorher entfernt (z. B. „/:id/p/:id“), als Seitentitel dient eine allgemeine Bezeichnung wie „Board“ oder „Ticket Detail“, nie ein
+        Ticket- oder Projekttitel. Außerdem zählen wir einzelne Schritte als Ereignisse ohne personenbezogene Inhalte, etwa „Registrierung
+        abgeschlossen“, „Workspace angelegt“, „Ticket erstellt“, „Status geändert“ (nur die Kategorie offen/in Arbeit/erledigt), „Ansicht
+        gewechselt“, „Mitglieder eingeladen“ (nur die Anzahl) oder „Claude verbunden“. Namen, E-Mail-Adressen und Ticket-Inhalte gelangen nie
+        zu Matomo; Zugriffe über API und MCP messen wir nicht. Einen Besuch fasst Matomo nur über einen täglich wechselnden, auf dem Server
+        gebildeten Wert zusammen; über Tage hinweg erkennt es dich nicht wieder.
       </p>
       <p>
-        Ist in deinem Browser „Do Not Track“ aktiviert, messen wir nicht – auch keine Ereignisse, die unser Server meldet. Rechtsgrundlage ist
-        unser berechtigtes Interesse, das Angebot zu verbessern und den Weg von der Startseite bis zur Nutzung zu verstehen (Art. 6 Abs. 1
-        lit. f DSGVO). Die Messdaten löschen wir nach 12 Monaten.
+        Rechtsgrundlage ist unser berechtigtes Interesse, das Angebot zu verbessern und den Weg von der Startseite bis zur Nutzung zu verstehen
+        (Art. 6 Abs. 1 lit. f DSGVO). Du kannst dem jederzeit widersprechen (Art. 21 DSGVO): mit dem Schalter unten oder, ganz ohne uns, mit
+        „Do Not Track“ oder „Global Privacy Control“ in deinem Browser. Dann messen wir nicht – weder im Browser noch Ereignisse, die unser
+        Server meldet. Die Messdaten löschen wir nach 12 Monaten.
+      </p>
+      <MeasurementToggle />
+      <p className="text-[13px] text-muted">
+        Der Schalter speichert das Cookie <code>iht_optout</code> mit dem Wert „1“ in diesem Browser (siehe Abschnitt 7). Er gilt für dieses
+        Gerät und diesen Browser; löschst du deine Cookies, ist der Widerspruch ebenfalls gelöscht.
       </p>
 
       <h2>6. Verbindung mit KI-Assistenten (z. B. Claude)</h2>
@@ -91,12 +138,47 @@ export default function DatenschutzPage() {
         Unternehmen, dem der Workspace gehört. Die Verbindung lässt sich jederzeit unter „Mit Claude verbinden“ trennen.
       </p>
 
-      <h2>7. Cookies</h2>
+      <h2>7. Cookies und Speicher im Browser</h2>
+      {/* ENTWURF – anwaltlich prüfen (2026-10-18): Tabelle aus e2e/storage-inventory.spec.ts; kein Einwilligungsbanner. */}
       <p>
-        Wir setzen ausschließlich Cookies, die für den Dienst unbedingt erforderlich sind: Cookies für die Anmeldung (Sitzung) und – nur wenn du
-        über den Umschalter „DE | EN“ eine Sprache wählst – das Cookie <code>lang</code>. Es enthält nur „de“ oder „en“, keine Kennung, gilt ein
-        Jahr, ist für Skripte im Browser nicht lesbar (HttpOnly), wird nur verschlüsselt übertragen (Secure) und nicht an fremde Seiten
-        mitgeschickt (SameSite=Lax). Für diese Cookies ist keine Einwilligung erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG).
+        Wir setzen ausschließlich Cookies, die für den Dienst unbedingt erforderlich sind, und nutzen weder Local Storage noch Session Storage
+        noch IndexedDB. Vollständige Liste:
+      </p>
+      <div className="mb-3 overflow-x-auto">
+        <table className="w-full border-collapse text-left text-[13px] [&_td]:border-t [&_td]:border-border [&_td]:py-2 [&_td]:pr-3 [&_td]:align-top [&_th]:py-2 [&_th]:pr-3 [&_th]:font-semibold">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Zweck</th>
+              <th scope="col">Speicherdauer</th>
+              <th scope="col">Rechtsgrundlage</th>
+            </tr>
+          </thead>
+          <tbody>
+            {COOKIES.map((c) => (
+              <tr key={c.name}>
+                <td>
+                  <code>{c.name}</code>
+                </td>
+                <td>{c.purpose}</td>
+                <td>{c.lifetime}</td>
+                <td>{c.basis}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Alle Cookies gelten nur für inhouseticket.com, werden im Betrieb nur verschlüsselt übertragen (Secure; die Anmelde-Cookies tragen
+        dort das Präfix <code>__Secure-</code>) und nicht an fremde Seiten mitgeschickt (SameSite=Lax). Bis auf <code>iht_optout</code> sind
+        sie für Skripte im Browser nicht lesbar (HttpOnly). Inhalte von Drittanbietern (Schriften, Skripte, Bilder) laden wir nicht.
+      </p>
+      <p>
+        <strong>Warum es keinen Cookie-Banner gibt:</strong> Eine Einwilligung ist nur nötig, wenn Informationen auf deinem Gerät gespeichert
+        oder dort ausgelesen werden, die für den von dir gewünschten Dienst nicht unbedingt erforderlich sind (§ 25 Abs. 1 TDDDG). Die Cookies
+        oben sind erforderlich, damit du angemeldet bleibst und deine Wahl (Sprache, Widerspruch gegen die Messung) gilt (§ 25 Abs. 2 Nr. 2
+        TDDDG). Die Messung nach Abschnitt 5 speichert nichts auf deinem Gerät und liest dort nichts aus; sie beruht auf unserem berechtigten
+        Interesse, und du kannst ihr jederzeit widersprechen.
       </p>
 
       <h2>8. Hosting und E-Mail-Versand</h2>

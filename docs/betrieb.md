@@ -93,15 +93,41 @@ Liegt der benötigte Dump nicht mehr im Volume: in mStudio das Projekt-Backup de
 Reichweite und Funnel – öffentliche Seiten, Anmeldung/Registrierung und App (seit 2026-10-18) – zusätzlich
 zur eigenen Zählung in `/admin`. Matomo läuft unter `analytics.klatxt.de` (Projekt `p-mdg6ae`, wie bei
 websecureaudit). Der Browser spricht nur mit `/stat` und `/stat.js` auf inhouseticket.com; `src/lib/matomo.ts`
-reicht weiter, kürzt die IP vorher (IPv4 /16, IPv6 /48) und setzt `idsite` selbst. Ohne Cookies, mit Do-Not-Track.
+reicht weiter, kürzt die IP vorher (IPv4 /16, IPv6 /48) und setzt `idsite` selbst. Ohne Cookies, ohne Auslesen von
+Geräteinformationen, mit Do-Not-Track, Global Privacy Control und Widerspruchs-Schalter (unten).
 Ohne `MATOMO_SITE_ID` und `MATOMO_TOKEN` ist alles aus (kein Schnipsel, `/stat` antwortet 404).
+
+Kein Cookie-Banner (2026-10-18, *Entwurf, anwaltlich prüfen*): Es gibt nur technisch notwendige Cookies
+(§ 25 Abs. 2 Nr. 2 TDDDG), keinen Local/Session Storage, kein IndexedDB und keine Anfragen an fremde Hosts; Matomo
+speichert und liest nichts auf dem Gerät und läuft auf berechtigtem Interesse mit Widerspruch. Festgehalten und
+geprüft von `e2e/storage-inventory.spec.ts` (öffentliche Seiten, Anmeldung, App, Einstellungen, OAuth-Zustimmung,
+anonym und angemeldet) – ein neues Cookie oder ein neuer Speicherschlüssel lässt den Test scheitern, bis er in
+`ALLOWED_COOKIES` und in der Tabelle in `/datenschutz` (Abschnitt 7) steht. Stand der Inventur:
+
+| Cookie | Zweck | Dauer | HttpOnly |
+|---|---|---|---|
+| `better-auth.session_token` (live `__Secure-…`) | Sitzung | 30 Tage, gleitend | ja |
+| `better-auth.session_data` (live `__Secure-…`) | Sitzungs-Cache | 5 Min. | ja |
+| `better-auth.session_token.oauth_logout_confirmation` | nur bei Abmeldung über eine verbundene App | 5 Min. | ja |
+| `lang` | Sprache, nur nach Klick auf DE/EN | 1 Jahr | ja |
+| `iht_optout` | Widerspruch gegen die Messung, nur nach Klick | 1 Jahr | nein (Tracker prüft es) |
+
+Im Dev-Server legt Next.js eine IndexedDB `__next_debug_channel` an (Dev-Tools, nicht im Production-Build).
+
+Widerspruch (`src/lib/optout.ts`): Schalter „Messung auf diesem Gerät deaktivieren/aktivieren“ in `/datenschutz`
+(`src/components/measurement-toggle.tsx`, Server Action `src/app/actions/measurement.ts`, funktioniert ohne JS) setzt
+bzw. löscht `iht_optout=1`. Mit dem Cookie, `DNT: 1` oder `Sec-GPC: 1`: kein Schnipsel im Root-Layout, der Bootstrap
+bricht im Browser ab (auch bei `navigator.globalPrivacyControl`), `trackPage`/`trackEvent` sind No-ops, `/stat`
+antwortet 204 und leitet nichts weiter, `trackServerEvent()` sendet nichts. Mit dem Cookie zählt auch die eigene
+Seitenaufruf-Zählung (`src/proxy.ts`) nicht.
 
 Was gemessen wird (Funnel, 2026-10-18):
 - **Ein Tracker für alles**: `src/components/matomo-tracker.tsx` im Root-Layout (Inline-Bootstrap mit Nonce, lädt
   `/stat.js`), Seitenaufrufe aus `src/components/analytics-tracker.tsx` bei jedem Routenwechsel (auch reine
   Query-Wechsel wie Liste/Board oder geöffnetes Ticket). Zentrale Client-Funktionen: `src/lib/analytics.ts`
-  (`initMatomo`, `trackPage`, `trackEvent`). Kein `enableLinkTracking` (Links in Tickets könnten fremde URLs mit
-  Tokens enthalten), kein `setCookieDomain`.
+  (`initMatomo`, `trackPage`, `trackEvent`). `disableCookies`, `disableBrowserFeatureDetection` (keine Auflösung,
+  Plugins, Client Hints), `disablePerformanceTracking`; kein `enableLinkTracking` (Links in Tickets könnten fremde
+  URLs mit Tokens enthalten), kein Heartbeat, kein `setCookieDomain`.
 - **URLs normalisiert** (`src/lib/analytics-url.ts`): Workspace-Slug, Projekt-Key, Ticket-Key, Token, IDs → `:id`
   (`/acme/p/MKT?t=MKT-12` → `/:id/p/:id`). Query nur `view=board` (Projektseite) und `utm_*` (nur öffentliche
   Seiten, nur einfache Werte); alles andere – `q`, `token`, `email`, `next`, `code` … – fällt weg. Titel generisch:
@@ -115,8 +141,9 @@ Was gemessen wird (Funnel, 2026-10-18):
   Magic-Link-Login wird nicht gezählt (Erfolg im Browser nicht erkennbar), API- und MCP-Aufrufe nie.
 
 Absicherung (Security-Review 2026-10-17):
-- `/stat` nimmt nur Parameter aus einer **Allowlist** an (`src/lib/matomo-params.ts`): Seitenaufruf, Timings,
-  Events, Suche, Links, Content, Ziele, Custom Dimensions. `token_auth`, `cip`, `cid`, `uid`, `cdt`, `ua`,
+- `/stat` nimmt nur Parameter aus einer **Allowlist** an (`src/lib/matomo-params.ts`): Seitenaufruf, Events,
+  Suche, Links, Content, Ziele, Custom Dimensions. Was vom Gerät stammt (`res`, `cookie`, `uadata`, Plugin-Flags,
+  Ortszeit `h`/`m`/`s`, Timings `pf_*`/`gt_ms`) und `ping` fällt seit 2026-10-18 auch serverseitig weg. `token_auth`, `cip`, `cid`, `uid`, `cdt`, `ua`,
   `country`/`region`/`city`/`lat`/`long`, `idsite`, `rec`, `new_visit`, `lang` und `_*` setzt nie der Browser.
 - Body höchstens 16 KB (gezählt gelesen), 120 Treffer pro IP und Minute (im Speicher), `/stat` und `/stat.js`
   laufen nicht durch den Proxy (kein Puffern, kein CSP-Kopf nötig); `proxyClientMaxBodySize` 1 MB.
