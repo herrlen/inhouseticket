@@ -55,7 +55,9 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The suite needed 27–29 min before the onboarding wizard; every new workspace now clicks
+    # through six steps. 30 min cut off a green run (2026-10-18).
+    timeout-minutes: 45
     services:
       postgres:
         image: postgres:16-alpine
