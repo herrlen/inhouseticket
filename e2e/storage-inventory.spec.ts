@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
-import { confirmRegistration, linkFromMail, REGISTER_LINK, submitRegistration, uniqueDomain } from "./helpers/auth";
+import { completeOwnerWizard, confirmRegistration, linkFromMail, ONBOARDING_URL, REGISTER_LINK, submitRegistration, uniqueDomain } from "./helpers/auth";
 import { waitForHydration } from "./helpers/hydration";
 
 // Inventory of everything the site stores on or reads from the device, with Matomo switched on
@@ -111,12 +111,12 @@ test("signed in: onboarding, app pages, settings and OAuth consent store nothing
   const since = new Date(Date.now() - 1000);
   await submitRegistration(page, { name: "Ina Inventar", email });
   await confirmRegistration(page, await linkFromMail(email, REGISTER_LINK, since));
-  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page).toHaveURL(ONBOARDING_URL);
   await snapshot(page, inv);
-  await page.getByRole("textbox", { name: "Name des Workspace" }).fill("Inventar GmbH");
-  await page.getByRole("button", { name: "Workspace anlegen" }).click();
-  await expect(page.getByRole("heading", { name: "Willkommen bei Inventar GmbH" })).toBeVisible();
-  const ws = new URL(page.url()).pathname;
+  // The wizard keeps its state on the server (user_pref.onboarding_step), never in the browser.
+  await completeOwnerWizard(page, "Inventar GmbH");
+  await snapshot(page, inv);
+  const ws = `/${new URL(page.url()).pathname.split("/")[1]}`;
 
   for (const path of [
     ws,

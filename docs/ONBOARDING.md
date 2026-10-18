@@ -147,15 +147,15 @@ Abhängigkeiten: Profil/Workspace/Einladen brauchen Sprint 1, Vorlagen brauchen 
 - [x] P2 Schritt 5 Zwei kurze Fragen + Tabelle `onboarding_answer`
 - [x] P2 Fortsetzbarkeit (`onboarding_step`), Redirect-Guard: nicht onboardete User → `/onboarding`
 - [x] P2 Beitretende-Flow (Profil + Ansicht)
-- [ ] Tests: Unit (Name-Parser, Paste-Parser, Domain→Name), E2E Owner-Happy-Path, E2E Beitritt
+- [x] Tests: Unit (Name-Parser, Paste-Parser, Domain→Name), E2E Owner-Happy-Path, E2E Beitritt
 
 ### Phase C – nach Sprint 4/5 (Vorlagen + Ansicht)
-- [ ] P1 Schritt 3 Team-Bereich + `templates.ts`
-- [ ] P1 Anlage in **einer Transaktion**: Projekt, Status, Labels, Tutorial-Tickets inkl. Unteraufgaben
-- [ ] P1 Schritt 4 Startansicht → `user_pref.default_view`, Projektlink öffnet diese Ansicht
-- [ ] P2 Banner „Einrichtung fertigstellen“ bei abgebrochenem Wizard
+- [x] P1 Schritt 3 Team-Bereich + `templates.ts`
+- [x] P1 Anlage in **einer Transaktion**: Projekt, Status, Labels, Tutorial-Tickets inkl. Unteraufgaben
+- [x] P1 Schritt 4 Startansicht → `user_pref.default_view`, Projektlink öffnet diese Ansicht
+- [x] P2 Banner „Einrichtung fertigstellen“ bei abgebrochenem Wizard
 - [ ] P2 Listen-Ergänzungen aus Abschnitt 4
-- [ ] Tests: jede Vorlage erzeugt gültige Daten (Limits, max. 5 Unteraufgaben), E2E Board/Liste-Wahl
+- [x] Tests: jede Vorlage erzeugt gültige Daten (Limits, max. 5 Unteraufgaben), E2E Board/Liste-Wahl
 
 ### SPRINTPLANNING-Änderungen
 - Sprint 1: „P2 Onboarding-Flow …“ ersetzen durch Phase B (siehe oben)

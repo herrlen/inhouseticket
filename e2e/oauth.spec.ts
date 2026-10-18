@@ -84,7 +84,7 @@ test("claude.ai connector: discovery, registration, consent, MCP call, refresh, 
 
   const call = await rpc(api, tokens.access_token, "inhouseticket_list_projects");
   expect(call.status()).toBe(200);
-  expect((await call.json()).result.structuredContent.projects).toEqual([{ key: "MKT", name: "Marketing", open_tickets: 3 }]);
+  expect((await call.json()).result.structuredContent.projects).toEqual([{ key: "MKT", name: "Marketing", open_tickets: 5 }]);
 
   const refreshed = await token(api, as.token_endpoint, { grant_type: "refresh_token", refresh_token: tokens.refresh_token!, client_id: clientId, resource });
   expect((await rpc(api, refreshed.access_token, "inhouseticket_list_members")).status()).toBe(200);

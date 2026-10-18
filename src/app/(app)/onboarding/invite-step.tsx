@@ -70,7 +70,6 @@ export function InviteStep({ data, set, errors, props }: StepProps) {
         }}
         onKeyDown={onKeyDown}
         onPaste={onPaste}
-        onBlur={() => data.draft.trim() && set(commitDraft(data, props))}
         type="text"
         inputMode="email"
         autoComplete="off"

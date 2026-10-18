@@ -69,3 +69,16 @@ und Token-Speicherung ohne Befund, `pnpm audit` ohne hohe Befunde. Alle Befunde 
 Offen (Len):
 - `MATOMO_TOKEN` live prüfen: eigener Benutzer, nur Recht „Schreiben“ auf die inhouseticket-Site, kein Superuser.
 - Neue offizielle Claude-Hosts bei Bedarf in `KNOWN_REDIRECT_HOSTS` nachtragen (`src/lib/oauth-client-trust.ts`).
+
+## Nachtrag 2026-10-18: Onboarding-Wizard (ADR 006)
+
+- Jede Schritt-Action prüft selbst: vor dem Workspace nur `requireUser()`, danach `requireRole({ workspaceId }, "owner")`
+  (Owner-Schritte, nur solange `onboarding_completed_at` leer ist) bzw. `requireMember()` (Startansicht der
+  Beitretenden). Die `workspaceId` aus dem Browser wird nie ungeprüft verwendet; Nicht-Mitglieder bekommen 404.
+- Der Name wird serverseitig über `auth.api.updateUser` gesetzt (Zod: 1–100 Zeichen, keine Steuerzeichen); der
+  HTTP-Endpunkt `/api/auth/update-user` bleibt abgeschaltet.
+- Einladungen aus Schritt 6: dieselben Regeln wie die Chips im Browser serverseitig erneut (Freemail/ungültig →
+  Ablehnung), gemeinsames Mail-Budget `takeInviteMails()`, Platzlimit 100 inkl. offener Einladungen in derselben
+  Transaktion wie der Abschluss (alles oder nichts).
+- `onboarding_answer`: CHECK-Constraints aus denselben Konstanten wie die Zod-Enums, Freitext max. 100 Zeichen, nur
+  bei „Andere“; `ON DELETE CASCADE` an Workspace und Person. Kein Wizard-Zustand im Browser-Speicher.

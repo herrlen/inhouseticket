@@ -34,7 +34,7 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [x] P2 Schritt 5 Zwei kurze Fragen + Tabelle `onboarding_answer`
 - [x] P2 Fortsetzbarkeit (`onboarding_step`), Redirect-Guard: nicht onboardete User → `/onboarding`
 - [x] P2 Beitretende-Flow (Profil + Ansicht)
-- [ ] Tests: Unit (Name-Parser, Paste-Parser, Domain→Name), E2E Owner-Happy-Path, E2E Beitritt
+- [x] Tests: Unit (Name-Parser, Paste-Parser, Domain→Name), E2E Owner-Happy-Path, E2E Beitritt
 
 ## Sprint 2 – App-Shell & Explorer
 **Ziel:** Navigation steht, Projekte anlegbar.
@@ -91,12 +91,12 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [x] P2 Kommentare mit @Erwähnung
 - [x] P2 Leichtes Markdown in Beschreibung/Kommentaren
 - Onboarding-Wizard Phase C (`docs/ONBOARDING.md`) – Vorlagen + Startansicht:
-  - [ ] P1 Schritt 3 Team-Bereich + `src/lib/onboarding/templates.ts`
-  - [ ] P1 Anlage in **einer Transaktion**: Projekt, Status, Labels, Tutorial-Tickets inkl. Unteraufgaben
-  - [ ] P1 Schritt 4 Startansicht → `user_pref.default_view`, Projektlink öffnet diese Ansicht
-  - [ ] P2 Banner „Einrichtung fertigstellen“ bei abgebrochenem Wizard
+  - [x] P1 Schritt 3 Team-Bereich + `src/lib/onboarding/templates.ts`
+  - [x] P1 Anlage in **einer Transaktion**: Projekt, Status, Labels, Tutorial-Tickets inkl. Unteraufgaben
+  - [x] P1 Schritt 4 Startansicht → `user_pref.default_view`, Projektlink öffnet diese Ansicht
+  - [x] P2 Banner „Einrichtung fertigstellen“ bei abgebrochenem Wizard
   - [ ] P2 Listen-Ergänzungen (Sprint 3, `docs/ONBOARDING.md` Abschnitt 4)
-  - [ ] Tests: jede Vorlage erzeugt gültige Daten (Limits, max. 5 Unteraufgaben), E2E Board/Liste-Wahl
+  - [x] Tests: jede Vorlage erzeugt gültige Daten (Limits, max. 5 Unteraufgaben), E2E Board/Liste-Wahl
 
 ## Sprint 6 – Speed-Features & Meine Aufgaben
 **Ziel:** Power-User lieben es.

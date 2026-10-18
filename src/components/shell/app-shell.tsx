@@ -18,7 +18,7 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { useLocale, useT } from "@/lib/i18n/client";
 import { PrefsProvider } from "./prefs-context";
 import { QueryProvider } from "./query-provider";
-import { ShellProvider, useShell, type ShellInfo } from "./shell-context";
+import { projectHref, ShellProvider, useShell, type ShellInfo } from "./shell-context";
 
 type Props = {
   shell: ShellInfo;
@@ -248,7 +248,7 @@ function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: 
 }
 
 function CollapsedProjects({ explorer }: { explorer: ExplorerData }) {
-  const { slug } = useShell();
+  const shell = useShell();
   const pathname = usePathname();
   const ordered = [
     ...explorer.favorites.map((id) => explorer.projects.find((p) => p.id === id)).filter(Boolean),
@@ -257,12 +257,12 @@ function CollapsedProjects({ explorer }: { explorer: ExplorerData }) {
   return (
     <ul className="flex flex-col items-center gap-1">
       {ordered.map((p) => {
-        const href = `/${slug}/p/${p.key}`;
+        const href = `/${shell.slug}/p/${p.key}`;
         return (
           <li key={p.id}>
             <Tooltip content={p.name} side="bottom">
               <Link
-                href={href}
+                href={projectHref(shell, p.key)}
                 aria-label={p.name}
                 aria-current={pathname.startsWith(href) ? "page" : undefined}
                 className={cn("flex size-10 items-center justify-center rounded-[var(--radius-badge)] hover:bg-bg", pathname.startsWith(href) && "bg-bg")}

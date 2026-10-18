@@ -64,7 +64,7 @@ test("connect Claude: token, tools, writes show up 'via Claude', revoke", async 
   ]);
 
   const projects = await call(api, token, "inhouseticket_list_projects");
-  expect(projects.structuredContent?.projects).toEqual([{ key: "MKT", name: "Marketing", open_tickets: 3 }]);
+  expect(projects.structuredContent?.projects).toEqual([{ key: "MKT", name: "Marketing", open_tickets: 5 }]);
 
   const created = await call(api, token, "inhouseticket_create_ticket", {
     project_key: "mkt",
@@ -76,33 +76,34 @@ test("connect Claude: token, tools, writes show up 'via Claude', revoke", async 
     subtasks: ["Zielgruppe", "Kanäle"],
   });
   expect(created.isError).toBeFalsy();
-  expect(created.structuredContent?.key).toBe("MKT-4");
+  expect(created.structuredContent?.key).toBe("MKT-6");
 
-  const updated = await call(api, token, "inhouseticket_update_ticket", { key: "MKT-4", status: "in arbeit" });
+  const updated = await call(api, token, "inhouseticket_update_ticket", { key: "MKT-6", status: "in arbeit" });
   expect(updated.content[0]?.text).toContain("In Arbeit");
-  await call(api, token, "inhouseticket_toggle_subtask", { key: "MKT-4", subtask: 2, done: true });
-  await call(api, token, "inhouseticket_add_comment", { key: "MKT-4", body: "Freigabe ist da." });
+  await call(api, token, "inhouseticket_toggle_subtask", { key: "MKT-6", subtask: 2, done: true });
+  await call(api, token, "inhouseticket_add_comment", { key: "MKT-6", body: "Freigabe ist da." });
 
-  const detail = await call(api, token, "inhouseticket_get_ticket", { key: "mkt-4" });
-  expect(detail.structuredContent).toMatchObject({ key: "MKT-4", status: "In Arbeit", priority: "hoch", assignee: "Lea", due_date: "2030-10-10" });
+  const detail = await call(api, token, "inhouseticket_get_ticket", { key: "mkt-6" });
+  expect(detail.structuredContent).toMatchObject({ key: "MKT-6", status: "In Arbeit", priority: "hoch", assignee: "Lea", due_date: "2030-10-10" });
   expect(detail.content[0]?.text).toContain("2. [x] Kanäle");
   expect(detail.content[0]?.text).toContain("Freigabe ist da.");
 
+  // Lea's own: the new ticket and the onboarding's "Drück C …" tutorial ticket (Hoch).
   const search = await call(api, token, "inhouseticket_search_tickets", { assignee: "me" });
-  expect(search.structuredContent).toMatchObject({ total: 1, has_more: false });
+  expect(search.structuredContent).toMatchObject({ total: 2, has_more: false });
 
   const workload = await call(api, token, "inhouseticket_get_workload");
-  expect(workload.structuredContent?.people).toEqual([expect.objectContaining({ name: "Lea", open: 1, points: 3 })]);
+  expect(workload.structuredContent?.people).toEqual([expect.objectContaining({ name: "Lea", open: 2, points: 6 })]);
 
   // Actionable errors instead of exceptions.
-  const missing = await call(api, token, "inhouseticket_update_ticket", { key: "MKT-4", status: "Gibt es nicht" });
+  const missing = await call(api, token, "inhouseticket_update_ticket", { key: "MKT-6", status: "Gibt es nicht" });
   expect(missing.isError).toBe(true);
   expect(missing.content[0]?.text).toMatch(/Offen.*In Arbeit.*Review.*Erledigt/);
   const tooMany = await call(api, token, "inhouseticket_create_ticket", { project_key: "MKT", title: "x", subtasks: ["1", "2", "3", "4", "5", "6"] });
   expect(tooMany.isError).toBe(true);
 
   // The web app shows the change "via Claude".
-  await page.goto(`${path}/p/MKT?t=MKT-4`);
+  await page.goto(`${path}/p/MKT?t=MKT-6`);
   await page.getByRole("dialog").getByRole("tab", { name: "Aktivität" }).click();
   await expect(page.getByRole("dialog").getByText("(via Claude)").first()).toBeVisible();
 
@@ -136,7 +137,7 @@ test("MCP endpoint rejects missing, unknown and foreign tokens", async ({ browse
   expect(foreign.structuredContent?.total).toBe(0);
   const own = await call(api, tokenA, "inhouseticket_search_tickets", { query: "Geheim" });
   expect(own.structuredContent?.total).toBe(1);
-  const cross = await call(api, tokenB, "inhouseticket_get_ticket", { key: "MKT-4" });
+  const cross = await call(api, tokenB, "inhouseticket_get_ticket", { key: "MKT-6" });
   expect(cross.isError).toBe(true);
 });
 

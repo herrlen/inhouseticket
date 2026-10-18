@@ -73,7 +73,7 @@ test("projects can be reordered with the keyboard", async ({ page }) => {
   await createWorkspace(page, `kim@${uniqueDomain("dnd")}`, "Dnd AG");
   await newProject(page, "Zweites", { key: "ZWO" });
   const links = () => sidebar(page).locator("section[aria-labelledby='projects-heading'] a").allInnerTexts();
-  await expect.poll(links).toEqual(["📣\nMarketing\n3", "Zweites"]);
+  await expect.poll(links).toEqual(["📣\nMarketing\n5", "Zweites"]);
 
   const handle = sidebar(page).getByRole("button", { name: "Zweites verschieben" });
   await handle.focus();
@@ -83,9 +83,9 @@ test("projects can be reordered with the keyboard", async ({ page }) => {
   await page.keyboard.press("ArrowUp");
   await page.waitForTimeout(200);
   await Promise.all([saved(page, "projectId"), page.keyboard.press("Space")]);
-  await expect.poll(links).toEqual(["Zweites", "📣\nMarketing\n3"]);
+  await expect.poll(links).toEqual(["Zweites", "📣\nMarketing\n5"]);
   await page.reload();
-  await expect.poll(links).toEqual(["Zweites", "📣\nMarketing\n3"]);
+  await expect.poll(links).toEqual(["Zweites", "📣\nMarketing\n5"]);
 });
 
 test("project settings: rename, statuses, archive with undo", async ({ page }) => {
@@ -106,11 +106,11 @@ test("project settings: rename, statuses, archive with undo", async ({ page }) =
   const names = await rows.getByRole("textbox", { name: "Name des Status" }).evaluateAll((els) => els.map((e) => (e as HTMLInputElement).value));
   expect(names).toEqual(["Offen", "In Arbeit", "Review", "Wartet", "Erledigt"]);
 
-  // "Offen" holds the 3 example tickets → deleting moves them.
+  // "Offen" holds the 5 tutorial tickets → deleting moves them.
   await statuses.getByRole("combobox", { name: "Tickets verschieben nach" }).first().selectOption({ label: "In Arbeit" });
   await statuses.getByRole("button", { name: "Status Offen löschen" }).click();
   await expect(rows).toHaveCount(4);
-  await expect(rows.first().getByText("3 Tickets")).toBeVisible();
+  await expect(rows.first().getByText("5 Tickets")).toBeVisible();
 
   // The last "done" status cannot be deleted.
   await statuses.getByRole("button", { name: "Status Erledigt löschen" }).click();

@@ -1,11 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createWorkspace, INVITE_LINK, linkFromMail, signIn, uniqueDomain } from "./helpers/auth";
+import { completeJoinerWizard, createWorkspace, INVITE_LINK, linkFromMail, signIn, uniqueDomain } from "./helpers/auth";
 
 async function acceptInvite(page: Page, email: string, since: Date) {
   const invite = await linkFromMail(email, INVITE_LINK, since);
   await signIn(page, email, new URL(invite).pathname);
   await page.getByRole("button", { name: "Annehmen" }).click();
-  await expect(page.getByRole("heading", { name: /^Willkommen bei/ })).toBeVisible();
+  await completeJoinerWizard(page);
+  await expect(page.getByRole("heading", { name: "Meine Aufgaben" })).toBeVisible();
 }
 
 test("owner manages members: invite, role change, removal", async ({ browser }) => {
@@ -61,7 +62,8 @@ test("with auto-join enabled, colleagues of the same domain can join", async ({ 
   const colleague = await browser.newPage();
   await signIn(colleague, `kollegin@${domain}`);
   await colleague.getByRole("button", { name: "Beitreten" }).click();
-  await expect(colleague).toHaveURL(new RegExp(`${path}$`));
+  await completeJoinerWizard(colleague);
+  await expect(colleague).toHaveURL(new RegExp(`${path}/me$`));
 });
 
 test("invitation link for someone else is refused", async ({ browser }) => {

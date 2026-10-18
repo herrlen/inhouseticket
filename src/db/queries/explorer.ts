@@ -14,9 +14,10 @@ export type ExplorerProject = {
   sort: string;
   openCount: number;
 };
-export type Prefs = { sidebarCollapsed: boolean; expandedFolders: string[]; favorites: string[]; theme: "system" | "light" | "dark"; confetti: boolean };
+export type Prefs = { sidebarCollapsed: boolean; expandedFolders: string[]; favorites: string[]; theme: "system" | "light" | "dark"; confetti: boolean; defaultView: "list" | "board" };
 
-export const DEFAULT_PREFS: Prefs = { sidebarCollapsed: false, expandedFolders: [], favorites: [], theme: "system", confetti: true };
+// Without a stored choice project links open the list, as before the wizard (ADR 006).
+export const DEFAULT_PREFS: Prefs = { sidebarCollapsed: false, expandedFolders: [], favorites: [], theme: "system", confetti: true, defaultView: "list" };
 
 export async function getExplorer(workspaceId: string, userId: string) {
   const [folders, projects, prefs] = await Promise.all([
@@ -56,11 +57,12 @@ export async function getPrefs(workspaceId: string, userId: string): Promise<Pre
       favorites: userPref.favorites,
       theme: userPref.theme,
       confetti: userPref.confetti,
+      defaultView: userPref.defaultView,
     })
     .from(userPref)
     .where(and(eq(userPref.workspaceId, workspaceId), eq(userPref.userId, userId)))
     .limit(1);
-  return row ?? DEFAULT_PREFS;
+  return row ? { ...row, defaultView: row.defaultView === "board" ? "board" : "list" } : DEFAULT_PREFS;
 }
 
 export async function updatePrefs(workspaceId: string, userId: string, patch: Partial<Prefs>) {

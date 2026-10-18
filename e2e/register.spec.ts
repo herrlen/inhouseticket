@@ -1,8 +1,10 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import {
+  completeJoinerWizard,
   confirmRegistration,
   createWorkspace,
+  ONBOARDING_URL,
   E2E_PASSWORD,
   INVITE_LINK,
   linkFromMail,
@@ -88,14 +90,14 @@ test("register by keyboard, confirm with wrong then right password, land in onbo
 
   await field.fill(E2E_PASSWORD);
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page).toHaveURL(ONBOARDING_URL);
 
   // The link works once; the account signs in with the registration password.
   await context.clearCookies();
   await page.goto(link);
   await expect(page.getByText("Dieser Link ist abgelaufen oder wurde schon benutzt.", { exact: false })).toBeVisible();
   await signInWithPassword(page, email);
-  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page).toHaveURL(ONBOARDING_URL);
 });
 
 test("an existing account gets the same screen and an 'already registered' mail", async ({ page, browser }) => {
@@ -182,5 +184,8 @@ test("an invited person registers and continues to the invitation", async ({ bro
   await confirmRegistration(guest, await linkFromMail(`neu@${domain}`, REGISTER_LINK, since2));
   await expect(guest.getByRole("heading", { name: "Einladung zu Einlader AG" })).toBeVisible();
   await guest.getByRole("button", { name: "Annehmen" }).click();
-  await expect(guest).toHaveURL(new RegExp(`${path}$`));
+  // The registration name is pre-filled in the joiner wizard.
+  await expect(guest.getByRole("textbox", { name: "Dein Name" })).toHaveValue("Neu Hier");
+  await completeJoinerWizard(guest);
+  await expect(guest).toHaveURL(new RegExp(`${path}/me$`));
 });

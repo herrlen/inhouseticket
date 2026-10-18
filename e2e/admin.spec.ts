@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createWorkspace, signIn, uniqueDomain } from "./helpers/auth";
+import { completeOwnerWizard, createWorkspace, signIn, uniqueDomain } from "./helpers/auth";
 
 // Platform operator (SUPERADMIN_EMAILS in .env / CI): freemail exception, personal workspace, /admin.
 const OPERATOR = "e2e-operator@gmail.com";
@@ -8,10 +8,14 @@ async function signInOperator(page: Page) {
   await signIn(page, OPERATOR);
   // /start only redirects onward (to onboarding or the workspace); don't mistake it for a slug.
   await page.waitForURL((url) => /^\/(onboarding|[a-z0-9-]+)$/.test(url.pathname) && url.pathname !== "/start");
-  if (page.url().endsWith("/onboarding")) {
+  if (new URL(page.url()).pathname === "/onboarding") {
+    await page.getByRole("button", { name: "Weiter" }).click();
     await expect(page.getByText(/Persönlicher Workspace/)).toBeVisible();
-    await page.getByRole("textbox", { name: "Name des Workspace" }).fill("Operator");
-    await page.getByRole("button", { name: "Workspace anlegen" }).click();
+    // No company domain → no auto-join switch.
+    await expect(page.getByRole("checkbox", { name: /dürfen beitreten/ })).toHaveCount(0);
+    await page.getByRole("button", { name: "Zurück" }).click();
+    await completeOwnerWizard(page, "Operator");
+    await page.goto(`/${new URL(page.url()).pathname.split("/")[1]}`);
     await expect(page.getByRole("heading", { name: "Willkommen bei Operator" })).toBeVisible();
   }
 }
@@ -51,8 +55,8 @@ test("/admin: metrics only, lock and delete a workspace; hidden from everyone el
   const row = page.getByRole("row", { name: new RegExp(`/${slug}`) });
   await expect(row).toContainText("Kunde GmbH");
   await expect(row).toContainText(`kai@`);
-  await expect(row).toContainText("3 (3)"); // example tickets, counts only
-  await expect(page.getByText("Newsletter für nächsten Monat planen")).toHaveCount(0); // no ticket content
+  await expect(row).toContainText("5 (5)"); // tutorial tickets, counts only
+  await expect(page.getByText("Newsletter November planen")).toHaveCount(0); // no ticket content
 
   // Lock → the customer is shut out, unlock → back in.
   await row.getByRole("button", { name: "Kunde GmbH sperren" }).click();

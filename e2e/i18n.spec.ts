@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { linkFromMail, MAGIC_LINK, openMagicLink, uniqueDomain } from "./helpers/auth";
+import { linkFromMail, MAGIC_LINK, ONBOARDING_URL, openMagicLink, uniqueDomain } from "./helpers/auth";
 import { waitForHydration } from "./helpers/hydration";
 
 test("landing page switches to English and back, by keyboard", async ({ page }) => {
@@ -48,14 +48,26 @@ test("the app works in English", async ({ page, context }) => {
   await page.getByLabel("Repeat password").fill("english-password-1");
   await page.getByRole("button", { name: "Save password and continue" }).click();
 
-  await expect(page).toHaveURL(/\/onboarding$/);
+  // The onboarding wizard in English (no German string on the way).
+  await expect(page).toHaveURL(ONBOARDING_URL);
+  await expect(page.getByRole("heading", { name: "Welcome! What's your name?" })).toBeVisible();
+  await expect(page.getByText("Step 1 of 6")).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
   await page.getByRole("textbox", { name: "Workspace name" }).fill("English Ltd");
-  await page.getByRole("button", { name: "Create workspace" }).click();
-  await expect(page.getByRole("heading", { name: "Welcome to English Ltd" })).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("radio", { name: "Marketing" }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByRole("radio", { name: /^List/ }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.getByRole("heading", { name: "Two quick questions" })).toBeVisible();
+  await page.getByRole("button", { name: "Skip" }).click();
+  await expect(page.getByRole("heading", { name: "Invite your team" })).toBeVisible();
+  await page.getByRole("button", { name: "Skip" }).click();
+  await expect(page).toHaveURL(/\/p\/MKT$/);
 
-  // Sample project and default statuses are created in English.
-  await page.getByRole("link", { name: /Marketing/ }).first().click();
-  await expect(page.getByText("Plan next month's newsletter")).toBeVisible();
+  // Template project, statuses and tutorial tickets are created in English.
+  await expect(page.getByText("Press C – and create your first own ticket")).toBeVisible();
+  await expect(page.getByText("Plan the November newsletter")).toBeVisible();
   await expect(page.getByRole("button", { name: /^Status of MKT-1: Open/ })).toBeVisible();
 
   const quickAdd = page.getByRole("textbox", { name: "New ticket – type a title and press Enter" });

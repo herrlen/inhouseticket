@@ -8,7 +8,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import type { Messages } from "@/lib/i18n/de";
-import { useShell } from "./shell-context";
+import { projectHref, useShell } from "./shell-context";
 
 type Item = { id: string; group: "actions" | "projects" | "tickets"; label: string; hint?: string; color?: string; run: () => void };
 
@@ -38,7 +38,7 @@ export function CommandPalette({
 
 function PaletteBody({ explorer, onClose, onToggleSidebar, onShowHelp }: { explorer: ExplorerData; onClose: () => void; onToggleSidebar: () => void; onShowHelp: () => void }) {
   const t = useT();
-  const { slug, workspaceId, canAdmin } = useShell();
+  const { slug, workspaceId, canAdmin, defaultView } = useShell();
   const router = useRouter();
   const pathname = usePathname();
   const [q, setQ] = useState("");
@@ -94,7 +94,7 @@ function PaletteBody({ explorer, onClose, onToggleSidebar, onShowHelp }: { explo
       { id: "a-sidebar", group: "actions", label: t.command.toggleSidebar, hint: "⌘B", run: () => { onClose(); onToggleSidebar(); } },
       { id: "a-help", group: "actions", label: t.command.shortcuts, hint: "?", run: () => { onClose(); onShowHelp(); } },
     ];
-    const projects: Item[] = explorer.projects.map((p) => ({ id: `p-${p.id}`, group: "projects", label: p.name, hint: p.key, color: p.color, run: () => go(`/${slug}/p/${p.key}`) }));
+    const projects: Item[] = explorer.projects.map((p) => ({ id: `p-${p.id}`, group: "projects", label: p.name, hint: p.key, color: p.color, run: () => go(projectHref({ slug, defaultView }, p.key)) }));
     const tickets: Item[] = (q.trim().length >= 2 ? hits : []).map((h) => ({
       id: `t-${h.id}`,
       group: "tickets",
@@ -104,7 +104,7 @@ function PaletteBody({ explorer, onClose, onToggleSidebar, onShowHelp }: { explo
       run: () => go(`/${slug}/p/${h.projectKey}?t=${h.key}`),
     }));
     return [...actions.filter((a) => matches(a.label)), ...projects.filter((p) => matches(p.label) || matches(p.hint ?? "")).slice(0, 6), ...tickets];
-  }, [q, hits, explorer.projects, currentKey, slug, canAdmin, onClose, onShowHelp, onToggleSidebar, router, t]);
+  }, [q, hits, explorer.projects, currentKey, slug, defaultView, canAdmin, onClose, onShowHelp, onToggleSidebar, router, t]);
 
   const safeActive = Math.min(active, Math.max(0, items.length - 1));
   useEffect(() => {

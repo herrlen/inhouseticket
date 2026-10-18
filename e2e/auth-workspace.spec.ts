@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createWorkspace, INVITE_LINK, linkFromMail, openMagicLink, requestMagicLink, signIn, uniqueDomain } from "./helpers/auth";
+import { completeJoinerWizard, createWorkspace, INVITE_LINK, ONBOARDING_URL, linkFromMail, openMagicLink, requestMagicLink, signIn, uniqueDomain } from "./helpers/auth";
 
 test("freemail addresses are rejected with a friendly message", async ({ page }) => {
   await page.goto("/login");
@@ -8,18 +8,18 @@ test("freemail addresses are rejected with a friendly message", async ({ page })
   await expect(page.getByText(/Bitte nutze deine Firmen-E-Mail-Adresse/)).toBeVisible();
 });
 
-test("first user creates a workspace with an example project", async ({ page }) => {
+test("first user creates a workspace with the template project", async ({ page }) => {
   const domain = uniqueDomain("onboard");
   await createWorkspace(page, `lea.owner@${domain}`, "Onboard GmbH");
   await expect(page.getByRole("heading", { name: /Marketing/ })).toBeVisible();
   await expect(page.getByText("MKT-1", { exact: true })).toBeVisible();
-  await expect(page.getByText("MKT-3", { exact: true })).toBeVisible();
+  await expect(page.getByText("MKT-5", { exact: true })).toBeVisible();
 });
 
 test("a used magic link cannot be used again", async ({ page, context }) => {
   const domain = uniqueDomain("reuse");
   const link = await signIn(page, `paul@${domain}`);
-  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page).toHaveURL(ONBOARDING_URL);
   await context.clearCookies();
   // Opening the link alone (as a mail scanner does) consumes nothing; the confirm click would.
   await page.goto(link);
@@ -50,7 +50,9 @@ test("an invited colleague joins via the invitation link", async ({ browser }) =
   await colleague.getByRole("link", { name: "Anmelden und annehmen" }).click();
   await signIn(colleague, `kollege@${domain}`, new URL(invite).pathname);
   await colleague.getByRole("button", { name: "Annehmen" }).click();
-  await expect(colleague).toHaveURL(new RegExp(`${path}$`));
+  await completeJoinerWizard(colleague);
+  await expect(colleague).toHaveURL(new RegExp(`${path}/me$`));
+  await colleague.goto(path);
   await expect(colleague.getByRole("heading", { name: "Willkommen bei Invite AG" })).toBeVisible();
   // Members cannot see the admin-only members page link.
   await expect(colleague.getByRole("link", { name: "Mitglieder" })).toHaveCount(0);

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createWorkspace, INVITE_LINK, linkFromMail, signIn, uniqueDomain } from "./helpers/auth";
+import { completeJoinerWizard, createWorkspace, INVITE_LINK, linkFromMail, signIn, uniqueDomain } from "./helpers/auth";
 import { waitForHydration } from "./helpers/hydration";
 
 /** Resolves when a ticket PATCH has been answered by the server. */
@@ -33,7 +33,7 @@ test("dashboard: workload, health, due heatmap, threshold and drill-down", async
   const lea = page.getByRole("link", { name: /^Lea Becker: 7 Punkte, 2 offen, 1 überfällig – OK/ });
   await expect(lea).toBeVisible();
   await expect(page.locator("main span", { hasText: /^Überfällig$/ }).first().locator("..")).toContainText("1");
-  await expect(page.getByRole("link", { name: /^Marketing: 3 offen, 0 in Arbeit, 0 erledigt, 1 überfällig/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Marketing: 5 offen, 0 in Arbeit, 0 erledigt, 1 überfällig/ })).toBeVisible();
   await expect(page.locator(`[aria-label^="${new Intl.DateTimeFormat("de-DE", { weekday: "short", timeZone: "UTC" }).format(new Date(`${berlinDate(2)}T00:00:00Z`))}"]`).first()).toHaveAttribute("aria-label", /1 Ticket fällig/);
 
   // Table view exists for each chart.
@@ -62,7 +62,7 @@ test("inbox: assignment notifies the colleague, badge, mark read, digest switch"
   const invite = await linkFromMail(`kim@${domain}`, INVITE_LINK, since);
   await signIn(kim, `kim@${domain}`, new URL(invite).pathname);
   await kim.getByRole("button", { name: "Annehmen" }).click();
-  await expect(kim.getByRole("heading", { name: "Willkommen bei Inbox AG" })).toBeVisible();
+  await completeJoinerWizard(kim);
 
   await owner.goto(`${path}/p/MKT`);
   await waitForHydration(owner.getByRole("textbox", { name: /Neues Ticket/ }));
@@ -72,7 +72,7 @@ test("inbox: assignment notifies the colleague, badge, mark read, digest switch"
   await kim.goto(path);
   await expect(kim.getByRole("link", { name: "Inbox, 1 ungelesen" })).toBeVisible();
   await kim.getByRole("link", { name: "Inbox, 1 ungelesen" }).click();
-  const item = kim.getByRole("link", { name: /Owner hat dir MKT-2 „Social-Media-Posts für die Woche vorbereiten“ zugewiesen/ });
+  const item = kim.getByRole("link", { name: /Owner hat dir MKT-2 „Ändere meinen Status per Klick“ zugewiesen/ });
   await expect(item).toBeVisible();
   await item.click();
   await expect(kim).toHaveURL(/\?t=MKT-2$/);

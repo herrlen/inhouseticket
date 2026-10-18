@@ -67,7 +67,7 @@ test("core flow with the keyboard only: skip link, create, open, change priority
   await expect(quick).toBeFocused();
   await page.keyboard.type("Per Tastatur angelegt");
   await Promise.all([ticketSaved(page), page.keyboard.press("Enter")]);
-  const open = page.getByRole("button", { name: /^MKT-4 öffnen/ });
+  const open = page.getByRole("button", { name: /^MKT-6 öffnen/ });
   await expect(open).toBeVisible();
 
   // Open with Enter, set priority with a digit, close with Escape – focus returns to the row.
@@ -80,5 +80,5 @@ test("core flow with the keyboard only: skip link, create, open, change priority
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(open).toBeFocused();
-  await expect(page.getByRole("button", { name: "Priorität von MKT-4: Dringend" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Priorität von MKT-6: Dringend" })).toBeVisible();
 });

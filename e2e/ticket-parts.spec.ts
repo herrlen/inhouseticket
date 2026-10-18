@@ -5,10 +5,10 @@ import { png } from "./helpers/images";
 
 const detail = (page: Page) => page.getByRole("dialog");
 
-async function openTicket(page: Page, label: string, name = "Lea Becker") {
+async function openTicket(page: Page, label: string, name = "Lea Becker", key = "MKT-1") {
   const email = `${name.toLowerCase().replace(" ", ".")}@${uniqueDomain(label)}`;
   const path = await createWorkspace(page, email, `${label} GmbH`);
-  await page.goto(`${path}/p/MKT?t=MKT-1`);
+  await page.goto(`${path}/p/MKT?t=${key}`);
   await expect(detail(page).getByRole("textbox", { name: "Titel" })).toBeVisible();
   await waitForHydration(detail(page).getByRole("textbox", { name: "Titel" }));
   return path;
@@ -86,7 +86,7 @@ test("attachments are served to members only", async ({ browser }) => {
 });
 
 test("comments with @mention and Markdown; description renders Markdown", async ({ page }) => {
-  await openTicket(page, "comments");
+  await openTicket(page, "comments", undefined, "MKT-2"); // MKT-1 (tutorial) already has a description
 
   await detail(page).getByRole("button", { name: "Beschreibung hinzufügen …" }).click();
   const desc = detail(page).getByRole("textbox", { name: "Beschreibung" });

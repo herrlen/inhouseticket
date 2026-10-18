@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { SetupBanner } from "@/components/onboarding/setup-banner";
 import { AppShell } from "@/components/shell/app-shell";
 import { isSuperadminEmail } from "@/lib/superadmin";
 import { getExplorer } from "@/db/queries/explorer";
@@ -28,6 +29,7 @@ export default async function WorkspaceLayout({ children, params }: Props) {
         workspaceColor: ctx.workspace.color,
         canAdmin: hasRole(ctx, "admin"),
         isSuperadmin: isSuperadminEmail(ctx.user.email),
+        defaultView: prefs.defaultView,
       }}
       user={{ id: ctx.user.id, name: ctx.user.name, email: ctx.user.email, image: ctx.user.image }}
       explorer={{
@@ -41,6 +43,7 @@ export default async function WorkspaceLayout({ children, params }: Props) {
       initialConfetti={prefs.confetti}
       unread={unread}
     >
+      {ctx.membership.role === "owner" && !ctx.workspace.onboardingCompletedAt ? <SetupBanner /> : null}
       {children}
     </AppShell>
   );

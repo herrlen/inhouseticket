@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createWorkspace, signIn, uniqueDomain } from "./helpers/auth";
+import { createWorkspace, ONBOARDING_URL, signIn, uniqueDomain } from "./helpers/auth";
 import { waitForHydration } from "./helpers/hydration";
 
 const csv = (assignee: string) =>
@@ -123,18 +123,24 @@ test("ways in: landing section, help page, onboarding and the new workspace", as
     await expect(page.getByRole("heading", { name: `Export aus ${tool}` })).toBeVisible();
   }
 
-  // Ticking the box in onboarding continues on the import page.
+  // Onboarding: choosing an importable tool in "Zwei kurze Fragen" points to the import.
   const domain = uniqueDomain("umzug");
   await signIn(page, `ina@${domain}`);
-  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page).toHaveURL(ONBOARDING_URL);
+  await page.getByRole("button", { name: "Weiter" }).click();
   await page.getByRole("textbox", { name: "Name des Workspace" }).fill("Umzug AG");
-  await page.getByRole("checkbox", { name: /Danach Projekte aus Jira/ }).check();
-  await page.getByRole("button", { name: "Workspace anlegen" }).click();
-  await expect(page.getByRole("heading", { name: "Projekte importieren" })).toBeVisible();
-  await expect(page).toHaveURL(/\/settings\/data\/import$/);
+  await page.getByRole("button", { name: "Weiter" }).click();
+  await page.getByRole("radio", { name: "Allgemein" }).click();
+  await page.getByRole("button", { name: "Weiter" }).click();
+  await page.getByRole("button", { name: "Weiter" }).click();
+  await page.getByRole("button", { name: "ClickUp" }).click();
+  await expect(page.getByText(/Tipp: Projekte aus Jira, ClickUp, Notion und monday\.com/)).toBeVisible();
+  await page.getByRole("button", { name: "Weiter" }).click();
+  await page.getByRole("button", { name: "Überspringen" }).click();
+  await expect(page).toHaveURL(/\/p\/ALL\?view=board$/);
 
-  // The new workspace (only the example project) offers the import.
-  const path = new URL(page.url()).pathname.replace(/\/settings\/data\/import$/, "");
+  // The new workspace (only the template project) offers the import.
+  const path = `/${new URL(page.url()).pathname.split("/")[1]}`;
   await page.goto(path);
   const offer = page.getByRole("region", { name: "Projekte aus einem anderen Tool mitnehmen" });
   await offer.getByRole("link", { name: "Projekte importieren" }).click();

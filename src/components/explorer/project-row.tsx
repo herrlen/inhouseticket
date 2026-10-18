@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Dropdown, type DropdownItem } from "@/components/ui/dropdown";
 import { Grip, More } from "@/components/ui/icons";
-import { useShell } from "@/components/shell/shell-context";
+import { projectHref, useShell } from "@/components/shell/shell-context";
 import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import { SortableItem } from "./dnd-bridge";
@@ -54,7 +54,8 @@ function SortableProjectRow(props: Props) {
 
 function ProjectRowView({ project, folders, favorite, onToggleFavorite, onMoveTo, onArchive, handle }: Props & { handle?: React.ReactNode }) {
   const t = useT();
-  const { slug, canAdmin } = useShell();
+  const shell = useShell();
+  const { slug, canAdmin } = shell;
   const router = useRouter();
   const href = `/${slug}/p/${project.key}`;
   const active = usePathname().startsWith(href);
@@ -72,7 +73,7 @@ function ProjectRowView({ project, folders, favorite, onToggleFavorite, onMoveTo
   const row = (
     <div className={cn("group flex h-8 items-center gap-1 rounded-[var(--radius-badge)] pr-1 pl-1", active ? "bg-bg" : "hover:bg-bg")}>
       {handle ?? <span className="w-5 shrink-0" />}
-      <Link href={href} aria-current={active ? "page" : undefined} className="flex min-w-0 flex-1 items-center gap-2 py-1 text-[13px]">
+      <Link href={projectHref(shell, project.key)} aria-current={active ? "page" : undefined} className="flex min-w-0 flex-1 items-center gap-2 py-1 text-[13px]">
         <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
         {project.icon ? <span aria-hidden>{project.icon}</span> : null}
         <span className="truncate">{project.name}</span>

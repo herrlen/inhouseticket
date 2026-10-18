@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { listArchivedProjects, listProjectsWithTickets } from "@/db/queries/projects";
 import { hasRole, requireMember } from "@/lib/authz";
 import { getT } from "@/lib/i18n/server";
-import { PROJECT_TEMPLATES, TEMPLATE_IDS } from "@/lib/project-templates";
+import { MAX_TEMPLATE_TICKETS } from "@/lib/onboarding/templates";
 import { setProjectArchivedAction } from "./actions";
 
 type Props = { params: Promise<{ workspace: string }> };
@@ -15,8 +15,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: ctx.workspace.name };
 }
 
-// A workspace still holding at most the onboarding example counts as new: admins get the import offer.
-const EXAMPLE_TICKETS = Math.max(...TEMPLATE_IDS.map((id) => PROJECT_TEMPLATES[id].tickets.length));
+// A workspace still holding at most the onboarding project counts as new: admins get the import offer.
+const EXAMPLE_TICKETS = MAX_TEMPLATE_TICKETS;
 
 // Placeholder overview until lists and boards arrive (Sprints 2–4).
 export default async function WorkspacePage({ params }: Props) {

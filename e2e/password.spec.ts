@@ -1,7 +1,9 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import {
+  completeOwnerWizard,
   createWorkspace,
+  ONBOARDING_URL,
   E2E_PASSWORD,
   linkFromMail,
   MAGIC_LINK,
@@ -68,9 +70,9 @@ test("link sign-in without a password: set it first, no way around", async ({ pa
   await expect(field).toHaveAttribute("type", "text");
 
   await setPassword(page);
-  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page).toHaveURL(ONBOARDING_URL);
   await page.goto("/set-password");
-  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page).toHaveURL(ONBOARDING_URL);
 });
 
 test("password sign-in: right password gets in, wrong ones and unknown addresses get the same answer", async ({ page, browser }) => {
@@ -124,10 +126,8 @@ test("account without a password: password attempt shows the box, mails a link, 
   await openMagicLink(other, link!);
   await expect(other).toHaveURL(/\/set-password$/);
   await setPassword(other);
-  await expect(other).toHaveURL(/\/onboarding$/);
-  await other.getByRole("textbox", { name: "Name des Workspace" }).fill("Ohne Passwort KG");
-  await other.getByRole("button", { name: "Workspace anlegen" }).click();
-  await expect(other.getByRole("heading", { name: "Willkommen bei Ohne Passwort KG" })).toBeVisible();
+  await expect(other).toHaveURL(ONBOARDING_URL);
+  await completeOwnerWizard(other, "Ohne Passwort KG");
 
   // From now on the password works.
   const fresh = await (await browser.newContext()).newPage();

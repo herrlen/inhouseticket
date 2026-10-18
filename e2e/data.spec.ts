@@ -17,7 +17,8 @@ test("export as JSON and CSV, then the owner deletes the workspace", async ({ pa
   expect(data.members).toEqual([expect.objectContaining({ email: `ina@${domain}`, role: "owner" })]);
   expect(data.projects[0].key).toBe("MKT");
   expect(data.projects[0].statuses.map((s: { name: string }) => s.name)).toEqual(["Offen", "In Arbeit", "Review", "Erledigt"]);
-  expect(data.projects[0].tickets.map((t: { key: string }) => t.key)).toEqual(["MKT-1", "MKT-2", "MKT-3"]);
+  // The five tutorial tickets from the onboarding wizard.
+  expect(data.projects[0].tickets.map((t: { key: string }) => t.key)).toEqual(["MKT-1", "MKT-2", "MKT-3", "MKT-4", "MKT-5"]);
 
   const csv = await page.request.get(`/api/w/${await page.evaluate(() => document.querySelector<HTMLAnchorElement>("a[href*='format=csv']")!.href.split("/api/w/")[1]!.split("/")[0])}/export?format=csv`);
   expect(csv.headers()["content-type"]).toContain("text/csv");
@@ -39,7 +40,7 @@ test("export as JSON and CSV, then the owner deletes the workspace", async ({ pa
   await expect(page.getByText("Das Kürzel stimmt nicht – nichts gelöscht.")).toBeVisible();
   await confirm.fill(slug);
   await page.getByRole("button", { name: "Workspace endgültig löschen" }).click();
-  await expect(page).toHaveURL(/\/(start|onboarding)$/);
+  await expect(page).toHaveURL(/\/(start|onboarding(\?step=\d)?)$/);
   expect((await page.goto(path))?.status()).toBe(404);
   expect((await page.request.get(exportUrl)).status()).toBe(404);
 });

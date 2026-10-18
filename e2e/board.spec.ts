@@ -20,7 +20,7 @@ async function openBoard(page: Page, label: string) {
 test("board shows columns and moves cards with the keyboard and the mouse", async ({ page }) => {
   const path = await openBoard(page, "board");
   await expect(column(page, "Offen").getByText("MKT-1")).toBeVisible();
-  await expect(column(page, "Offen")).toContainText("3");
+  await expect(column(page, "Offen")).toContainText("5"); // the five tutorial tickets
 
   // Keyboard: Space picks up, → jumps to the next column, Space drops.
   await card(page, "MKT-1").focus();
@@ -34,14 +34,17 @@ test("board shows columns and moves cards with the keyboard and the mouse", asyn
   ]);
   await expect(column(page, "In Arbeit").getByText("MKT-1")).toBeVisible();
   await page.waitForLoadState("load");
+  // Let the keyboard drop settle (save + refetch re-render the board) before the mouse drag.
+  await expect(page.getByText("Speichert …")).toHaveCount(0);
+  await page.waitForTimeout(300);
 
   // Mouse: drag MKT-2 into "Erledigt". The board scrolls horizontally, so aim at the visible part.
   const from = await card(page, "MKT-2").boundingBox();
   const to = await column(page, "Erledigt").boundingBox();
   const viewport = page.viewportSize()!;
-  await page.mouse.move(from!.x + 20, from!.y + 20);
+  await page.mouse.move(from!.x + from!.width / 2, from!.y + from!.height / 2);
   await page.mouse.down();
-  await page.mouse.move(from!.x + 40, from!.y + 30, { steps: 5 });
+  await page.mouse.move(from!.x + from!.width / 2 + 20, from!.y + from!.height / 2 + 10, { steps: 5 });
   await page.mouse.move(Math.min(to!.x + 40, viewport.width - 10), to!.y + 120, { steps: 15 });
   await Promise.all([
     page.waitForResponse((r) => r.request().method() === "PATCH" && /\/api\/w\/[^/]+\/tickets\/[^/]+$/.test(r.url())),
@@ -53,7 +56,7 @@ test("board shows columns and moves cards with the keyboard and the mouse", asyn
   await page.reload();
   await expect(column(page, "In Arbeit").getByText("MKT-1")).toBeVisible();
   await expect(column(page, "Erledigt").getByText("MKT-2")).toBeVisible();
-  await expect(page.getByRole("link", { name: /Marketing 2 offen/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Marketing 4 offen/ })).toBeVisible();
   expect(path).toBeTruthy();
 });
 
@@ -63,14 +66,14 @@ test("quick add in a column, Enter opens the detail, L returns to the list", asy
   const input = page.getByRole("textbox", { name: "Neues Ticket in Review" });
   await input.fill("Freigabe Kampagne einholen");
   await input.press("Enter");
-  await expect(column(page, "Review").getByText("MKT-4")).toBeVisible();
+  await expect(column(page, "Review").getByText("MKT-6")).toBeVisible();
 
-  await card(page, "MKT-4").focus();
+  await card(page, "MKT-6").focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("dialog").getByRole("textbox", { name: "Titel" })).toHaveValue("Freigabe Kampagne einholen");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
-  await expect(card(page, "MKT-4")).toBeFocused();
+  await expect(card(page, "MKT-6")).toBeFocused();
 
   await page.keyboard.press("l");
   await expect(page).not.toHaveURL(/view=board/);
@@ -87,7 +90,7 @@ test("WIP limit warns when exceeded; confetti can be switched off", async ({ pag
   await expect(offenRow.getByText("Gespeichert.")).toBeVisible();
 
   await page.goto(`${path}/p/MKT?view=board`);
-  await expect(column(page, "Offen")).toContainText("3/2");
+  await expect(column(page, "Offen")).toContainText("5/2");
   await expect(column(page, "Offen").getByRole("status")).toHaveText("WIP-Limit von 2 überschritten");
 
   await page.getByRole("button", { name: /^Konto von/ }).click();

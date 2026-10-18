@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { confirmRegistration, linkFromMail, REGISTER_LINK, submitRegistration, uniqueDomain } from "./helpers/auth";
+import { completeOwnerWizard, confirmRegistration, linkFromMail, REGISTER_LINK, submitRegistration, uniqueDomain } from "./helpers/auth";
 import { waitForHydration } from "./helpers/hydration";
 
 // Matomo is switched on for the e2e dev server (playwright.config.ts). Every request the tracker
@@ -55,18 +55,24 @@ test("app: page views on route changes without duplicates, events without person
   const since = new Date(Date.now() - 1000);
   await submitRegistration(page, { name: "Kim Analytics", email });
   await confirmRegistration(page, await linkFromMail(email, REGISTER_LINK, since));
-  await expect(page).toHaveURL(/\/onboarding$/);
-  await page.getByRole("textbox", { name: "Name des Workspace" }).fill("Statistik GmbH");
-  await page.getByRole("button", { name: "Workspace anlegen" }).click();
-  await expect(page.getByRole("heading", { name: "Willkommen bei Statistik GmbH" })).toBeVisible();
-  const ws = new URL(page.url()).pathname;
+  await completeOwnerWizard(page, "Statistik GmbH");
+  const ws = `/${new URL(page.url()).pathname.split("/")[1]}`;
   await expect.poll(() => events(hits)).toContain("Account/Signup completed");
+  // Wizard steps and the end: only step keys and the team area, nothing personal.
+  await expect.poll(() => events(hits)).toContain("Onboarding/Completed/marketing");
+  for (const step of ["profile", "workspace", "team", "view", "questions", "invite"]) expect(events(hits)).toContain(`Onboarding/Step completed/${step}`);
+  expect(pageViews(hits).filter((h) => h.url?.endsWith("/onboarding")).map((h) => h.action_name)).toEqual(["localhost/Onboarding"]);
+
+  // The wizard ends in the project list – wait for that view before counting.
+  await expect.poll(() => pageViews(hits).at(-1)?.action_name).toBe("localhost/Liste");
+  const beforeSearch = pageViews(hits).length;
 
   // Search terms never leave the browser: the page view carries the bare pattern.
   await page.goto(`${ws}/p/MKT?q=geheim`);
   const quickAdd = page.getByRole("textbox", { name: /Neues Ticket/ });
   await waitForHydration(quickAdd);
-  await expect.poll(() => pageViews(hits).at(-1)?.action_name).toBe("localhost/Liste");
+  await expect.poll(() => pageViews(hits).length).toBe(beforeSearch + 1);
+  expect(pageViews(hits).at(-1)?.action_name).toBe("localhost/Liste");
   expect(pageViews(hits).at(-1)?.url).toBe("http://localhost:3100/:id/p/:id");
 
   const loaded = pageViews(hits).length;

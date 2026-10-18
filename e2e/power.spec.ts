@@ -22,11 +22,11 @@ test("command palette: search tickets by text and key, run actions", async ({ pa
     await expect(page.getByRole("combobox", { name: "Suchen oder Befehl eingeben" })).toBeVisible({ timeout: 500 });
   }).toPass();
   const input = page.getByRole("combobox", { name: "Suchen oder Befehl eingeben" });
-  await input.fill("landing");
-  await expect(page.getByRole("option", { name: /Landingpage-Texte prüfen/ })).toBeVisible();
+  await input.fill("newsletter");
+  await expect(page.getByRole("option", { name: /Newsletter November planen/ })).toBeVisible();
   await input.press("Enter");
-  await expect(page).toHaveURL(/\?t=MKT-3$/);
-  await expect(page.getByRole("dialog").getByRole("textbox", { name: "Titel" })).toHaveValue("Landingpage-Texte prüfen");
+  await expect(page).toHaveURL(/\?t=MKT-5$/);
+  await expect(page.getByRole("dialog").getByRole("textbox", { name: "Titel" })).toHaveValue("Newsletter November planen");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toBeHidden();
 
@@ -34,7 +34,7 @@ test("command palette: search tickets by text and key, run actions", async ({ pa
   await page.locator("main").click({ position: { x: 5, y: 5 } });
   await page.keyboard.press("/");
   await input.fill("mkt-2");
-  await expect(page.getByRole("option", { name: /Social-Media-Posts/ })).toBeVisible();
+  await expect(page.getByRole("option", { name: /Ändere meinen Status per Klick/ })).toBeVisible();
   await input.fill("meine auf");
   await page.getByRole("option", { name: /Meine Aufgaben/ }).click();
   await expect(page).toHaveURL(/\/me$/);
@@ -53,11 +53,11 @@ test("quick add understands @person !prio ^date", async ({ page }) => {
   await expect(page.getByText("Person: Lea Becker")).toBeVisible();
   await expect(page.getByText("Priorität: Dringend")).toBeVisible();
   await quick.press("Enter");
-  const row = page.locator("tr", { has: page.getByText("MKT-4", { exact: true }) });
+  const row = page.locator("tr", { has: page.getByText("MKT-6", { exact: true }) });
   await expect(row).toContainText("Messe planen");
-  await expect(page.getByRole("button", { name: "Priorität von MKT-4: Dringend" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Zuständig für MKT-4: Lea Becker" })).toBeVisible();
-  await expect(page.getByRole("textbox", { name: "Fälligkeit von MKT-4" })).toHaveValue(berlinDate(1));
+  await expect(page.getByRole("button", { name: "Priorität von MKT-6: Dringend" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Zuständig für MKT-6: Lea Becker" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Fälligkeit von MKT-6" })).toHaveValue(berlinDate(1));
 });
 
 test("ticket shortcuts 1–4/0 and A in the detail panel", async ({ page }) => {
@@ -94,13 +94,13 @@ test("my tasks across projects, grouped by due date", async ({ page }) => {
 test("filters and saved views", async ({ page }) => {
   await openProject(page, "filters");
   const rows = page.locator("tr[data-ticket-row]");
-  await expect(rows).toHaveCount(3);
+  await expect(rows).toHaveCount(5); // the tutorial tickets
 
   await page.getByRole("button", { name: /^Priorität ▾/ }).click();
   await page.getByRole("menuitem", { name: "Hoch" }).click();
   await expect(page).toHaveURL(/priority=3/);
   await expect(rows).toHaveCount(1);
-  await expect(page.getByText("1 von 3 Tickets")).toBeVisible();
+  await expect(page.getByText("1 von 5 Tickets")).toBeVisible();
 
   await page.getByRole("button", { name: "+ Ansicht speichern" }).click();
   await page.getByRole("textbox", { name: "Name der Ansicht" }).fill("Wichtig");
@@ -108,16 +108,16 @@ test("filters and saved views", async ({ page }) => {
   await expect(page.getByText("Ansicht „Wichtig“ gespeichert.")).toBeVisible();
 
   await page.getByRole("button", { name: "Filter zurücksetzen" }).click();
-  await expect(rows).toHaveCount(3);
+  await expect(rows).toHaveCount(5);
   await page.getByRole("searchbox", { name: "Tickets filtern" }).fill("newsletter");
   await expect(rows).toHaveCount(1);
-  await expect(rows.first()).toContainText("MKT-1");
+  await expect(rows.first()).toContainText("MKT-5");
 
   await page.reload();
   await page.getByRole("button", { name: "Wichtig", exact: true }).click();
   await expect(page.getByRole("button", { name: "Wichtig", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(rows).toHaveCount(1);
-  await expect(rows.first()).toContainText("MKT-3");
+  await expect(rows.first()).toContainText("MKT-1");
 
   await page.getByRole("button", { name: "Ansicht Wichtig löschen" }).click();
   await expect(page.getByRole("button", { name: "Wichtig", exact: true })).toHaveCount(0);
