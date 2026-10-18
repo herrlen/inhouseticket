@@ -164,6 +164,12 @@ test("auth forms before hydration: no submit, and never a password in the URL", 
   await page.goto("/forgot-password");
   await expect(page.getByRole("button", { name: "Link zum Zurücksetzen senden" })).toBeDisabled();
   await expect(page.locator("form:has(input[name=email])")).toHaveAttribute("method", "post");
+  await page.goto("/register");
+  await expect(page.getByRole("button", { name: "Registrieren" })).toBeDisabled();
+  await expect(page.locator("form:has(input[name=password])")).toHaveAttribute("method", /post/i);
+  await page.getByLabel("Passwort", { exact: true }).fill("geheim-und-lang");
+  await page.getByLabel("Passwort", { exact: true }).press("Enter");
+  expect(page.url()).not.toContain("geheim");
 });
 
 test("change password in the settings ends other sessions", async ({ page, browser }) => {

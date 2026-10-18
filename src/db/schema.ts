@@ -27,7 +27,10 @@ import {
   MAX_ATTACHMENT_BYTES,
   MAX_COMMENT,
   MAX_DESCRIPTION,
+  MAX_NAME,
+  MAX_NEXT_PATH,
   MAX_PROJECT_KEY,
+  MAX_REGISTRATION_ATTEMPTS,
   MAX_TITLE,
 } from "../lib/limits";
 
@@ -116,6 +119,36 @@ export const verification = pgTable(
 // ---------------------------------------------------------------------------
 // Workspace & membership
 // ---------------------------------------------------------------------------
+
+/**
+ * Registration with name, address and password that is not confirmed yet (ADR 005). No user
+ * exists until the link in the mail is opened and the same password is entered again. One row per
+ * address – a new registration replaces the older one. Token and password only as hashes.
+ */
+export const pendingRegistration = pgTable(
+  "pending_registration",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    email: text().notNull().unique(),
+    name: text().notNull(),
+    /** Better Auth's scrypt hash, moved into the credential account on confirmation. */
+    passwordHash: text().notNull(),
+    /** SHA-256 of the link token. */
+    tokenHash: text().notNull().unique(),
+    /** Same-origin path to continue to after confirmation (invitation, connector login). */
+    next: text(),
+    failedAttempts: smallint().notNull().default(0),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index().on(t.expiresAt),
+    check("pending_registration_email_lower", sql`${t.email} = lower(${t.email})`),
+    check("pending_registration_name_len", sql`char_length(${t.name}) between 1 and ${sql.raw(String(MAX_NAME))}`),
+    check("pending_registration_next_len", sql`${t.next} is null or char_length(${t.next}) <= ${sql.raw(String(MAX_NEXT_PATH))}`),
+    check("pending_registration_attempts", sql`${t.failedAttempts} between 0 and ${sql.raw(String(MAX_REGISTRATION_ATTEMPTS))}`),
+  ],
+);
 
 export const memberRole = pgEnum("member_role", ["owner", "admin", "member"]);
 export const memberStatus = pgEnum("member_status", ["active", "invited", "disabled"]);

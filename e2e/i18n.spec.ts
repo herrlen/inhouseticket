@@ -38,7 +38,7 @@ test("the app works in English", async ({ page, context }) => {
   const since = new Date(Date.now() - 1000);
   await page.goto("/login");
   await page.getByRole("textbox", { name: "Company email" }).fill(email);
-  await page.getByRole("button", { name: "Send sign-in link by email" }).click();
+  await page.getByRole("button", { name: "Sign in without a password by link" }).click();
   await expect(page.getByRole("heading", { name: "Check your inbox" })).toBeVisible();
   await openMagicLink(page, await linkFromMail(email, MAGIC_LINK, since));
 

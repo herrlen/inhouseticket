@@ -32,13 +32,13 @@ export function useNewPasswordCheck() {
   return { local, onSubmitCheck };
 }
 
-export function NewPasswordFields({ errors, autoFocus }: { errors: PasswordErrors; autoFocus?: boolean }) {
+export function NewPasswordFields({ errors, autoFocus, label }: { errors: PasswordErrors; autoFocus?: boolean; label?: string }) {
   const t = useT();
   return (
     <>
       <PasswordInput
         name="password"
-        label={t.password.newLabel}
+        label={label ?? t.password.newLabel}
         autoComplete="new-password"
         autoFocus={autoFocus}
         maxLength={MAX_PASSWORD}

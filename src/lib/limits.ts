@@ -39,3 +39,24 @@ export const NO_PASSWORD_LINK_WINDOW_MS = 15 * 60_000;
  * Set 2026-10-17 (security review).
  */
 export const MAX_OAUTH_CLIENT_NAME = 60;
+
+/** Display name of a person (registration and the name suggested from the address). */
+export const MAX_NAME = 100;
+
+/**
+ * Registration with name, address and password (Len, 2026-10-18, ADR 005): the account only
+ * exists after the confirmation link. The pending registration lives this long.
+ */
+export const REGISTRATION_TTL_MS = 24 * 60 * 60_000;
+/** Wrong passwords on the confirm page before the link is dead (the person registers again). */
+export const MAX_REGISTRATION_ATTEMPTS = 5;
+/** Registration requests per IP and per address (mails to one inbox) in this window. */
+export const REGISTRATIONS_PER_IP = 10;
+export const REGISTRATIONS_PER_EMAIL = 3;
+export const REGISTRATION_WINDOW_MS = 15 * 60_000;
+/** "You already have an account" mails per address and window (silently skipped above). */
+export const ACCOUNT_EXISTS_MAILS_PER_EMAIL = 1;
+/** Confirm attempts per IP and window, on top of the per-link counter. */
+export const REGISTRATION_CONFIRMS_PER_IP = 20;
+/** Longest stored continuation path (e.g. a connector's OAuth authorize URL). */
+export const MAX_NEXT_PATH = 2000;

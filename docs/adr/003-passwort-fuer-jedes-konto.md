@@ -47,3 +47,8 @@ Schema-Änderung, keine neue Abhängigkeit.
 - Verworfen: **eigener Wrapper-Endpunkt** statt `/api/auth/sign-in/email` – der offene Better-Auth-Endpunkt bliebe
   daneben erreichbar, und der Wrapper müsste Cookies und Fehlerformat nachbauen. **Mail im Client auslösen** – der
   Client kennt den Kontostatus nicht (keine Enumeration), müsste also immer senden.
+
+## Nachtrag 2026-10-18: Registrierung mit Passwort
+- Die oben verworfene „Registrierung mit Passwort“ gibt es jetzt (Len) – mit eigener Bestätigung und denselben
+  Prüfungen, siehe **ADR 005**. `disableSignUp: true` bleibt: Better Auths `/sign-up/email` würde das Konto vor der
+  Bestätigung anlegen.

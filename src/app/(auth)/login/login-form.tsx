@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { authClient } from "@/lib/auth-client";
+import { registerHref } from "@/lib/auth-links";
 import { getEmailDomain } from "@/lib/freemail";
 import { useT } from "@/lib/i18n/client";
 import { useHydrated } from "@/lib/use-hydrated";
@@ -168,6 +169,12 @@ export function LoginForm({ next }: { next: string }) {
         </Button>
         <p className="text-xs text-muted">{t.login.linkHint}</p>
       </div>
+      <p className="border-t border-border pt-4 text-[13px] text-muted">
+        {t.login.noAccount}{" "}
+        <Link href={registerHref(next)} className="font-medium text-accent underline">
+          {t.login.registerLink}
+        </Link>
+      </p>
     </div>
   );
 }

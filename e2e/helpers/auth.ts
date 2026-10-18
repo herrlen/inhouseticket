@@ -64,7 +64,7 @@ export async function requestMagicLink(page: Page, email: string, next?: string)
   const since = new Date(Date.now() - 1000);
   await page.goto(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
   await page.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(email);
-  await page.getByRole("button", { name: "Anmeldelink per E-Mail senden" }).click();
+  await page.getByRole("button", { name: "Ohne Passwort per Link anmelden" }).click();
   await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
   return linkFromMail(email, MAGIC_LINK, since);
 }
@@ -103,4 +103,25 @@ export async function createWorkspace(page: Page, email: string, name: string, i
   await page.getByRole("button", { name: "Workspace anlegen" }).click();
   await expect(page.getByRole("heading", { name: `Willkommen bei ${name}` })).toBeVisible();
   return new URL(page.url()).pathname;
+}
+
+export const REGISTER_LINK = /http:\/\/localhost:3100\/register\/confirm\?token=[\w-]+/;
+
+/** Fills the registration form and waits for the neutral "check your inbox" answer. */
+export async function submitRegistration(page: Page, opts: { name: string; email: string; password?: string; next?: string }) {
+  await page.goto(opts.next ? `/register?next=${encodeURIComponent(opts.next)}` : "/register");
+  await page.getByRole("textbox", { name: "Name" }).fill(opts.name);
+  await page.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(opts.email);
+  await page.getByLabel("Passwort", { exact: true }).fill(opts.password ?? E2E_PASSWORD);
+  await page.getByLabel("Passwort wiederholen").fill(opts.password ?? E2E_PASSWORD);
+  await page.getByRole("button", { name: "Registrieren" }).click();
+  await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
+}
+
+/** Opens the confirmation link and completes it with the registration password. */
+export async function confirmRegistration(page: Page, link: string, password = E2E_PASSWORD) {
+  await page.goto(link);
+  await page.getByLabel("Passwort", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Bestätigen und anmelden" }).click();
+  await expect(page).not.toHaveURL(/\/register\/confirm/);
 }

@@ -9,13 +9,14 @@ import { oauthProvider } from "@better-auth/oauth-provider";
 import { db } from "@/db/client";
 import { revokeAllConnections } from "@/db/queries/connections";
 import { passwordStateByEmail, userHasPassword } from "@/db/queries/credentials";
+import { deletePendingForEmail } from "@/db/queries/registrations";
 import * as schema from "@/db/schema";
 import { env } from "@/lib/env";
 import { magicLinkConfirmUrl } from "@/lib/magic-link-url";
 import { mayEnterBeta } from "@/lib/beta";
 import { isCompanyEmail } from "@/lib/freemail";
 import { isExemptEmail } from "@/lib/superadmin";
-import { MAX_PASSWORD, MIN_PASSWORD } from "@/lib/limits";
+import { MAX_NAME, MAX_PASSWORD, MIN_PASSWORD } from "@/lib/limits";
 import { setPasswordUrl } from "@/lib/password-gate";
 import { getTOrDefault } from "@/lib/i18n/server";
 import { buttonMail, sendMail } from "@/lib/mail";
@@ -23,6 +24,7 @@ import { nameFromEmail } from "@/lib/names";
 import { sanitizeClientName } from "@/lib/oauth-client-trust";
 import { failedSignInEmail, shouldSendNoPasswordLink } from "@/lib/no-password-link";
 import { addressKey, rateLimit } from "@/lib/rate-limit";
+import { registrationPlugin } from "@/lib/registration-plugin";
 import { hashToken } from "@/lib/tokens";
 
 /** The MCP endpoint is the one protected resource OAuth clients (claude.ai connectors) get tokens for. */
@@ -32,7 +34,6 @@ const MAGIC_LINK_TTL_SECONDS = 15 * 60;
 /** Login mails per address – the per-IP limit alone does not stop mail bombing one inbox. */
 const MAGIC_LINKS_PER_EMAIL = 5;
 const MAGIC_LINK_EMAIL_WINDOW_MS = 15 * 60_000;
-const MAX_NAME = 100;
 /** Password reset links: short-lived and single-use (the token is consumed on use). */
 const RESET_LINK_TTL_SECONDS = 30 * 60;
 /** Password sign-ins per address – slows guessing even from many IPs. */
@@ -86,8 +87,9 @@ export const auth = betterAuth({
   },
   // Per-IP limits in production only; local and E2E runs share one IP.
   rateLimit: { enabled: env.NODE_ENV === "production", window: 60, max: 100 },
-  // Every account has a password (Len, 2026-10-16). Accounts are only created by the magic link
-  // (company address, closed beta, verified inbox) – a password sign-up would skip all three.
+  // Every account has a password (Len, 2026-10-16). Better Auth's own sign-up stays off: it would
+  // create the account before the inbox is verified. Accounts come from the magic link or from the
+  // registration plugin below (company address, closed beta, verified inbox, ADR 005).
   emailAndPassword: {
     enabled: true,
     disableSignUp: true,
@@ -180,6 +182,11 @@ export const auth = betterAuth({
           const name = (user.name || nameFromEmail(user.email)).trim().slice(0, MAX_NAME);
           return { data: { ...user, email: user.email.toLowerCase(), name } };
         },
+        // Whatever path created the account (link, registration): an open registration for the
+        // address can never be completed any more – drop it (ADR 005).
+        after: async (user) => {
+          await deletePendingForEmail(user.email);
+        },
       },
     },
   },
@@ -226,6 +233,8 @@ export const auth = betterAuth({
       clientRegistrationDefaultResources: [MCP_RESOURCE],
       storeTokens: { hash: (token) => hashToken(token) },
     }),
+    // Registration with name, address and password, completed on the confirm page (ADR 005).
+    registrationPlugin(),
     nextCookies(), // must be last
   ],
 });

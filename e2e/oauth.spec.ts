@@ -115,7 +115,7 @@ test("connector login: not signed in → magic link → consent; deny returns an
   await expect(page.getByText("Melde dich an, um Claude mit inhouseticket zu verbinden.")).toBeVisible();
   const since = new Date(Date.now() - 1000);
   await page.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(email);
-  await page.getByRole("button", { name: "Anmeldelink per E-Mail senden" }).click();
+  await page.getByRole("button", { name: "Ohne Passwort per Link anmelden" }).click();
   await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
   await openMagicLink(page, await linkFromMail(email, MAGIC_LINK, since));
   await expect(page.getByRole("heading", { name: "Zugriff erlauben?" })).toBeVisible();
@@ -142,7 +142,7 @@ test("connector login of a person without a password: link → set password → 
   await expect(page).toHaveURL(/\/login\?/);
   const since = new Date(Date.now() - 1000);
   await page.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(email);
-  await page.getByRole("button", { name: "Anmeldelink per E-Mail senden" }).click();
+  await page.getByRole("button", { name: "Ohne Passwort per Link anmelden" }).click();
   await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
   await openMagicLink(page, await linkFromMail(email, MAGIC_LINK, since));
   // The authorize endpoint itself sends the person to set a password first, then continues.
