@@ -2,8 +2,14 @@
 # Rolls out a green main commit to mittwald (project p-flw0r0 "Ticket").
 #
 #   scripts/deploy.sh            deploys HEAD of main (image built by CI: sha-<commit>)
+#   scripts/deploy.sh --lokal    same, but without GitHub Actions: runs the CI checks locally
+#                                (typecheck, lint, unit, db tests, build incl. bundle budget),
+#                                builds the image from `git archive HEAD` with Docker Desktop and
+#                                pushes it to ghcr.io (gh token needs write:packages). E2E is not
+#                                run locally – use only when CI is unavailable.
 #
-# Preconditions: on main, clean tree, CI green for HEAD (the CI job "image" pushed the image).
+# Preconditions: on main, clean tree, CI green for HEAD (the CI job "image" pushed the image),
+# or --lokal.
 # Secrets are read from the running stack and handed to `mw` in a mode-600 temp file that is
 # deleted afterwards; nothing is printed. On the very first deploy POSTGRES_PASSWORD and
 # BETTER_AUTH_SECRET are generated once; afterwards they always come from the running stack.
@@ -32,8 +38,30 @@ SHA="$(git rev-parse HEAD)"
 TAG="sha-$SHA"
 echo "Commit $(git log --oneline -1)"
 
-CI="$(gh run list --commit "$SHA" --workflow CI --json conclusion,status -q '.[0] | "\(.status) \(.conclusion)"')"
-[[ "$CI" == "completed success" ]] || fehler "CI für $SHA nicht grün (${CI:-kein Lauf})"
+if [[ "${1:-}" == "--lokal" ]]; then
+  schritt "Prüfungen lokal (statt CI)"
+  pnpm install --frozen-lockfile >/dev/null
+  pnpm typecheck
+  pnpm lint
+  pnpm test
+  pnpm test:db
+  pnpm build >/dev/null
+  node scripts/check-bundle-budget.mjs
+
+  schritt "Image bauen und pushen ($TAG)"
+  export PATH="$PATH:/Applications/Docker.app/Contents/Resources/bin"
+  IMAGE=ghcr.io/herrlen/inhouseticket
+  BUILD_DIR="$(mktemp -d)"
+  git archive HEAD | tar -x -C "$BUILD_DIR"
+  gh auth token | docker login ghcr.io -u "$(gh api user -q .login)" --password-stdin >/dev/null
+  docker build --platform linux/amd64 --build-arg "APP_VERSION=$TAG" -t "$IMAGE:$TAG" -t "$IMAGE:main" "$BUILD_DIR"
+  rm -rf "$BUILD_DIR"
+  docker push -q "$IMAGE:$TAG"
+  docker push -q "$IMAGE:main"
+else
+  CI="$(gh run list --commit "$SHA" --workflow CI --json conclusion,status -q '.[0] | "\(.status) \(.conclusion)"')"
+  [[ "$CI" == "completed success" ]] || fehler "CI für $SHA nicht grün (${CI:-kein Lauf}) – ohne CI: scripts/deploy.sh --lokal"
+fi
 
 schritt "Stack"
 STATE="$(mw stack list -p "$PROJECT" -o json 2>/dev/null)"
