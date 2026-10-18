@@ -228,18 +228,25 @@ Coral `#FF6B5B` · Orange `#FF9F1C` · Sonne `#F5C400` · Limette `#8AC926` · M
 6. **Mobile:** responsiv, Board horizontal scrollbar, Sidebar als Drawer. Keine native App im MVP.
 
 ### 5.6 Onboarding (≤ 60 Sekunden)
-1. Firmen-E-Mail eingeben → Magic Link → Passwort festlegen.
-2. Workspace-Name (vorausgefüllt aus Domain) + Farbe.
-3. Erstes Projekt anlegen (Vorlage: *Marketing · IT · Allgemein*), 3 Beispiel-Tickets.
-4. Kollegen einladen (E-Mails mit Komma) – überspringbar.
+Vollständige Spezifikation: **`docs/ONBOARDING.md`** (ersetzt die frühere Kurzliste). Kurzfassung:
+- Wizard als Modal-Karte über der App, eine Frage pro Screen, Fortschrittsbalken, `Zurück` / `Weiter`, Enter = Weiter,
+  optionale Schritte mit `Überspringen`. Jeder Schritt speichert sofort (Server Action + Zod) → fortsetzbar nach Reload.
+- **Owner** (erster User der Domain), max. 6 Schritte: 1 Profil (Name, Zeitzone) · 2 Workspace (Name aus Domain, Farbe,
+  Auto-Join) · 3 Team-Bereich (8 Bereiche → Projektvorlage) · 4 Startansicht (Liste/Board) · 5 Zwei kurze Fragen
+  (bisher genutzte Tools, Herkunft – optional) · 6 Kollegen einladen (Chips, Freemail/extern/Duplikat, Limit 100 – optional).
+- **Beitretende** (Einladung/Auto-Join): nur Profil + Startansicht → „Meine Aufgaben“.
+- Abschluss in **einer Transaktion**: Projekt aus der Vorlage mit Status, Labels und Tutorial-Tickets (Label „Tutorial“),
+  danach öffnet sich die gewählte Ansicht. Abgebrochen nach Schritt 2 → Banner „Einrichtung fertigstellen“.
 
 ---
 
 ## 6. Datenmodell (PostgreSQL)
 
 ```
-workspace        id, name, domain (unique), auto_join bool, created_at
-user             id, email (unique), name, avatar_url, created_at
+workspace        id, name, domain (unique), auto_join bool, created_at,
+                 team_type? (marketing|it|support|office|sales|creative|dev|general), onboarding_completed_at?
+user             id, email (unique), name, avatar_url, created_at,
+                 timezone (default 'Europe/Berlin'), onboarded_at?
 membership       id, workspace_id, user_id, role (owner|admin|member), status (active|invited|disabled), created_at
                  UNIQUE(workspace_id, user_id)
 invitation       id, workspace_id, email, token_hash, invited_by, expires_at
@@ -259,7 +266,10 @@ comment          id, ticket_id, author_id, body varchar(5000), created_at, edite
 activity         id, workspace_id, ticket_id, actor_id, type, payload jsonb, via (web|mcp|api), created_at
 notification     id, user_id, workspace_id, ticket_id, type, read_at?, created_at
 saved_view       id, user_id, workspace_id, project_id?, name, filters jsonb
-user_pref        user_id, sidebar_collapsed bool, expanded_folders jsonb, favorites jsonb, theme
+user_pref        user_id, sidebar_collapsed bool, expanded_folders jsonb, favorites jsonb, theme,
+                 default_view ('list'|'board', default 'board'), onboarding_step smallint?   -- Wizard fortsetzen
+onboarding_answer id, workspace_id, user_id, previous_tools text[] (max 9), source?, source_other varchar(100)?,
+                 created_at · UNIQUE(workspace_id, user_id) · gelöscht mit dem Workspace (docs/ONBOARDING.md §3)
 api_token        id, user_id, workspace_id, name, token_hash, last_used_at, created_at, revoked_at?
 ```
 

@@ -26,7 +26,15 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [x] P1 Einladungen per E-Mail, Auto-Join-Option (Default aus)
 - [x] P1 User-Limit 100 (DB-Trigger + UI-Hinweis ab 90)
 - [x] P2 Rollen Owner/Admin/Member, `requireMember()`-Helper
-- [x] P2 Onboarding-Flow (Workspace-Name, Farbe, erstes Projekt)
+- [x] P2 Onboarding-Flow (Workspace-Name, Farbe, erstes Projekt) – abgelöst durch den Onboarding-Wizard (`docs/ONBOARDING.md`, Phase B):
+- [ ] P1 Route `src/app/(app)/onboarding/` mit Wizard-Shell: Modal-Karte, Fortschritt, Zurück/Weiter, Enter, Überspringen
+- [ ] P1 Schritt 1 Profil (Name-Vorbelegung aus E-Mail, Zeitzone via `Intl`)
+- [ ] P1 Schritt 2 Workspace (Name aus Domain, Farbe, Auto-Join)
+- [ ] P1 Schritt 6 Einladen (Chips, Paste-Parser, Freemail/extern/Duplikat, Limit 100)
+- [ ] P2 Schritt 5 Zwei kurze Fragen + Tabelle `onboarding_answer`
+- [ ] P2 Fortsetzbarkeit (`onboarding_step`), Redirect-Guard: nicht onboardete User → `/onboarding`
+- [ ] P2 Beitretende-Flow (Profil + Ansicht)
+- [ ] Tests: Unit (Name-Parser, Paste-Parser, Domain→Name), E2E Owner-Happy-Path, E2E Beitritt
 
 ## Sprint 2 – App-Shell & Explorer
 **Ziel:** Navigation steht, Projekte anlegbar.
@@ -47,6 +55,13 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [x] P2 Labels
 - [x] P2 Mehrfachauswahl + Bulk-Aktionen
 - [x] P2 Aktivitätslog
+- Listen-Ergänzungen (`docs/ONBOARDING.md` Abschnitt 4):
+  - [ ] P2 „+ Ticket hinzufügen“-Zeile am Ende jeder Gruppe (legt Ticket mit diesem Status an)
+  - [ ] P2 Schalter „Erledigte anzeigen“ (Default aus)
+  - [ ] P2 Kommentar-Zähler als Spalte
+  - [ ] P3 Schalter „Unteraufgaben anzeigen“ (aufklappbar unter dem Ticket)
+  - [ ] P3 Spalten ein-/ausblenden (pro User in `user_pref`)
+  - [ ] P3 „+ Neuer Status“ am Listenende (nur Admin/Owner)
 
 ## Sprint 3b – Geschlossene Beta live (entschieden 2026-10-04)
 **Ziel:** inhouseticket.com läuft, nur für freigegebene Firmen-Domains.
@@ -75,6 +90,13 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 - [x] P2 Bildvorschau/Lightbox
 - [x] P2 Kommentare mit @Erwähnung
 - [x] P2 Leichtes Markdown in Beschreibung/Kommentaren
+- Onboarding-Wizard Phase C (`docs/ONBOARDING.md`) – Vorlagen + Startansicht:
+  - [ ] P1 Schritt 3 Team-Bereich + `src/lib/onboarding/templates.ts`
+  - [ ] P1 Anlage in **einer Transaktion**: Projekt, Status, Labels, Tutorial-Tickets inkl. Unteraufgaben
+  - [ ] P1 Schritt 4 Startansicht → `user_pref.default_view`, Projektlink öffnet diese Ansicht
+  - [ ] P2 Banner „Einrichtung fertigstellen“ bei abgebrochenem Wizard
+  - [ ] P2 Listen-Ergänzungen (Sprint 3, `docs/ONBOARDING.md` Abschnitt 4)
+  - [ ] Tests: jede Vorlage erzeugt gültige Daten (Limits, max. 5 Unteraufgaben), E2E Board/Liste-Wahl
 
 ## Sprint 6 – Speed-Features & Meine Aufgaben
 **Ziel:** Power-User lieben es.
@@ -117,6 +139,7 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
   - [x] Rechtliche Prüfung durch Kanzlei (2026-10-10), verlinkt im Footer, im Menü der App und im Onboarding; Entwurfshinweis entfernt, AGB/AVV in der Sitemap
 - [x] P1 Deployment EU (Container + managed Postgres + Backups), Domain, SSL – live auf mittwald; Backups: Projekt-Backup täglich + nächtlicher `pg_dump` (docs/betrieb.md) – neues mittwald-Projekt auf dem bestehenden Space-Server, Stack mit App- und Postgres-Container, vHost `inhouseticket.com` → App, SMTP-Zugang no-reply@ in die Umgebung des App-Containers, RAM messen
 - [x] P1 Landingpage (Claim, Screenshots, „Kostenlos bis 100 User“, MCP-Highlight) – 2026-10-10: Abschnitt „Kostenlos. Wirklich. Und alles drin.“ mit allem, was jeder Workspace bekommt; Hinweis „Noch in Entwicklung – Ideen an hello@“ statt Beta-Hinweis
+- [ ] P2 CSV-Import (generisch, Spalten-Mapping) – passt zum Onboarding-Schritt „Bisher genutzt: Excel/CSV“
 - [x] P2 Datenexport CSV/JSON, Workspace löschen – Seite „Daten & Workspace“ (Export für Admins, Löschen nur Owner mit Kürzel-Bestätigung)
 - [ ] P2 Mobile-Feinschliff, Dark Mode, Accessibility-Audit
   - [x] Automatischer Audit (axe, WCAG 2.1 A/AA) auf 12 Seiten, hell und dunkel – in CI (`e2e/a11y.spec.ts`); einziger Befund: Diagramm-Balken/-Zellen mit `aria-label` ohne Rolle → `role="img"`
@@ -195,6 +218,10 @@ ohne API-Zugang, nur mit der Export-Datei des alten Tools.
 - Subdomain pro Workspace (`firma.inhouseticket.com`) als mögliche Pro-Option – braucht Wildcard-DNS/-Zertifikat
 - Englische UI
 - Realtime per Server-Sent Events statt 30-s-Polling
+- Import-Assistent Jira/Trello/Asana (über den CSV-Import hinaus)
+- iCal-Feed „Meine Fälligkeiten“
+- Internes Dashboard: Onboarding-Auswertung (nur aggregiert, `onboarding_answer`)
+- Tool-Verbindungen (Kalender, Slack/Teams) – bewusst nicht im Onboarding-Wizard
 
 ## Risiken
 | Risiko | Gegenmaßnahme |
