@@ -109,15 +109,53 @@ describe("confirmRegistration (server-only Better Auth endpoint)", async () => {
     await expect(auth.api.confirmRegistration({ body: { token: `${run}-t11`, password }, headers: new Headers() })).rejects.toMatchObject({ body: { code: "INVALID_TOKEN" } });
   });
 
-  it("refuses when the address got an account in the meantime – and any account drops open registrations", async () => {
+  it("refuses when the address got an account in the meantime", async () => {
     await q.upsertPendingRegistration(row("gero", "t12", { passwordHash: await ctx.password.hash(password) }));
     await db.insert(schema.user).values({ id: `${run}-gero`, name: "Gero", email: `gero@${domain}` });
     await expect(auth.api.confirmRegistration({ body: { token: `${run}-t12`, password }, headers: new Headers() })).rejects.toMatchObject({ body: { code: "ACCOUNT_EXISTS" } });
+  });
 
-    // A user created through Better Auth (e.g. by the magic link) removes the pending row.
+  it("is the only way to create a user: other sources are refused and leave open registrations alone", async () => {
     await q.upsertPendingRegistration(row("hugo", "t13"));
-    await ctx.internalAdapter.createUser({ email: `hugo@${domain}`, name: "Hugo" }, { method: "magic-link" });
+    await expect(ctx.internalAdapter.createUser({ email: `hugo@${domain}`, name: "Hugo" }, { method: "magic-link" })).rejects.toThrow();
+    expect(await db.select().from(schema.user).where(eq(schema.user.email, `hugo@${domain}`))).toEqual([]);
     const left = await db.select().from(schema.pendingRegistration).where(inArray(schema.pendingRegistration.email, [`hugo@${domain}`]));
-    expect(left).toEqual([]);
+    expect(left).toHaveLength(1);
+  });
+});
+
+describe("magic link (Len, 2026-10-19: existing accounts only)", async () => {
+  const { auth } = await import("@/lib/auth");
+  const ctx = await auth.$context;
+  const sha256 = async (v: string) => Buffer.from(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v))).toString("base64url");
+
+  /** A sign-in link as the endpoint stores it (hashed token), opened like the confirm page does. */
+  async function openLink(email: string, token: string) {
+    await ctx.internalAdapter.createVerificationValue({
+      identifier: `magic-link:${await sha256(token)}`,
+      value: JSON.stringify({ type: "magic-link", email }),
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    const res = await auth.api.magicLinkVerify({
+      query: { token, callbackURL: "/start", errorCallbackURL: "/login?error=link" },
+      headers: new Headers(),
+      asResponse: true,
+    });
+    return { status: res.status, location: res.headers.get("location") ?? "" };
+  }
+
+  it("never creates an account for an unknown address", async () => {
+    const { status, location } = await openLink(`ida@${domain}`, `${run}-ml1-xxxxxxxxxxxxxxxxxxxx`);
+    expect(status).toBe(302);
+    expect(location).toContain("/login?error=new_user_signup_disabled");
+    expect(await db.select().from(schema.user).where(eq(schema.user.email, `ida@${domain}`))).toEqual([]);
+  });
+
+  it("signs in an existing account", async () => {
+    await db.insert(schema.user).values({ id: `${run}-jan`, name: "Jan", email: `jan@${domain}`, emailVerified: true });
+    const { status, location } = await openLink(`jan@${domain}`, `${run}-ml2-xxxxxxxxxxxxxxxxxxxx`);
+    expect(status).toBe(302);
+    expect(new URL(location, "http://x").pathname).toBe("/start");
+    expect(await db.select().from(schema.session).where(eq(schema.session.userId, `${run}-jan`))).toHaveLength(1);
   });
 });

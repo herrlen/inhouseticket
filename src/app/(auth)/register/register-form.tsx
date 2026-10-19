@@ -12,7 +12,7 @@ import { MAX_NAME } from "@/lib/limits";
 import { useHydrated } from "@/lib/use-hydrated";
 import { registerAction, type RegisterState } from "./actions";
 
-export function RegisterForm({ next }: { next: string }) {
+export function RegisterForm({ next, email }: { next: string; email?: string }) {
   const t = useT();
   const hydrated = useHydrated();
   const [state, action, pending] = useActionState<RegisterState, FormData>(registerAction, {});
@@ -79,7 +79,7 @@ export function RegisterForm({ next }: { next: string }) {
           placeholder={t.login.emailPlaceholder}
           autoComplete="username"
           required
-          defaultValue={values?.email}
+          defaultValue={values?.email ?? email}
           error={errors.email}
           hint={errors.email ? undefined : t.login.hint}
         />

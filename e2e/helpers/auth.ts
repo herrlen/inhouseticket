@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { removePassword } from "./db";
 
 const MAILPIT = process.env.MAILPIT_URL ?? "http://localhost:8025";
 
@@ -59,14 +60,22 @@ export const RESET_LINK = /http:\/\/localhost:3100\/api\/auth\/reset-password\/\
 /** Password the helpers give every new test account. */
 export const E2E_PASSWORD = "e2e-Passwort-2026";
 
-/** Asks for a magic link on the login page and returns it from the mail. */
-export async function requestMagicLink(page: Page, email: string, next?: string): Promise<string> {
+/** Link in the "no account for this address yet" mail (instead of a sign-in link). */
+export const NO_ACCOUNT_LINK = /http:\/\/localhost:3100\/register\?\S+/;
+
+/** Clicks "Ohne Passwort per Link anmelden" for `email` and waits for the neutral answer. */
+async function askForLink(page: Page, email: string, next?: string): Promise<Date> {
   const since = new Date(Date.now() - 1000);
   await page.goto(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
   await page.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(email);
   await page.getByRole("button", { name: "Ohne Passwort per Link anmelden" }).click();
   await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
-  return linkFromMail(email, MAGIC_LINK, since);
+  return since;
+}
+
+/** Asks for a magic link on the login page and returns it from the mail (existing accounts only). */
+export async function requestMagicLink(page: Page, email: string, next?: string): Promise<string> {
+  return linkFromMail(email, MAGIC_LINK, await askForLink(page, email, next));
 }
 
 /** Fills the forced set-password page (first sign-in by link) and continues. */
@@ -78,12 +87,48 @@ export async function setPassword(page: Page, password = E2E_PASSWORD) {
   await expect(page).not.toHaveURL(/\/set-password/);
 }
 
-/** Signs in through the real magic-link flow; a new account sets its password on the way. */
+/** "max.mustermann@firma.de" → "Max Mustermann" – the name the helpers register with. */
+export function nameFor(email: string): string {
+  const local = email.split("@")[0] ?? "";
+  return local.split(/[._+-]+/).filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ") || email;
+}
+
+/**
+ * Signs in through the real link flow. An address with an account gets the sign-in link (and sets
+ * a password if it has none); a new address gets the "no account yet" mail, follows its link to
+ * the registration page (address and `next` carried over) and registers – like a person would.
+ * Returns the link from the first mail.
+ */
 export async function signIn(page: Page, email: string, next?: string) {
-  const link = await requestMagicLink(page, email, next);
+  const since = await askForLink(page, email, next);
+  const link = await linkFromMail(email, new RegExp(`${MAGIC_LINK.source}|${NO_ACCOUNT_LINK.source}`), since);
+  if (NO_ACCOUNT_LINK.test(link)) {
+    await page.goto(link);
+    await expect(page.getByRole("textbox", { name: "Firmen-E-Mail" })).toHaveValue(email.toLowerCase());
+    await fillRegistration(page, nameFor(email));
+    await confirmRegistration(page, await linkFromMail(email, REGISTER_LINK, since));
+    return link;
+  }
   await openMagicLink(page, link);
   if (new URL(page.url()).pathname === "/set-password") await setPassword(page);
   return link;
+}
+
+/** Registers `email` on /register and confirms the mailed link; ends signed in at `next` (or /start). */
+export async function registerAccount(page: Page, email: string, next?: string) {
+  const since = new Date(Date.now() - 1000);
+  await submitRegistration(page, { name: nameFor(email), email, next });
+  await confirmRegistration(page, await linkFromMail(email, REGISTER_LINK, since));
+}
+
+/**
+ * An account without a password, as the magic link used to create them: registered, password
+ * removed in the database, signed out. The app itself no longer produces such accounts.
+ */
+export async function createAccountWithoutPassword(page: Page, email: string) {
+  await registerAccount(page, email);
+  await removePassword(email);
+  await page.context().clearCookies();
 }
 
 /** Signs in with email and password on the login page. */
@@ -165,15 +210,20 @@ export async function completeJoinerWizard(page: Page, view: "Liste" | "Board" =
 
 export const REGISTER_LINK = /http:\/\/localhost:3100\/register\/confirm\?token=[\w-]+/;
 
+/** Fills name and password on the (already open) registration page and submits. */
+async function fillRegistration(page: Page, name: string, password = E2E_PASSWORD) {
+  await page.getByRole("textbox", { name: "Name" }).fill(name);
+  await page.getByLabel("Passwort", { exact: true }).fill(password);
+  await page.getByLabel("Passwort wiederholen").fill(password);
+  await page.getByRole("button", { name: "Registrieren" }).click();
+  await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
+}
+
 /** Fills the registration form and waits for the neutral "check your inbox" answer. */
 export async function submitRegistration(page: Page, opts: { name: string; email: string; password?: string; next?: string }) {
   await page.goto(opts.next ? `/register?next=${encodeURIComponent(opts.next)}` : "/register");
-  await page.getByRole("textbox", { name: "Name" }).fill(opts.name);
   await page.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(opts.email);
-  await page.getByLabel("Passwort", { exact: true }).fill(opts.password ?? E2E_PASSWORD);
-  await page.getByLabel("Passwort wiederholen").fill(opts.password ?? E2E_PASSWORD);
-  await page.getByRole("button", { name: "Registrieren" }).click();
-  await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
+  await fillRegistration(page, opts.name, opts.password);
 }
 
 /** Opens the confirmation link and completes it with the registration password. */

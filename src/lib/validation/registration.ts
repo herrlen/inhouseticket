@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MAX_NAME, MAX_PASSWORD } from "@/lib/limits";
+import { MAX_EMAIL, MAX_NAME, MAX_PASSWORD } from "@/lib/limits";
 import { newPasswordSchema } from "@/lib/validation/password";
 
 // Registration with name, address and password (ADR 005). Messages in German, translated at the
@@ -19,7 +19,7 @@ export const registrationEmailSchema = z
   .string("Das sieht nicht nach einer gültigen E-Mail-Adresse aus.")
   .trim()
   .toLowerCase()
-  .max(254, "Das sieht nicht nach einer gültigen E-Mail-Adresse aus.")
+  .max(MAX_EMAIL, "Das sieht nicht nach einer gültigen E-Mail-Adresse aus.")
   .pipe(z.email("Das sieht nicht nach einer gültigen E-Mail-Adresse aus."));
 
 export const registerSchema = z

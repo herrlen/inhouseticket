@@ -98,6 +98,14 @@ export const en: Messages = {
       button: "Sign in and set password",
       outro: "Wasn't you? Then simply ignore this email – nothing happens without the link.",
     },
+    noAccountMail: {
+      subject: "There is no account for this address yet",
+      heading: "No inhouseticket account yet",
+      intro:
+        "Someone – probably you – wanted to sign in to inhouseticket with this address by link. But there is no account for this address yet. Sign up here; afterwards you sign in with your password or by link.",
+      button: "Sign up now",
+      outro: "Wasn't you? Then simply ignore this email – no account is created without signing up.",
+    },
   },
   home: {
     claim: "Tickets. Without the baggage.",
@@ -286,10 +294,11 @@ export const en: Messages = {
     linkSubmit: "Sign in without a password by link",
     noAccount: "No account yet?",
     registerLink: "Sign up",
-    linkHint: "Sign in without a password – also if you forgot it. The first time, you set a password afterwards.",
+    linkHint: "Sign in without a password – also if you forgot it. For addresses that already have an account.",
     sending: "Sending …",
     sentTitle: "Check your inbox",
-    sentText: (email: string) => `We've sent a sign-in link to ${email}. It is valid for 15 minutes.`,
+    sentText: (email: string) =>
+      `We've sent an email to ${email}. If the address has an account, it contains your sign-in link (valid for 15 minutes) – otherwise how to sign up.`,
     otherEmail: "Use a different address",
     linkError: "This sign-in link has expired or has already been used. Just request a new one.",
     confirmTitle: "Confirm sign-in",
@@ -365,6 +374,8 @@ export const en: Messages = {
     title: (workspace: string) => `Invitation to ${workspace}`,
     text: (inviter: string, email: string) => `${inviter} invited ${email}.`,
     signIn: "Sign in and accept",
+    noAccount: "No account yet?",
+    register: "Sign up and accept",
     wrongUser: (invited: string, current: string) =>
       `This invitation is for ${invited}, but you are signed in as ${current}. Sign out and sign in again with the invited address.`,
     goneTitle: "Invitation not valid",
@@ -989,7 +1000,7 @@ export const en: Messages = {
       heading: `Invitation to ${workspace}`,
       intro: `${inviter} has invited you to work together in the workspace “${workspace}” on inhouseticket.`,
       button: "Accept invitation",
-      outro: "The invitation is valid for 7 days. You sign in with your email address and set a password the first time.",
+      outro: "The invitation is valid for 7 days. If you already have an account, sign in – otherwise sign up with this address on the invitation page.",
     }),
   },
   avatar: {

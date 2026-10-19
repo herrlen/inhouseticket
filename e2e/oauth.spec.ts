@@ -1,6 +1,19 @@
 import { createHash, randomBytes } from "node:crypto";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
-import { createWorkspace, E2E_PASSWORD, linkFromMail, MAGIC_LINK, openMagicLink, setPassword, uniqueDomain } from "./helpers/auth";
+import {
+  confirmRegistration,
+  createAccountWithoutPassword,
+  createWorkspace,
+  E2E_PASSWORD,
+  linkFromMail,
+  MAGIC_LINK,
+  NO_ACCOUNT_LINK,
+  openMagicLink,
+  REGISTER_LINK,
+  setPassword,
+  uniqueDomain,
+} from "./helpers/auth";
+import { userCount } from "./helpers/db";
 
 // The connector flow of claude.ai, step by step: discovery, dynamic client registration,
 // authorization code + PKCE with consent, token, MCP call, refresh, disconnect.
@@ -130,8 +143,40 @@ test("connector login: not signed in → magic link → consent; deny returns an
   expect((await denied).searchParams.get("error")).toBe("access_denied");
 });
 
+test("connector login of a new person: link request → \"no account\" mail → register → consent", async ({ browser }) => {
+  const email = `pina@${uniqueDomain("oauthreg")}`;
+  const page = await (await browser.newContext()).newPage();
+  const api = page.context().request;
+  const { resource, as } = await discover(api);
+  const clientId = await register(api, as.registration_endpoint);
+  const { path: authPath } = authorizeUrl(as.authorization_endpoint, clientId, resource);
+
+  await page.goto(authPath);
+  await expect(page).toHaveURL(/\/login\?/);
+  const since = new Date(Date.now() - 1000);
+  await page.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(email);
+  await page.getByRole("button", { name: "Ohne Passwort per Link anmelden" }).click();
+  await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
+  const link = await linkFromMail(email, NO_ACCOUNT_LINK, since);
+  expect(new URL(link).searchParams.get("next")).toMatch(/^\/api\/auth\/oauth2\/authorize\?/);
+  expect(await userCount(email)).toBe(0);
+
+  await page.goto(link);
+  await expect(page.getByRole("textbox", { name: "Firmen-E-Mail" })).toHaveValue(email);
+  await page.getByRole("textbox", { name: "Name" }).fill("Pina Neu");
+  await page.getByLabel("Passwort", { exact: true }).fill(E2E_PASSWORD);
+  await page.getByLabel("Passwort wiederholen").fill(E2E_PASSWORD);
+  await page.getByRole("button", { name: "Registrieren" }).click();
+  await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
+  await confirmRegistration(page, await linkFromMail(email, REGISTER_LINK, since));
+  // The registration keeps the connector's authorization request and continues it.
+  await expect(page.getByRole("heading", { name: "Zugriff erlauben?" })).toBeVisible();
+});
+
 test("connector login of a person without a password: link → set password → consent", async ({ browser }) => {
   const email = `pit@${uniqueDomain("oauthnew")}`;
+  // An account from before registration existed (signed in by link once, never set a password).
+  await createAccountWithoutPassword(await browser.newPage(), email);
   const page = await (await browser.newContext()).newPage();
   const api = page.context().request;
   const { resource, as } = await discover(api);

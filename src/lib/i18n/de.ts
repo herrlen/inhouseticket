@@ -55,6 +55,15 @@ export const de = {
       button: "Anmelden und Passwort festlegen",
       outro: "Das warst du nicht? Dann ignoriere diese E-Mail einfach – ohne den Link passiert nichts.",
     },
+    /** A sign-in link was requested for an address without an account – the link never creates one. */
+    noAccountMail: {
+      subject: "Für diese Adresse gibt es noch kein Konto",
+      heading: "Noch kein Konto bei inhouseticket",
+      intro:
+        "Jemand – vermutlich du – wollte sich mit dieser Adresse per Link bei inhouseticket anmelden. Für diese Adresse gibt es aber noch kein Konto. Registriere dich hier, danach meldest du dich mit deinem Passwort oder per Link an.",
+      button: "Jetzt registrieren",
+      outro: "Das warst nicht du? Dann ignoriere diese E-Mail einfach – ohne Registrierung entsteht kein Konto.",
+    },
   },
   home: {
     claim: "Tickets. Ohne Ballast.",
@@ -243,10 +252,11 @@ export const de = {
     linkSubmit: "Ohne Passwort per Link anmelden",
     noAccount: "Noch kein Konto?",
     registerLink: "Registrieren",
-    linkHint: "Ohne Passwort anmelden – auch wenn du es vergessen hast. Beim ersten Mal legst du danach ein Passwort fest.",
+    linkHint: "Ohne Passwort anmelden – auch wenn du es vergessen hast. Für Adressen, die schon ein Konto haben.",
     sending: "Wird gesendet …",
     sentTitle: "Schau in dein Postfach",
-    sentText: (email: string) => `Wir haben einen Anmeldelink an ${email} geschickt. Er ist 15 Minuten gültig.`,
+    sentText: (email: string) =>
+      `Wir haben eine E-Mail an ${email} geschickt. Hat die Adresse ein Konto, steht darin dein Anmeldelink (15 Minuten gültig) – sonst, wie du dich registrierst.`,
     otherEmail: "Andere Adresse verwenden",
     linkError: "Dieser Anmeldelink ist abgelaufen oder wurde schon benutzt. Fordere einfach einen neuen an.",
     confirmTitle: "Anmeldung bestätigen",
@@ -322,6 +332,8 @@ export const de = {
     title: (workspace: string) => `Einladung zu ${workspace}`,
     text: (inviter: string, email: string) => `${inviter} hat ${email} eingeladen.`,
     signIn: "Anmelden und annehmen",
+    noAccount: "Noch kein Konto?",
+    register: "Registrieren und annehmen",
     wrongUser: (invited: string, current: string) =>
       `Diese Einladung gilt für ${invited}, du bist aber als ${current} angemeldet. Melde dich ab und mit der eingeladenen Adresse wieder an.`,
     goneTitle: "Einladung nicht gültig",
@@ -946,7 +958,7 @@ export const de = {
       heading: `Einladung zu ${workspace}`,
       intro: `${inviter} hat dich eingeladen, im Workspace „${workspace}“ auf inhouseticket mitzuarbeiten.`,
       button: "Einladung annehmen",
-      outro: "Die Einladung ist 7 Tage gültig. Du meldest dich mit deiner E-Mail-Adresse an und legst beim ersten Mal ein Passwort fest.",
+      outro: "Die Einladung ist 7 Tage gültig. Hast du schon ein Konto, meldest du dich an – sonst registrierst du dich auf der Seite der Einladung mit dieser Adresse.",
     }),
   },
   avatar: {

@@ -170,8 +170,10 @@ test("an invited person registers and continues to the invitation", async ({ bro
 
   const guest = await (await browser.newContext()).newPage();
   await guest.goto(invite);
+  // Via the sign-in page: its "Registrieren" link keeps the invitation as next.
   await guest.getByRole("link", { name: "Anmelden und annehmen" }).click();
-  await guest.getByRole("link", { name: "Registrieren" }).click();
+  await expect(guest).toHaveURL(/\/login\?next=%2Finvite%2F/);
+  await guest.getByRole("link", { name: "Registrieren", exact: true }).click();
   await expect(guest).toHaveURL(/\/register\?next=%2Finvite%2F/);
   const since2 = new Date(Date.now() - 1000);
   await guest.getByRole("textbox", { name: "Name" }).fill("Neu Hier");

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { linkFromMail, MAGIC_LINK, ONBOARDING_URL, openMagicLink, uniqueDomain } from "./helpers/auth";
+import { linkFromMail, mailText, NO_ACCOUNT_LINK, ONBOARDING_URL, REGISTER_LINK, uniqueDomain } from "./helpers/auth";
 import { waitForHydration } from "./helpers/hydration";
 
 test("landing page switches to English and back, by keyboard", async ({ page }) => {
@@ -40,13 +40,21 @@ test("the app works in English", async ({ page, context }) => {
   await page.getByRole("textbox", { name: "Company email" }).fill(email);
   await page.getByRole("button", { name: "Sign in without a password by link" }).click();
   await expect(page.getByRole("heading", { name: "Check your inbox" })).toBeVisible();
-  await openMagicLink(page, await linkFromMail(email, MAGIC_LINK, since));
 
-  // First sign-in by link: set a password (in English, too).
-  await expect(page.getByRole("heading", { name: "Set a password" })).toBeVisible();
-  await page.getByLabel("New password").fill("english-password-1");
+  // No account yet: the mail (in English) points to the registration instead of signing in.
+  expect(await mailText(email, since)).toContain("But there is no account for this address yet.");
+  await page.goto(await linkFromMail(email, NO_ACCOUNT_LINK, since));
+  await expect(page.getByRole("heading", { name: "Create account" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Company email" })).toHaveValue(email);
+  await page.getByRole("textbox", { name: "Name" }).fill("Lea English");
+  await page.getByLabel("Password", { exact: true }).fill("english-password-1");
   await page.getByLabel("Repeat password").fill("english-password-1");
-  await page.getByRole("button", { name: "Save password and continue" }).click();
+  await page.getByRole("button", { name: "Sign up", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Check your inbox" })).toBeVisible();
+  await page.goto(await linkFromMail(email, REGISTER_LINK, since));
+  await expect(page.getByRole("heading", { name: "Complete registration" })).toBeVisible();
+  await page.getByLabel("Password", { exact: true }).fill("english-password-1");
+  await page.getByRole("button", { name: "Confirm and sign in" }).click();
 
   // The onboarding wizard in English (no German string on the way).
   await expect(page).toHaveURL(ONBOARDING_URL);

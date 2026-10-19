@@ -15,6 +15,9 @@ import { safeNext } from "@/lib/safe-next";
 import { isExemptEmail } from "@/lib/superadmin";
 import { hashToken } from "@/lib/tokens";
 
+/** Source of users created by the confirm endpoint – the only one `user.validateUserInfo` admits. */
+export const REGISTRATION_METHOD = "registration";
+
 /** Stable codes the confirm action maps to messages. */
 export type ConfirmErrorCode = "INVALID_TOKEN" | "WRONG_PASSWORD" | "LOCKED" | "ACCOUNT_EXISTS" | "FREEMAIL_NOT_ALLOWED" | "BETA_CLOSED";
 
@@ -60,10 +63,11 @@ export const registrationPlugin = () =>
           if (!isCompanyEmail(pending.email) && !isExemptEmail(pending.email)) throw fail("FORBIDDEN", "FREEMAIL_NOT_ALLOWED");
           if (!(await mayEnterBeta(pending.email))) throw fail("FORBIDDEN", "BETA_CLOSED");
 
-          // The inbox is verified by the link. Hooks run as for every other sign-up path.
+          // The inbox is verified by the link. The only path that creates users (validateUserInfo
+          // in src/lib/auth.ts); the database hooks check company address and name once more.
           const user = await ctx.context.internalAdapter.createUser(
             { email: pending.email, name: pending.name, emailVerified: true },
-            { method: "email-password" },
+            { method: REGISTRATION_METHOD },
           );
           if (!user) throw fail("FORBIDDEN", "FREEMAIL_NOT_ALLOWED");
           try {

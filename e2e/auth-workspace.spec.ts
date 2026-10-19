@@ -1,5 +1,23 @@
 import { expect, test } from "@playwright/test";
-import { completeJoinerWizard, createWorkspace, INVITE_LINK, ONBOARDING_URL, linkFromMail, openMagicLink, requestMagicLink, signIn, uniqueDomain } from "./helpers/auth";
+import {
+  completeJoinerWizard,
+  confirmRegistration,
+  createWorkspace,
+  E2E_PASSWORD,
+  INVITE_LINK,
+  mailCount,
+  mailText,
+  NO_ACCOUNT_LINK,
+  ONBOARDING_URL,
+  linkFromMail,
+  openMagicLink,
+  REGISTER_LINK,
+  registerAccount,
+  requestMagicLink,
+  signIn,
+  uniqueDomain,
+} from "./helpers/auth";
+import { userCount } from "./helpers/db";
 
 test("freemail addresses are rejected with a friendly message", async ({ page }) => {
   await page.goto("/login");
@@ -16,8 +34,40 @@ test("first user creates a workspace with the template project", async ({ page }
   await expect(page.getByText("MKT-5", { exact: true })).toBeVisible();
 });
 
+test("a link for an address without an account creates nothing: same screen, a mail pointing to the registration", async ({ page }) => {
+  const email = `niemand@${uniqueDomain("noaccount")}`;
+  const since = new Date(Date.now() - 1000);
+  await page.goto("/login");
+  await page.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(email);
+  await page.getByRole("button", { name: "Ohne Passwort per Link anmelden" }).click();
+  await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
+
+  const text = await mailText(email, since);
+  expect(text).toContain("Für diese Adresse gibt es aber noch kein Konto");
+  expect(text).not.toMatch(/\/login\/link|magic-link/);
+  const link = text.match(NO_ACCOUNT_LINK)?.[0];
+  expect(link).toBeTruthy();
+  expect(await userCount(email)).toBe(0);
+
+  // Asking again shows the same screen, but no second mail (one per address and 15 minutes).
+  await page.getByRole("button", { name: "Andere Adresse verwenden" }).click();
+  await page.getByRole("textbox", { name: "Firmen-E-Mail" }).fill(email);
+  await page.getByRole("button", { name: "Ohne Passwort per Link anmelden" }).click();
+  await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
+  await page.waitForTimeout(2000);
+  expect(await mailCount(email, since)).toBe(1);
+  expect(await userCount(email)).toBe(0);
+
+  // The mail's link opens the registration with the address filled in.
+  await page.goto(link!);
+  await expect(page.getByRole("heading", { name: "Konto erstellen" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Firmen-E-Mail" })).toHaveValue(email);
+});
+
 test("a used magic link cannot be used again", async ({ page, context }) => {
   const domain = uniqueDomain("reuse");
+  await registerAccount(page, `paul@${domain}`);
+  await context.clearCookies();
   const link = await signIn(page, `paul@${domain}`);
   await expect(page).toHaveURL(ONBOARDING_URL);
   await context.clearCookies();
@@ -30,11 +80,13 @@ test("a used magic link cannot be used again", async ({ page, context }) => {
 
 test("a mail scanner opening the link first does not use it up", async ({ page, request }) => {
   const email = `scan@${uniqueDomain("scan")}`;
+  await registerAccount(page, email);
+  await page.context().clearCookies();
   const link = await requestMagicLink(page, email);
   // What scanners and link previews do: fetch the address from the mail, follow redirects.
   expect((await request.get(link)).ok()).toBe(true);
   await openMagicLink(page, link);
-  await expect(page).toHaveURL(/\/set-password/);
+  await expect(page).toHaveURL(ONBOARDING_URL);
 });
 
 test("an invited colleague joins via the invitation link", async ({ browser }) => {
@@ -47,8 +99,18 @@ test("an invited colleague joins via the invitation link", async ({ browser }) =
   const invite = await linkFromMail(`kollege@${domain}`, INVITE_LINK, since);
   await colleague.goto(invite);
   await expect(colleague.getByRole("heading", { name: "Einladung zu Invite AG" })).toBeVisible();
-  await colleague.getByRole("link", { name: "Anmelden und annehmen" }).click();
-  await signIn(colleague, `kollege@${domain}`, new URL(invite).pathname);
+  // No account yet: register from the invitation (address prefilled) and land back on it.
+  await colleague.getByRole("link", { name: "Registrieren und annehmen" }).click();
+  await expect(colleague).toHaveURL(/\/register\?/);
+  await expect(colleague.getByRole("textbox", { name: "Firmen-E-Mail" })).toHaveValue(`kollege@${domain}`);
+  const registered = new Date(Date.now() - 1000);
+  await colleague.getByRole("textbox", { name: "Name" }).fill("Karl Kollege");
+  await colleague.getByLabel("Passwort", { exact: true }).fill(E2E_PASSWORD);
+  await colleague.getByLabel("Passwort wiederholen").fill(E2E_PASSWORD);
+  await colleague.getByRole("button", { name: "Registrieren" }).click();
+  await expect(colleague.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
+  await confirmRegistration(colleague, await linkFromMail(`kollege@${domain}`, REGISTER_LINK, registered));
+  await expect(colleague).toHaveURL(new RegExp(`${new URL(invite).pathname}$`));
   await colleague.getByRole("button", { name: "Annehmen" }).click();
   await completeJoinerWizard(colleague);
   await expect(colleague).toHaveURL(new RegExp(`${path}/me$`));

@@ -2,12 +2,14 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import {
   completeOwnerWizard,
+  createAccountWithoutPassword,
   createWorkspace,
   ONBOARDING_URL,
   E2E_PASSWORD,
   linkFromMail,
   MAGIC_LINK,
   mailCount,
+  NO_ACCOUNT_LINK,
   mailText,
   RESET_LINK,
   openMagicLink,
@@ -30,6 +32,7 @@ async function hasLiveSession(page: Page): Promise<boolean> {
 
 test("link sign-in without a password: set it first, no way around", async ({ page }) => {
   const email = `nora@${uniqueDomain("setpw")}`;
+  await createAccountWithoutPassword(page, email);
   await openMagicLink(page, await requestMagicLink(page, email));
   await expect(page).toHaveURL(/\/set-password$/);
 
@@ -98,7 +101,8 @@ test("password sign-in: right password gets in, wrong ones and unknown addresses
 test("account without a password: password attempt shows the box, mails a link, then a password is set", async ({ page, browser }) => {
   const domain = uniqueDomain("nopw");
   const email = `ole@${domain}`;
-  // Signed in by link once, never set a password.
+  // Signed in by link once, never set a password (an account from before registration existed).
+  await createAccountWithoutPassword(page, email);
   await openMagicLink(page, await requestMagicLink(page, email));
   await expect(page).toHaveURL(/\/set-password$/);
 
@@ -135,7 +139,7 @@ test("account without a password: password attempt shows the box, mails a link, 
   await expect(fresh.getByRole("heading", { name: "Willkommen bei Ohne Passwort KG" })).toBeVisible();
 });
 
-test("the box's button mails a sign-in link to the typed address", async ({ page }) => {
+test("the box's button mails the typed address (no account: the hint to register)", async ({ page }) => {
   const email = `pia@${uniqueDomain("boxlink")}`;
   await signInWithPassword(page, email, "irgendein-passwort");
   await expect(page.getByRole("alert").filter({ hasText: INVALID })).toBeVisible();
@@ -147,7 +151,7 @@ test("the box's button mails a sign-in link to the typed address", async ({ page
   const since = new Date(Date.now() - 1000);
   await page.getByRole("button", { name: "Anmeldelink an diese Adresse senden" }).click();
   await expect(page.getByRole("heading", { name: "Schau in dein Postfach" })).toBeVisible();
-  expect(await linkFromMail(email, MAGIC_LINK, since)).toBeTruthy();
+  expect(await linkFromMail(email, NO_ACCOUNT_LINK, since)).toBeTruthy();
 });
 
 test("auth forms before hydration: no submit, and never a password in the URL", async ({ browser }) => {

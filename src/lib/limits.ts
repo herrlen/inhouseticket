@@ -34,6 +34,15 @@ export const NO_PASSWORD_LINKS_PER_EMAIL = 1;
 export const NO_PASSWORD_LINK_WINDOW_MS = 15 * 60_000;
 
 /**
+ * Sign-in link requested for an address without an account (Len, 2026-10-19): instead of a link,
+ * a hint to register – at most one mail per address in this window.
+ */
+export const NO_ACCOUNT_MAILS_PER_EMAIL = 1;
+export const NO_ACCOUNT_MAIL_WINDOW_MS = 15 * 60_000;
+/** Longest address the registration page takes over from its query (RFC 5321 path limit). */
+export const MAX_EMAIL = 254;
+
+/**
  * Self-chosen name of a dynamically registered OAuth client (connector). Longer names are cut at
  * registration and on the consent page – a long name could push the redirect host out of view.
  * Set 2026-10-17 (security review).

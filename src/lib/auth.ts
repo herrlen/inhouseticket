@@ -18,13 +18,15 @@ import { isCompanyEmail } from "@/lib/freemail";
 import { isExemptEmail } from "@/lib/superadmin";
 import { MAX_NAME, MAX_PASSWORD, MIN_PASSWORD } from "@/lib/limits";
 import { setPasswordUrl } from "@/lib/password-gate";
+import type { Messages } from "@/lib/i18n/de";
 import { getTOrDefault } from "@/lib/i18n/server";
 import { buttonMail, sendMail } from "@/lib/mail";
 import { nameFromEmail } from "@/lib/onboarding/names";
 import { sanitizeClientName } from "@/lib/oauth-client-trust";
+import { noAccountRegisterUrl, takeNoAccountMail } from "@/lib/no-account-mail";
 import { failedSignInEmail, shouldSendNoPasswordLink } from "@/lib/no-password-link";
 import { addressKey, rateLimit } from "@/lib/rate-limit";
-import { registrationPlugin } from "@/lib/registration-plugin";
+import { REGISTRATION_METHOD, registrationPlugin } from "@/lib/registration-plugin";
 import { hashToken } from "@/lib/tokens";
 
 /** The MCP endpoint is the one protected resource OAuth clients (claude.ai connectors) get tokens for. */
@@ -76,6 +78,43 @@ function afterResponse(task: () => Promise<void>): void {
   }
 }
 
+/**
+ * Mail behind a sign-in link request: the link for an existing account (a different text if it has
+ * no password yet), a hint to register for an unknown address (once per address and window).
+ */
+async function deliverSignInMail(email: string, verifyUrl: string, t: Messages): Promise<void> {
+  try {
+    const state = await passwordStateByEmail(email);
+    if (state === "noAccount") {
+      if (!takeNoAccountMail(email)) return;
+      const url = noAccountRegisterUrl(env.APP_URL, email, verifyUrl);
+      const m = t.auth.noAccountMail;
+      await sendMail({
+        to: email,
+        subject: m.subject,
+        text: `${m.intro}\n\n${url}\n\n${m.outro}`,
+        html: buttonMail({ heading: m.heading, intro: m.intro, button: m.button, url, outro: m.outro, lang: t.common.langTag, fallback: t.common.mailFallback }),
+      });
+      return;
+    }
+    // Mail scanners and link previews fetch links ahead of the person; a GET on the verify
+    // endpoint consumes the token. So the mail points at a confirm page whose button does it.
+    // The link carries the token: never log it.
+    const url = magicLinkConfirmUrl(verifyUrl);
+    // An account without a password learns why it gets a link and that it sets a password next.
+    const m = state === "noPassword" ? t.auth.noPasswordMail : t.auth.mail;
+    await sendMail({
+      to: email,
+      subject: m.subject,
+      text: `${m.intro}\n\n${url}\n\n${m.outro}`,
+      html: buttonMail({ heading: m.heading, intro: m.intro, button: m.button, url, outro: m.outro, lang: t.common.langTag, fallback: t.common.mailFallback }),
+    });
+  } catch (e) {
+    // Never log the address or the link.
+    console.error("auth: sign-in mail not sent", e instanceof Error ? e.name : "unknown");
+  }
+}
+
 export const auth = betterAuth({
   baseURL: env.APP_URL,
   secret: env.BETTER_AUTH_SECRET,
@@ -88,8 +127,8 @@ export const auth = betterAuth({
   // Per-IP limits in production only; local and E2E runs share one IP.
   rateLimit: { enabled: env.NODE_ENV === "production", window: 60, max: 100 },
   // Every account has a password (Len, 2026-10-16). Better Auth's own sign-up stays off: it would
-  // create the account before the inbox is verified. Accounts come from the magic link or from the
-  // registration plugin below (company address, closed beta, verified inbox, ADR 005).
+  // create the account before the inbox is verified. Accounts come only from the registration
+  // plugin below (company address, closed beta, verified inbox, ADR 005) – not from the magic link.
   emailAndPassword: {
     enabled: true,
     disableSignUp: true,
@@ -115,6 +154,13 @@ export const auth = betterAuth({
   },
   // Reset tokens are stored as SHA-256 only (magic-link tokens hash themselves, see below).
   verification: { storeIdentifier: { default: "plain", overrides: { "reset-password:": "hashed" } } },
+  user: {
+    // One way into an account: the confirmed registration (ADR 005). Every other creation – the
+    // magic link (also off there), Better Auth's own sign-up, a future plugin – is refused here,
+    // before the database hooks run.
+    validateUserInfo: ({ source }) =>
+      source.action === "create-user" && source.method !== REGISTRATION_METHOD ? { error: "SIGN_UP_DISABLED" } : undefined,
+  },
   // Profile changes are not offered; the endpoint would accept any avatar URL and unbounded names.
   disabledPaths: ["/update-user"],
   hooks: {
@@ -182,8 +228,8 @@ export const auth = betterAuth({
           const name = (user.name || nameFromEmail(user.email)).trim().slice(0, MAX_NAME);
           return { data: { ...user, email: user.email.toLowerCase(), name } };
         },
-        // Whatever path created the account (link, registration): an open registration for the
-        // address can never be completed any more – drop it (ADR 005).
+        // An account exists now: an open registration for the address can never be completed any
+        // more – drop it (ADR 005).
         after: async (user) => {
           await deletePendingForEmail(user.email);
         },
@@ -195,28 +241,15 @@ export const auth = betterAuth({
       expiresIn: MAGIC_LINK_TTL_SECONDS,
       storeToken: "hashed",
       rateLimit: { window: 60, max: 5 },
+      // The link only signs in existing accounts (Len, 2026-10-19). Accounts come from the
+      // registration alone (ADR 005); an unknown address gets a hint to register instead.
+      disableSignUp: true,
       sendMagicLink: async ({ email, url: verifyUrl }) => {
-        // Mail scanners and link previews fetch links ahead of the person; a GET on the verify
-        // endpoint consumes the token. So the mail points at a confirm page whose button does it.
-        const url = magicLinkConfirmUrl(verifyUrl);
-        // In the language the person chose on the sign-in page. An account without a password
-        // learns why it gets a link and that it sets a password next.
+        // In the language the person chose on the sign-in page – resolved while the request lives.
         const t = await getTOrDefault();
-        const m = (await passwordStateByEmail(email)) === "noPassword" ? t.auth.noPasswordMail : t.auth.mail;
-        await sendMail({
-          to: email,
-          subject: m.subject,
-          text: `${m.intro}\n\n${url}\n\n${m.outro}`,
-          html: buttonMail({
-            heading: m.heading,
-            intro: m.intro,
-            button: m.button,
-            url,
-            outro: m.outro,
-            lang: t.common.langTag,
-            fallback: t.common.mailFallback,
-          }),
-        });
+        // The lookup and the mail run after the response: neither content nor timing of the
+        // answer tells an address with an account from one without.
+        afterResponse(() => deliverSignInMail(email, verifyUrl, t));
       },
     }),
     // OAuth 2.1 for claude.ai / Claude Desktop connectors: dynamic client registration, PKCE,
