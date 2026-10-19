@@ -52,3 +52,7 @@ Schema-Änderung, keine neue Abhängigkeit.
 - Die oben verworfene „Registrierung mit Passwort“ gibt es jetzt (Len) – mit eigener Bestätigung und denselben
   Prüfungen, siehe **ADR 005**. `disableSignUp: true` bleibt: Better Auths `/sign-up/email` würde das Konto vor der
   Bestätigung anlegen.
+
+## Nachtrag 2026-10-19: Magic Link nur für bestehende Konten
+- Konten entstehen nicht mehr über den Magic Link, nur noch über die Registrierung (Len, siehe **ADR 005**, Nachtrag
+  2026-10-19). Unbekannte Adressen bekommen statt eines Links einen Hinweis auf `/register`.

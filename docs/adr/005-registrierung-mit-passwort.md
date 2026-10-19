@@ -62,3 +62,29 @@ Freemail-/Beta-Prüfung bräuchte. Beides liefert diese Entscheidung jetzt nach.
 - In der geschlossenen Beta verrät „Beta geschlossen“ wie beim Anmeldelink, dass eine Adresse außerhalb der
   Beta-Domains ein Konto oder eine Einladung hat – unverändert gegenüber heute.
 - Wer das Registrierungspasswort vergisst, registriert sich neu; der alte Link verfällt.
+
+## Nachtrag 2026-10-19: Der Magic Link legt keine Konten mehr an
+- Entscheidung Len: „Ohne Passwort per Link anmelden“ funktioniert nur noch für **bestehende** Konten. Bisher entstand
+  für eine unbekannte (erlaubte) Firmenadresse beim Klick auf den Link ein Konto ohne Passwort – ein zweiter Weg an
+  Name, Passwort-Wahl und AGB-Hinweis der Registrierung vorbei.
+- Umsetzung in `src/lib/auth.ts`:
+  - `magicLink({ disableSignUp: true })`: Better Auths Verify-Endpunkt legt keinen Nutzer an (Fehler
+    `new_user_signup_disabled` → `/login?error=link`).
+  - `sendMagicLink` plant die Mail mit `after()` (`deliverSignInMail`): Konto vorhanden → Anmeldelink wie bisher
+    (Konto ohne Passwort: Text „Du hast noch kein Passwort“); kein Konto → Mail „Für diese Adresse gibt es noch kein
+    Konto“ mit Link auf `/register?email=…&next=…` (`src/lib/no-account-mail.ts`), höchstens eine je Adresse und
+    15 Minuten (`NO_ACCOUNT_MAILS_PER_EMAIL`, auch lokal). Antwort, Inhalt und Antwortzeit sind in beiden Fällen gleich
+    („Schau in dein Postfach“). Freemail-, Beta- und Adress-Limit-Prüfung im Before-Hook bleiben unverändert davor.
+  - `next` kommt aus dem `callbackURL` des Links (nur gleiche Herkunft, `safeNext`). Die Registrierungsseite übernimmt
+    `email` aus der Query nur, wenn sie `registrationEmailSchema` besteht; die Registrierung speichert `next` und
+    landet nach der Bestätigung dort – Einladung (`/invite/…`) oder Connector-Login (`/api/auth/oauth2/authorize?…`).
+  - Harte Sperre für jeden anderen Weg: `user.validateUserInfo` lehnt `create-user` ab, wenn die Quelle nicht
+    `REGISTRATION_METHOD` des Bestätigungs-Endpunkts ist (auch Better Auths `/sign-up/email`, künftige Plugins,
+    direkte `internalAdapter.createUser`-Aufrufe ohne Endpunkt). Die Datenbank-Hooks (Firmenadresse, Name) bleiben.
+- Die Einladungsseite bietet ohne Sitzung „Anmelden und annehmen“ und „Noch kein Konto? Registrieren und annehmen“
+  (Adresse der Einladung vorausgefüllt, `next` = Einladung).
+- Konten ohne Passwort gibt es nur noch aus der Zeit davor; für sie bleiben Passwort-Pflicht (ADR 003) und der
+  automatische Anmeldelink unverändert.
+- Verworfen: **Before-Hook auf `/sign-in/magic-link`, der unbekannte Adressen ablehnt** – die Antwort verriete, ob es
+  ein Konto gibt. **Nur `disableSignUp`** ohne eigene Mail – die Person bekäme einen Link, der mit einem Fehler endet,
+  ohne Hinweis auf die Registrierung.

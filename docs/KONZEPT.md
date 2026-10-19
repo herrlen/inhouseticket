@@ -25,8 +25,12 @@ Ein kostenloses, schlankes Ticketing-System für interne Teams – so schnell wi
 ### 2.1 Account & Workspace
 - Registrierung **nur mit Firmen-E-Mail** (Freemail-Blockliste: gmail, googlemail, gmx, web.de, t-online, outlook, hotmail, live, yahoo, icloud, me, proton, aol, mail.de, freenet …).
 - Login mit **E-Mail und Passwort** (geändert 2026-10-16, Len: „Jeder User hat einen E-Mail-Login und ein Passwort“, ADR 003).
-  Der **Magic Link** bleibt: Konten entstehen nur über ihn (Firmen-E-Mail, Beta-Liste, Postfach bestätigt – keine
-  Selbstregistrierung per Passwort), und er dient als Alternative und als Weg bei vergessenem Passwort.
+  Konten entstehen **nur über die Registrierung** `/register` (Name, Firmen-E-Mail, Passwort, Bestätigungslink – ADR 005).
+  Der **Magic Link** bleibt als Alternative und als Weg bei vergessenem Passwort, meldet aber **nur bestehende Konten** an
+  (Len, 2026-10-19): Für eine Adresse ohne Konto zeigt die Seite dasselbe „Schau in dein Postfach“, die Mail enthält dann
+  statt eines Links den Hinweis „Für diese Adresse gibt es noch kein Konto“ mit Link zur Registrierung (höchstens eine je
+  Adresse und 15 Minuten). Eingeladene und Connector-Logins ohne Konto registrieren sich zuerst und landen danach wieder
+  bei der Einladung bzw. der Einwilligung.
 - Wer per Link ohne Passwort ankommt (Login, Einladung, Onboarding, Connector-Login), legt **zuerst ein Passwort fest** –
   serverseitig erzwungen (`requireUser`, API, OAuth-Authorize), bestehende Konten beim nächsten Login.
 - Passwort 10–128 Zeichen (`limits.ts`), gehasht von Better Auth (scrypt). „Passwort vergessen“ schickt einen Link
