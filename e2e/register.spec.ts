@@ -155,7 +155,11 @@ test("someone else's registration cannot be completed without its password; a ne
     const answered = page.waitForResponse((r) => r.request().method() === "POST" && r.url().includes("/register/confirm"));
     await page.getByRole("button", { name: "Bestätigen und anmelden" }).click();
     await answered;
-    if (i < 4) await expect(page.getByText("Das Passwort stimmt nicht.", { exact: false }).first()).toBeVisible();
+    if (i < 4) {
+      await expect(page.getByText("Das Passwort stimmt nicht.", { exact: false }).first()).toBeVisible();
+      // React resets the form after the action; typing before that lands would be wiped (empty submit).
+      await expect(page.getByLabel("Passwort", { exact: true })).toHaveValue("");
+    }
   }
   await expect(page.getByText("Zu viele falsche Versuche.", { exact: false })).toBeVisible();
   await expect(page.getByRole("link", { name: "Erneut registrieren" })).toBeVisible();
