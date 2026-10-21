@@ -9,6 +9,13 @@ import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import type { Messages } from "@/lib/i18n/de";
 import { projectHref, useShell } from "./shell-context";
+import deCommand from "@/lib/i18n/de/command";
+import deCommon from "@/lib/i18n/de/common";
+import deHelp from "@/lib/i18n/de/help";
+import deMe from "@/lib/i18n/de/me";
+import deShell from "@/lib/i18n/de/shell";
+
+const MESSAGES = { command: deCommand, common: deCommon, help: deHelp, me: deMe, shell: deShell };
 
 type Item = { id: string; group: "actions" | "projects" | "tickets"; label: string; hint?: string; color?: string; run: () => void };
 
@@ -28,7 +35,7 @@ export function CommandPalette({
   onToggleSidebar: () => void;
   onShowHelp: () => void;
 }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   return (
     <Dialog open={open} onClose={onClose} title={t.command.title} hideTitle className="top-[15vh] w-[min(36rem,calc(100vw-2rem))]">
       {open ? <PaletteBody explorer={explorer} onClose={onClose} onToggleSidebar={onToggleSidebar} onShowHelp={onShowHelp} /> : null}
@@ -37,7 +44,7 @@ export function CommandPalette({
 }
 
 function PaletteBody({ explorer, onClose, onToggleSidebar, onShowHelp }: { explorer: ExplorerData; onClose: () => void; onToggleSidebar: () => void; onShowHelp: () => void }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { slug, workspaceId, canAdmin, defaultView } = useShell();
   const router = useRouter();
   const pathname = usePathname();
@@ -87,10 +94,10 @@ function PaletteBody({ explorer, onClose, onToggleSidebar, onShowHelp }: { explo
             { id: "a-settings", group: "actions" as const, label: t.command.projectSettings, run: () => go(`/${slug}/p/${currentKey}/settings`) },
           ]
         : []),
-      ...(canAdmin ? [{ id: "a-members", group: "actions" as const, label: t.members.title, run: () => go(`/${slug}/settings/members`) }] : []),
-      { id: "a-claude", group: "actions", label: t.claude.title, run: () => go(`/${slug}/settings/claude`) },
-      ...(canAdmin ? [{ id: "a-data", group: "actions" as const, label: t.data.title, run: () => go(`/${slug}/settings/data`) }] : []),
-      ...(canAdmin ? [{ id: "a-import", group: "actions" as const, label: t.import.title, run: () => go(`/${slug}/settings/data/import`) }] : []),
+      ...(canAdmin ? [{ id: "a-members", group: "actions" as const, label: t.shell.pages.members, run: () => go(`/${slug}/settings/members`) }] : []),
+      { id: "a-claude", group: "actions", label: t.shell.pages.claude, run: () => go(`/${slug}/settings/claude`) },
+      ...(canAdmin ? [{ id: "a-data", group: "actions" as const, label: t.shell.pages.data, run: () => go(`/${slug}/settings/data`) }] : []),
+      ...(canAdmin ? [{ id: "a-import", group: "actions" as const, label: t.shell.pages.import, run: () => go(`/${slug}/settings/data/import`) }] : []),
       { id: "a-sidebar", group: "actions", label: t.command.toggleSidebar, hint: "⌘B", run: () => { onClose(); onToggleSidebar(); } },
       { id: "a-help", group: "actions", label: t.command.shortcuts, hint: "?", run: () => { onClose(); onShowHelp(); } },
     ];
@@ -196,7 +203,7 @@ const SHORTCUTS: Array<{ keys: string[]; label: keyof Messages["help"]["items"] 
 ];
 
 export function ShortcutHelp({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   return (
     <Dialog open={open} onClose={onClose} title={t.help.title}>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[13px]">

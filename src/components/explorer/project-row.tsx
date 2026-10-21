@@ -9,6 +9,9 @@ import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import { SortableItem } from "./dnd-bridge";
 import { projectDndId, type FolderItem, type ProjectItem } from "./model";
+import deExplorer from "@/lib/i18n/de/explorer";
+
+const MESSAGES = { explorer: deExplorer };
 
 type Props = {
   project: ProjectItem;
@@ -27,7 +30,7 @@ export function ProjectRow(props: Props) {
 }
 
 function SortableProjectRow(props: Props) {
-  const t = useT();
+  const t = useT(MESSAGES);
   return (
     <SortableItem id={projectDndId(props.project.id)}>
       {(s) => (
@@ -53,7 +56,7 @@ function SortableProjectRow(props: Props) {
 }
 
 function ProjectRowView({ project, folders, favorite, onToggleFavorite, onMoveTo, onArchive, handle }: Props & { handle?: React.ReactNode }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const shell = useShell();
   const { slug, canAdmin } = shell;
   const router = useRouter();

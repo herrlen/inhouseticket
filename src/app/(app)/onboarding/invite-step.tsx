@@ -8,6 +8,9 @@ import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import { parseInviteInput, SENDABLE, type InviteChip, type InviteStatus } from "@/lib/onboarding/invite-input";
 import type { WizardData, StepProps } from "./wizard-state";
+import deOnboarding from "@/lib/i18n/de/onboarding";
+
+const MESSAGES = { onboarding: deOnboarding };
 
 // Step 6 (docs/ONBOARDING.md §2.3): paste or type addresses, each becomes a chip with its status.
 // Red = freemail/invalid (not invited), yellow = external (invited, marked), grey = duplicate or
@@ -35,7 +38,7 @@ export function commitDraft(data: WizardData, props: StepProps["props"], text = 
 export const sendableEmails = (chips: InviteChip[]) => chips.filter((c) => SENDABLE.has(c.status)).map((c) => c.email);
 
 export function InviteStep({ data, set, errors, props }: StepProps) {
-  const messages = useT();
+  const messages = useT(MESSAGES);
   const t = messages.onboarding.invite;
   const used = props.invites.seatsUsed + sendableEmails(data.chips).length;
   const max = props.invites.maxSeats;

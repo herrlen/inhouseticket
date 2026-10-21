@@ -14,6 +14,9 @@ import type { AttachmentRow, CommentRow, SubtaskRow } from "@/db/queries/ticket-
 import { useToast } from "@/components/ui/toast";
 import { useT } from "@/lib/i18n/client";
 import { activityKey, ticketsKey } from "./use-tickets";
+import deExplorer from "@/lib/i18n/de/explorer";
+
+const MESSAGES = { explorer: deExplorer };
 
 /** `manageAttachments`: the viewer may delete every attachment (ticket author or admin), not just their own. */
 export type Parts = { subtasks: SubtaskRow[]; attachments: AttachmentRow[]; comments: CommentRow[]; manageAttachments: boolean };
@@ -35,7 +38,7 @@ export function useParts(workspaceId: string, ticketId: string) {
 export function usePartMutation<I, O>(workspaceId: string, projectId: string, ticketId: string, run: (input: I) => Promise<{ ok: true; data: O } | { ok: false; error: string }>, optimistic?: (parts: Parts, input: I) => Parts) {
   const qc = useQueryClient();
   const toast = useToast();
-  const t = useT();
+  const t = useT(MESSAGES);
   return useMutation({
     mutationFn: async (input: I) => {
       const r = await run(input);

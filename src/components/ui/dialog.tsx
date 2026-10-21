@@ -4,6 +4,9 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import { Close } from "./icons";
+import deCommon from "@/lib/i18n/de/common";
+
+const MESSAGES = { common: deCommon };
 
 export type DialogProps = {
   open: boolean;
@@ -22,7 +25,7 @@ export type DialogProps = {
  * browser. Clicking the backdrop closes it as well.
  */
 export function Dialog({ open, onClose, title, hideTitle, children, placement = "center", className }: DialogProps) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 

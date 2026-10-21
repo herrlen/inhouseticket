@@ -1,0 +1,23 @@
+export default {
+  title: "Konto",
+  signedInAs: (email: string) => `Angemeldet als ${email}.`,
+  passwordTitle: "Passwort",
+  changeTitle: "Passwort ändern",
+  changeText: "Andere Geräte werden danach abgemeldet.",
+  changeSubmit: "Passwort ändern",
+  changed: "Passwort geändert. Andere Geräte wurden abgemeldet.",
+  wrongCurrent: "Das aktuelle Passwort stimmt nicht.",
+  resetTitle: "Passwort zurücksetzen",
+  resetText: "Wir schicken dir einen Link an deine E-Mail-Adresse. Damit legst du ein neues Passwort fest; danach wirst du auf allen Geräten abgemeldet, und alle API-Tokens und verbundenen Apps werden getrennt.",
+  resetButton: "Passwort zurücksetzen",
+  resetSent: (email: string) => `Link an ${email} geschickt. Er ist 30 Minuten gültig.`,
+  disconnectTitle: "Verbindungen",
+  disconnectText: "Trennt sofort alle API-Tokens und alle über „Connector hinzufügen“ verbundenen Apps (z. B. Claude) – in allen deinen Workspaces. Skripte und Connectors müssen danach neu eingerichtet werden. Ein Zurücksetzen des Passworts macht das automatisch.",
+  disconnectAllButton: "Alle Verbindungen trennen",
+  disconnectAllPending: "Trenne …",
+  disconnectAllConfirm: "Wirklich alle API-Tokens und Apps trennen?",
+  disconnectAllYes: "Ja, alle trennen",
+  disconnectAllDone: (tokens: number, apps: number) =>
+    `Getrennt: ${tokens === 1 ? "1 API-Token" : `${tokens} API-Tokens`}, ${apps === 1 ? "1 App" : `${apps} Apps`}.`,
+  tooMany: "Zu viele Versuche. Bitte warte ein paar Minuten und versuch es dann noch einmal.",
+} as const;

@@ -1,0 +1,15 @@
+export default {
+  title: "Befehle und Suche",
+  input: "Suchen oder Befehl eingeben",
+  placeholder: "Ticket suchen, Projekt öffnen, Aktion …",
+  results: "Ergebnisse",
+  noResults: "Nichts gefunden.",
+  typeToSearch: "Tippe, um Tickets zu suchen (Titel, Beschreibung oder Key wie MKT-12).",
+  newTicket: (project: string) => `Neues Ticket in ${project}`,
+  toList: "Zur Liste",
+  toBoard: "Zum Board",
+  projectSettings: "Projekteinstellungen",
+  toggleSidebar: "Seitenleiste ein-/ausklappen",
+  shortcuts: "Tastenkürzel anzeigen",
+  groups: { actions: "Aktionen", projects: "Projekte", tickets: "Tickets" },
+} as const;

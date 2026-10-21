@@ -13,6 +13,13 @@ import { useProjectInfo } from "./context";
 import { hasFilters, type Filters } from "./filters";
 import { priorityKey } from "./list-model";
 import { PriorityIcon } from "./pickers";
+import deCommon from "@/lib/i18n/de/common";
+import deFilters from "@/lib/i18n/de/filters";
+import deList from "@/lib/i18n/de/list";
+import dePriority from "@/lib/i18n/de/priority";
+import deViews from "@/lib/i18n/de/views";
+
+const MESSAGES = { common: deCommon, filters: deFilters, list: deList, priority: dePriority, views: deViews };
 
 type Props = {
   filters: Filters;
@@ -32,7 +39,7 @@ const chip = (active: boolean) =>
   );
 
 export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views, onViewsChange, shown, total }: Props) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { members, labels, currentUserId, workspaceId, project } = useProjectInfo();
   const toast = useToast();
   const [, startTransition] = useTransition();

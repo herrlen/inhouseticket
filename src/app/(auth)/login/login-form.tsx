@@ -11,6 +11,11 @@ import { registerHref } from "@/lib/auth-links";
 import { getEmailDomain } from "@/lib/freemail";
 import { useT } from "@/lib/i18n/client";
 import { useHydrated } from "@/lib/use-hydrated";
+import deAuth from "@/lib/i18n/de/auth";
+import deLogin from "@/lib/i18n/de/login";
+import dePassword from "@/lib/i18n/de/password";
+
+const MESSAGES = { auth: deAuth, login: deLogin, password: dePassword };
 
 type State =
   | { kind: "idle" }
@@ -23,7 +28,7 @@ type State =
 type Failure = { lead: string; hint?: string; attempt: number };
 
 export function LoginForm({ next }: { next: string }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const hydrated = useHydrated();
   const [state, setState] = useState<State>({ kind: "idle" });
   const [failure, setFailure] = useState<Failure | null>(null);

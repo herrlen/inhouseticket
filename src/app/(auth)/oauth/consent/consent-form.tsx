@@ -4,6 +4,9 @@ import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/client";
 import { consentAction, type ConsentState } from "./actions";
+import deOauth from "@/lib/i18n/de/oauth";
+
+const MESSAGES = { oauth: deOauth };
 
 type Props = {
   oauthQuery: string;
@@ -14,7 +17,7 @@ type Props = {
 };
 
 export function ConsentForm({ oauthQuery, workspaces, email, unverifiedHost }: Props) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [state, action, pending] = useActionState<ConsentState, FormData>(consentAction, {});
   const [confirmed, setConfirmed] = useState(false);
 

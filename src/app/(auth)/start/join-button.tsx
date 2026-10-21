@@ -4,11 +4,14 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/client";
 import { acceptInvitation, joinByDomain, type JoinState } from "./actions";
+import deStart from "@/lib/i18n/de/start";
+
+const MESSAGES = { start: deStart };
 
 type Props = { kind: "invitation"; invitationId: string } | { kind: "domain" };
 
 export function JoinButton(props: Props) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [state, action, pending] = useActionState<JoinState, FormData>(
     props.kind === "invitation" ? acceptInvitation : joinByDomain,
     {},

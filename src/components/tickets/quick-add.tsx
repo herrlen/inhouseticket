@@ -7,10 +7,14 @@ import { MAX_TITLE } from "@/lib/limits";
 import { parseQuickAdd, type QuickAddResult } from "@/lib/quick-add";
 import { useProjectInfo } from "./context";
 import { todayInBerlin } from "./list-model";
+import deList from "@/lib/i18n/de/list";
+import deQuickAdd from "@/lib/i18n/de/quickAdd";
+
+const MESSAGES = { list: deList, quickAdd: deQuickAdd };
 
 /** Single-line ticket creation with @person !prio ^date. Counter n/500 (KONZEPT §5.5). */
 export const QuickAdd = forwardRef<HTMLInputElement, { onCreate: (ticket: QuickAddResult) => void }>(function QuickAdd({ onCreate }, ref) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const locale = useLocale();
   const { members, currentUserId } = useProjectInfo();
   const [text, setText] = useState("");

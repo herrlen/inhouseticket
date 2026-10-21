@@ -1,0 +1,22 @@
+export default {
+  someone: "Jemand",
+  created: "hat das Ticket angelegt",
+  title: (to: string) => `hat den Titel geändert in „${to}“`,
+  description: "hat die Beschreibung geändert",
+  status: (from: string, to: string) => `hat den Status von ${from} auf ${to} gesetzt`,
+  priority: (to: string) => `hat die Priorität auf ${to} gesetzt`,
+  assignee: (to: string) => `hat ${to} zugewiesen`,
+  unassigned: "hat die Zuweisung entfernt",
+  due: (to: string) => `hat das Fälligkeitsdatum auf ${to} gesetzt`,
+  dueRemoved: "hat das Fälligkeitsdatum entfernt",
+  subtask_added: (t: string) => `hat die Unteraufgabe „${t}“ hinzugefügt`,
+  subtask_done: (t: string) => `hat „${t}“ abgehakt`,
+  subtask_reopened: (t: string) => `hat „${t}“ wieder geöffnet`,
+  subtask_removed: (t: string) => `hat die Unteraufgabe „${t}“ entfernt`,
+  attachment_added: (f: string) => `hat ${f} angehängt`,
+  imported: (source: string, ref: string) => `hat das Ticket aus ${source} importiert${ref ? ` (${ref})` : ""}`,
+  attachment_removed: (f: string) => `hat ${f} entfernt`,
+  labels: (added: string[], removed: string[]) =>
+    [added.length ? `Labels hinzugefügt: ${added.join(", ")}` : "", removed.length ? `entfernt: ${removed.join(", ")}` : ""].filter(Boolean).join("; "),
+  viaClaude: "(via Claude)",
+} as const;

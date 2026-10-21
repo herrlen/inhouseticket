@@ -7,13 +7,17 @@ import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import { ghostRow } from "./list-extras";
 import { useParts } from "./use-parts";
+import deCommon from "@/lib/i18n/de/common";
+import deList from "@/lib/i18n/de/list";
+
+const MESSAGES = { common: deCommon, list: deList };
 
 // Loaded on demand (next/dynamic) to keep the project page within the JS budget: the new-status
 // form for admins and the unfolded subtasks of the list (docs/ONBOARDING.md §4).
 
 /** "+ Neuer Status" under the list (admins only); goes before the done statuses. */
 export function NewStatusRow({ workspaceId, projectKey }: { workspaceId: string; projectKey: string }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState(createStatusAction, {});
   const form = useRef<HTMLFormElement>(null);
@@ -57,7 +61,7 @@ export function NewStatusRow({ workspaceId, projectKey }: { workspaceId: string;
 
 /** Subtasks of one ticket, read-only, under its row (loaded when the switch is on). */
 export function SubtaskRows({ workspaceId, ticketId, ticketKey, colSpan }: { workspaceId: string; ticketId: string; ticketKey: string; colSpan: number }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { data } = useParts(workspaceId, ticketId);
   return (
     <tr className="border-b border-border bg-bg/40">

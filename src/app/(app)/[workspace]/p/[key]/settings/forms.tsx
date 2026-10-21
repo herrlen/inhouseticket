@@ -17,12 +17,17 @@ import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import { PALETTE } from "@/lib/palette";
 import { DEFAULT_STATUSES } from "@/lib/project-templates";
+import deCommon from "@/lib/i18n/de/common";
+import deProjectForm from "@/lib/i18n/de/projectForm";
+import deProjectSettings from "@/lib/i18n/de/projectSettings";
+
+const MESSAGES = { common: deCommon, projectForm: deProjectForm, projectSettings: deProjectSettings };
 
 // Status colors: the four defaults plus the project palette.
 const STATUS_COLORS = [...new Set([...DEFAULT_STATUSES.map((s) => s.color as string), ...Object.values(PALETTE)])];
 
 function Feedback({ state }: { state: FormState }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const message = state.error ?? (state.ok ? t.common.saved : "");
   return (
     <p role={state.error ? "alert" : "status"} className={cn("min-h-4 text-xs", state.error ? "text-prio-urgent-ink" : "text-status-done-ink")}>
@@ -32,7 +37,7 @@ function Feedback({ state }: { state: FormState }) {
 }
 
 export function ProjectForm({ workspaceId, project }: { workspaceId: string; project: { id: string; name: string; key: string; color: string; icon: string | null } }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [state, action, pending] = useActionState<FormState, FormData>(updateProjectAction, {});
   const e = state.fieldErrors ?? {};
   return (
@@ -65,7 +70,7 @@ function Hidden({ workspaceId, projectKey, statusId }: StatusRef & { statusId?: 
 }
 
 function StatusFields({ status, idPrefix }: { status?: StatusData; idPrefix: string }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   return (
     <>
       <div className="flex min-w-40 flex-1 flex-col gap-1">
@@ -102,7 +107,7 @@ function StatusFields({ status, idPrefix }: { status?: StatusData; idPrefix: str
 }
 
 export function StatusRow({ status, isFirst, isLast, others, ...ref }: StatusRef & { status: StatusData; isFirst: boolean; isLast: boolean; others: Array<{ id: string; name: string }> }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [state, action, pending] = useActionState<FormState, FormData>(updateStatusAction, {});
   const [delState, delAction, deleting] = useActionState<FormState, FormData>(deleteStatusAction, {});
   const idPrefix = `status-${status.id}`;
@@ -153,7 +158,7 @@ export function StatusRow({ status, isFirst, isLast, others, ...ref }: StatusRef
 }
 
 export function NewStatusForm(ref: StatusRef) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [state, action, pending] = useActionState<FormState, FormData>(createStatusAction, {});
   const form = useRef<HTMLFormElement>(null);
   useEffect(() => {

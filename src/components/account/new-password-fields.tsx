@@ -5,6 +5,9 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { MAX_PASSWORD, MIN_PASSWORD } from "@/lib/limits";
 import { useT } from "@/lib/i18n/client";
 import { checkNewPassword } from "@/lib/password-gate";
+import dePassword from "@/lib/i18n/de/password";
+
+const MESSAGES = { password: dePassword };
 
 export type PasswordErrors = { password?: string; confirm?: string };
 
@@ -13,7 +16,7 @@ export type PasswordErrors = { password?: string; confirm?: string };
  * browser check and cancels the submit on a problem; the server validates again with Zod.
  */
 export function useNewPasswordCheck() {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [local, setLocal] = useState<PasswordErrors>({});
   function onSubmitCheck(e: React.FormEvent<HTMLFormElement>) {
     const data = new FormData(e.currentTarget);
@@ -33,7 +36,7 @@ export function useNewPasswordCheck() {
 }
 
 export function NewPasswordFields({ errors, autoFocus, label }: { errors: PasswordErrors; autoFocus?: boolean; label?: string }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   return (
     <>
       <PasswordInput

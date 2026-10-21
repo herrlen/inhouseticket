@@ -3,6 +3,9 @@
 import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import { PALETTE, PALETTE_COLORS, paletteColorFromHex, type PaletteColor } from "@/lib/palette";
+import dePalette from "@/lib/i18n/de/palette";
+
+const MESSAGES = { palette: dePalette };
 
 const swatches: Record<PaletteColor, string> = {
   coral: "bg-p-coral", orange: "bg-p-orange", sun: "bg-p-sun", lime: "bg-p-lime", mint: "bg-p-mint",
@@ -12,7 +15,7 @@ const swatches: Record<PaletteColor, string> = {
 
 /** Radio group over the 12 palette colors; submits the hex value as `name`. */
 export function ColorPicker({ name, legend, defaultValue, error }: { name: string; legend: string; defaultValue?: string; error?: string }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const selected = (defaultValue && paletteColorFromHex(defaultValue)) || "indigo";
   return (
     <fieldset>

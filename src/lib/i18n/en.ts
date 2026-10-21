@@ -840,6 +840,7 @@ export const en: Messages = {
     subtask_reopened: (t: string) => `reopened “${t}”`,
     subtask_removed: (t: string) => `removed the subtask “${t}”`,
     attachment_added: (f: string) => `attached ${f}`,
+    imported: (source: string, ref: string) => `imported the ticket from ${source}${ref ? ` (${ref})` : ""}`,
     attachment_removed: (f: string) => `removed ${f}`,
     labels: (added: string[], removed: string[]) =>
       [added.length ? `added labels: ${added.join(", ")}` : "", removed.length ? `removed: ${removed.join(", ")}` : ""].filter(Boolean).join("; "),
@@ -941,6 +942,17 @@ export const en: Messages = {
     search: "Search",
     confettiOn: "Turn confetti on",
     confettiOff: "Turn confetti off",
+    pages: {
+      dashboard: "Dashboard",
+      members: "Members",
+      admin: "Operator overview",
+      account: "Account",
+      claude: "Connect to Claude",
+      claudeNav: "Claude",
+      data: "Data & workspace",
+      dataNav: "Data",
+      import: "Import projects",
+    },
   },
   projectForm: {
     name: "Name",
@@ -1232,7 +1244,6 @@ export const en: Messages = {
     done: (n: number, key: string) => `${n} tickets imported into ${key}.`,
     openProject: "Go to project",
     another: "Import another file",
-    activity: (source: string, ref: string) => `imported the ticket from ${source}${ref ? ` (${ref})` : ""}`,
     errors: {
       too_large: "The file is larger than 5 MB. Export one project at a time.",
       empty: () => "The file contains no tickets.",

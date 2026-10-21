@@ -7,9 +7,12 @@ import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import { DEFAULT_EXPIRY, EXPIRY_CHOICES, type ExpiryChoice } from "@/lib/token-expiry";
 import { createTokenAction, type TokenState } from "./actions";
+import deClaude from "@/lib/i18n/de/claude";
+
+const MESSAGES = { claude: deClaude };
 
 export function TokenForm({ workspaceId, onToken }: { workspaceId: string; onToken?: (token: string) => void }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   // Controlled fields: React resets uncontrolled ones after every submit, which would drop the input on errors.
   const [name, setName] = useState("");
   const [expiry, setExpiry] = useState<ExpiryChoice>(DEFAULT_EXPIRY);
@@ -84,7 +87,7 @@ export function TokenForm({ workspaceId, onToken }: { workspaceId: string; onTok
 }
 
 function NewToken({ token }: { token: string }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [copied, setCopied] = useState(false);
   return (
     <div role="status" className="flex flex-col gap-2 rounded-[var(--radius-badge)] border border-status-done-ink p-3">

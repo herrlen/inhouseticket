@@ -4,9 +4,12 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/client";
 import { deleteWorkspaceAction, type DeleteState } from "./actions";
+import deData from "@/lib/i18n/de/data";
+
+const MESSAGES = { data: deData };
 
 export function DeleteWorkspaceForm({ workspaceId, slug }: { workspaceId: string; slug: string }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [state, action, pending] = useActionState<DeleteState, FormData>(deleteWorkspaceAction, {});
   return (
     <form action={action} className="flex flex-wrap items-end gap-3">

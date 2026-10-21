@@ -3,6 +3,9 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
+import deCommon from "@/lib/i18n/de/common";
+
+const MESSAGES = { common: deCommon };
 
 const DEFAULT_DURATION_MS = 5000;
 
@@ -26,7 +29,7 @@ export function useToast() {
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
 
@@ -55,7 +58,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 const dots = { info: "bg-accent", success: "bg-status-done", error: "bg-prio-urgent" } as const;
 
 function Toast({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => void }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const tone = toast.tone ?? "info";
   const duration = toast.duration ?? (tone === "error" ? 0 : DEFAULT_DURATION_MS);
   const [paused, setPaused] = useState(false);

@@ -8,6 +8,11 @@ import { trackEvent } from "@/lib/analytics";
 import { keyBetween } from "@/lib/fractional";
 import { useT } from "@/lib/i18n/client";
 import type { TicketPatch } from "@/lib/validation/ticket";
+import deCommon from "@/lib/i18n/de/common";
+import deExplorer from "@/lib/i18n/de/explorer";
+import deList from "@/lib/i18n/de/list";
+
+const MESSAGES = { common: deCommon, explorer: deExplorer, list: deList };
 
 export const ticketsKey = (projectId: string) => ["tickets", projectId] as const;
 export const activityKey = (ticketId: string) => ["activity", ticketId] as const;
@@ -73,7 +78,7 @@ function trackStatusChange(statusId: string | undefined, categoryOf?: StatusCate
 
 /** Optimistic single-ticket update with rollback, toast and retry (KONZEPT §5.5). */
 export function useUpdateTicket(workspaceId: string, projectId: string, categoryOf?: StatusCategoryOf) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const qc = useQueryClient();
   const toast = useToast();
   const router = useRouter();
@@ -108,7 +113,7 @@ export function useUpdateTicket(workspaceId: string, projectId: string, category
 }
 
 export function useCreateTicket(workspaceId: string, projectId: string) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const qc = useQueryClient();
   const toast = useToast();
   const router = useRouter();
@@ -158,7 +163,7 @@ export function useCreateTicket(workspaceId: string, projectId: string) {
 }
 
 export function useBulkUpdate(workspaceId: string, projectId: string, categoryOf?: StatusCategoryOf) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const qc = useQueryClient();
   const toast = useToast();
   const router = useRouter();

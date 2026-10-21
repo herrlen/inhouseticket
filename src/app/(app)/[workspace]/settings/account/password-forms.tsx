@@ -8,9 +8,15 @@ import { MAX_PASSWORD } from "@/lib/limits";
 import { useT } from "@/lib/i18n/client";
 import type { PasswordFormState } from "@/lib/password-actions";
 import { changePasswordAction, disconnectAllAction, sendResetLinkAction, type DisconnectAllState, type ResetLinkState } from "./actions";
+import deAccount from "@/lib/i18n/de/account";
+import deCommon from "@/lib/i18n/de/common";
+import deLogin from "@/lib/i18n/de/login";
+import dePassword from "@/lib/i18n/de/password";
+
+const MESSAGES = { account: deAccount, common: deCommon, login: deLogin, password: dePassword };
 
 export function ChangePasswordForm({ email }: { email: string }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [state, action, pending] = useActionState<PasswordFormState, FormData>(changePasswordAction, {});
   const { local, onSubmitCheck } = useNewPasswordCheck();
   const errors: Record<string, string | undefined> = { ...state.errors, ...local };
@@ -34,7 +40,7 @@ export function ChangePasswordForm({ email }: { email: string }) {
 }
 
 export function ResetPasswordButton() {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [state, action, pending] = useActionState<ResetLinkState>(sendResetLinkAction, {});
   return (
     <form action={action} className="flex flex-col items-start gap-2">
@@ -50,7 +56,7 @@ export function ResetPasswordButton() {
 
 /** Two steps (button, then confirm) – it cuts scripts and connectors off at once. */
 export function DisconnectAllButton() {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [state, action, pending] = useActionState<DisconnectAllState>(disconnectAllAction, {});
   const [confirming, setConfirming] = useState(false);
   const confirmRef = useRef<HTMLButtonElement>(null);

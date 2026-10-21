@@ -1,5 +1,6 @@
-// Checks the initial JS per page after `next build` (CLAUDE.md rule 4): total ≤ 200 KB gzip.
-// "own" (everything beyond the shared root chunks) is printed for orientation only.
+// Checks the initial JS per page after `next build` (CLAUDE.md rule 4): total ≤ 200 KB gzip fails the build.
+// "own" (everything beyond the shared root chunks) above 50 KB only warns: it still counts Next.js router
+// pieces and TanStack Query, so it is an upper bound of our own code, not an exact measure.
 // Reads Turbopack's per-page client reference manifests; run after `pnpm build`.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -8,6 +9,7 @@ import { gzipSync } from "node:zlib";
 const NEXT_DIR = ".next";
 const KB = 1024;
 const BUDGET_TOTAL = 200 * KB;
+const TARGET_OWN = 50 * KB;
 
 const gzCache = new Map();
 function gzipSize(file) {
@@ -53,7 +55,8 @@ console.log(`${"Route".padEnd(42)} ${"own".padStart(9)} ${"total".padStart(9)}`)
 for (const r of rows) {
   const over = r.total > BUDGET_TOTAL;
   failed ||= over;
-  console.log(`${r.route.padEnd(42)} ${fmt(r.own)} ${fmt(r.total)}${over ? "  ✗ over budget" : ""}`);
+  const note = over ? "  ✗ over budget" : r.own > TARGET_OWN ? "  ⚠ own > 50 KB" : "";
+  console.log(`${r.route.padEnd(42)} ${fmt(r.own)} ${fmt(r.total)}${note}`);
 }
-console.log(`\nBudget: total ≤ ${BUDGET_TOTAL / KB} KB gzip initial JS per page`);
+console.log(`\nBudget: total ≤ ${BUDGET_TOTAL / KB} KB gzip initial JS per page (target: own ≤ ${TARGET_OWN / KB} KB)`);
 if (failed) process.exit(1);

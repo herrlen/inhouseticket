@@ -6,6 +6,12 @@ import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import { useProjectInfo } from "./context";
 import { priorityKey } from "./list-model";
+import deList from "@/lib/i18n/de/list";
+import deMembers from "@/lib/i18n/de/members";
+import dePriority from "@/lib/i18n/de/priority";
+import deTicket from "@/lib/i18n/de/ticket";
+
+const MESSAGES = { list: deList, members: deMembers, priority: dePriority, ticket: deTicket };
 
 const pickerTrigger =
   "inline-flex h-7 max-w-full items-center gap-1.5 rounded-[var(--radius-badge)] px-1.5 text-[13px] hover:bg-bg aria-expanded:bg-bg";
@@ -27,7 +33,7 @@ export function StatusDot({ color }: { color: string }) {
 }
 
 export function StatusPicker({ value, onChange, ticketLabel }: { value: string; onChange: (statusId: string) => void; ticketLabel: string }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { statuses } = useProjectInfo();
   const current = statuses.find((s) => s.id === value);
   return (
@@ -46,7 +52,7 @@ export function StatusPicker({ value, onChange, ticketLabel }: { value: string; 
 }
 
 export function PriorityPicker({ value, onChange, ticketLabel, compact }: { value: number; onChange: (p: number) => void; ticketLabel: string; compact?: boolean }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const label = t.priority[priorityKey(value)];
   return (
     <Dropdown
@@ -64,7 +70,7 @@ export function PriorityPicker({ value, onChange, ticketLabel, compact }: { valu
 }
 
 export function AssigneePicker({ value, onChange, ticketLabel, compact }: { value: string | null; onChange: (userId: string | null) => void; ticketLabel: string; compact?: boolean }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { members, currentUserId } = useProjectInfo();
   const current = members.find((m) => m.id === value) ?? null;
   const ordered = [...members].sort((a, b) => (a.id === currentUserId ? -1 : b.id === currentUserId ? 1 : 0));
@@ -96,7 +102,7 @@ export function AssigneePicker({ value, onChange, ticketLabel, compact }: { valu
 
 /** Native date input (keyboard + screen reader friendly), styled to match. */
 export function DueDateInput({ value, onChange, ticketLabel, overdue }: { value: string | null; onChange: (d: string | null) => void; ticketLabel: string; overdue?: boolean }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   return (
     <span className="relative inline-flex items-center">
       <input

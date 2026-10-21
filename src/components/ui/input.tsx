@@ -3,6 +3,9 @@
 import { useId, useState, type ComponentProps } from "react";
 import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
+import deInput from "@/lib/i18n/de/input";
+
+const MESSAGES = { input: deInput };
 
 export type InputProps = Omit<ComponentProps<"input">, "id"> & {
   label: string;
@@ -17,7 +20,7 @@ export type InputProps = Omit<ComponentProps<"input">, "id"> & {
 };
 
 export function Input({ label, hideLabel, hint, error, showCounter, maxLength, className, inputClassName, onChange, ...props }: InputProps) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const id = useId();
   const initial = String(props.value ?? props.defaultValue ?? "");
   const [count, setCount] = useState(initial.length);

@@ -1,0 +1,35 @@
+export default {
+  metaTitle: "Umziehen von Jira, ClickUp, Notion und monday.com",
+  metaDescription: "So nimmst du deine Projekte aus Jira, ClickUp, Notion oder monday.com mit zu inhouseticket: Export-Datei finden, hochladen, Vorschau prüfen.",
+  title: "Von Jira, ClickUp, Notion oder monday.com umziehen",
+  intro: "Du nimmst deine Projekte mit: Im alten Tool exportierst du eine CSV-Datei, in inhouseticket lädst du sie hoch. Du siehst zuerst eine Vorschau, erst nach deiner Bestätigung entsteht ein neues Projekt – ganz oder gar nicht.",
+  stepsTitle: "In drei Schritten",
+  steps: [
+    "Im alten Tool die Projekt-Datei als CSV exportieren – wo das geht, steht unten für jedes Tool.",
+    "In inhouseticket unter Einstellungen → Daten & Workspace → „Import öffnen“ das Tool wählen und die Datei hochladen. Importieren dürfen Owner und Admins.",
+    "Vorschau prüfen: Status, Personen und die ersten Tickets. Name und Kürzel des neuen Projekts anpassen und den Import bestätigen.",
+  ],
+  toolTitle: (tool: string) => `Export aus ${tool}`,
+  carriedTitle: "Was übernommen wird",
+  carried: [
+    "Titel, Beschreibung, Status, Priorität, Fälligkeit und Labels",
+    "Zuständige Personen, wenn sie schon Mitglied sind – zugeordnet über Name oder E-Mail. Lade dein Team also am besten vorher ein.",
+    "Unteraufgaben und Kommentare, mit dem ursprünglichen Datum",
+    "Jedes Ticket bekommt im Verlauf den Hinweis, aus welchem Tool es kommt",
+  ],
+  notCarriedTitle: "Was nicht übernommen wird",
+  notCarried: [
+    "Anhänge und Bilder",
+    "Zeiterfassung, Automationen und eigene Ansichten",
+    "Benachrichtigungen – beim Import bekommt niemand eine Mail",
+  ],
+  limitsTitle: "Grenzen",
+  limits: (mb: number, tickets: string, title: string, description: string, subtasks: number) => [
+    `Nur CSV-Dateien, höchstens ${mb} MB und ${tickets} Tickets pro Import.`,
+    `Titel über ${title} und Beschreibungen über ${description} Zeichen werden gekürzt.`,
+    `Mehr als ${subtasks} Unteraufgaben pro Ticket landen als Checkliste in der Beschreibung.`,
+    "Enthält eine Datei mehrere Projekte, kommen sie zusammen in ein Projekt.",
+  ],
+  outro: "Und wenn du wieder gehen willst: Unter Daten & Workspace exportierst du alles als CSV oder JSON.",
+  cta: "Kostenlos starten",
+} as const;

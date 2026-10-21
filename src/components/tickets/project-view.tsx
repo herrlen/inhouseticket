@@ -23,6 +23,13 @@ import { groupTickets, todayInBerlin, type GroupBy, type SortBy, type StatusOpti
 import { QuickAdd } from "./quick-add";
 import { TicketList } from "./ticket-list";
 import { useBulkUpdate, useCreateTicket, useTickets, useUpdateTicket } from "./use-tickets";
+import deDetail from "@/lib/i18n/de/detail";
+import deFilters from "@/lib/i18n/de/filters";
+import deList from "@/lib/i18n/de/list";
+import dePriority from "@/lib/i18n/de/priority";
+import deView from "@/lib/i18n/de/view";
+
+const MESSAGES = { detail: deDetail, filters: deFilters, list: deList, priority: dePriority, view: deView };
 
 // Loaded on demand to keep the list view within the JS budget (≤ 200 KB gzip): the board pulls in
 // dnd-kit, the detail panel Markdown, uploads and comments.
@@ -70,7 +77,7 @@ const isEditable = (el: EventTarget | null) =>
   el instanceof HTMLElement && (el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) || Boolean(el.closest("[role=menu],dialog")));
 
 export function ProjectView({ info, statuses, members, labels: initialLabels, initialTickets, savedViews }: Props) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const params = useSearchParams();
   const groupBy = (GROUPS.find((g) => g === params.get("group")) ?? "status") as GroupBy;
   const sortBy = (SORTS.find((s) => s === params.get("sort")) ?? "manual") as SortBy;

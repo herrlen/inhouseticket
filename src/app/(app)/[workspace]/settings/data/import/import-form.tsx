@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/client";
 import type { ImportPreview } from "@/lib/import/plan";
 import { SOURCE_NAMES, type SourceId } from "@/lib/import/source";
+import deImport from "@/lib/i18n/de/import";
+import dePriority from "@/lib/i18n/de/priority";
+
+const MESSAGES = { import: deImport, priority: dePriority };
 
 type Suggestion = { name: string; key: string; color: string };
 type State =
@@ -30,7 +34,7 @@ async function send(workspaceId: string, form: FormData, networkError: string): 
 }
 
 export function ImportForm({ workspaceId }: { workspaceId: string }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<SourceId>("jira");
@@ -186,7 +190,7 @@ export function ImportForm({ workspaceId }: { workspaceId: string }) {
 }
 
 function Preview({ preview: p, tool, children }: { preview: ImportPreview; tool: string; children: ReactNode }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const notes = [
     p.projectCount > 1 ? t.import.multipleProjects(p.projectCount) : null,
     p.skipped ? t.import.skipped(p.skipped) : null,

@@ -7,6 +7,9 @@ import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import { SortableItem, SortableList } from "./dnd-bridge";
 import { folderDndId, projectDndId, type FolderItem, type ProjectItem } from "./model";
+import deExplorer from "@/lib/i18n/de/explorer";
+
+const MESSAGES = { explorer: deExplorer };
 
 type Props = {
   folder: FolderItem;
@@ -22,7 +25,7 @@ type Props = {
 };
 
 export function FolderRow({ folder, projects, expanded, onToggle, onRename, onDelete, onNewProject, dropTarget, children }: Props) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { canAdmin } = useShell();
   const openCount = projects.reduce((n, p) => n + p.openCount, 0);
   const listId = `folder-${folder.id}`;

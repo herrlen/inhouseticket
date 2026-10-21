@@ -8,11 +8,16 @@ import { authClient } from "@/lib/auth-client";
 import { getEmailDomain } from "@/lib/freemail";
 import { useT } from "@/lib/i18n/client";
 import { useHydrated } from "@/lib/use-hydrated";
+import deAuth from "@/lib/i18n/de/auth";
+import deLogin from "@/lib/i18n/de/login";
+import dePassword from "@/lib/i18n/de/password";
+
+const MESSAGES = { auth: deAuth, login: deLogin, password: dePassword };
 
 type State = { kind: "idle" } | { kind: "sending" } | { kind: "sent"; email: string } | { kind: "error"; message: string };
 
 export function ForgotPasswordForm() {
-  const t = useT();
+  const t = useT(MESSAGES);
   const hydrated = useHydrated();
   const [state, setState] = useState<State>({ kind: "idle" });
   const sentHeading = useRef<HTMLHeadingElement>(null);

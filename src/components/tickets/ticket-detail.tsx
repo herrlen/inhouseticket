@@ -18,6 +18,13 @@ import { AssigneePicker, DueDateInput, PriorityPicker, StatusPicker } from "./pi
 import { Attachments, Comments, DescriptionField, Subtasks } from "./detail-parts";
 import { usePartActions, useParts } from "./use-parts";
 import { useActivity } from "./use-tickets";
+import deActivity from "@/lib/i18n/de/activity";
+import deDetail from "@/lib/i18n/de/detail";
+import deList from "@/lib/i18n/de/list";
+import dePriority from "@/lib/i18n/de/priority";
+import deProject from "@/lib/i18n/de/project";
+
+const MESSAGES = { activity: deActivity, detail: deDetail, list: deList, priority: dePriority, project: deProject };
 
 type Props = {
   ticket: TicketRow;
@@ -52,7 +59,7 @@ function useDraft(initial: string, save: (value: string) => void) {
 }
 
 export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Props) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { project, workspaceId, statuses } = useProjectInfo();
   const key = `${project.key}-${ticket.number}`;
   const today = todayInBerlin();
@@ -207,7 +214,7 @@ export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Pr
 const LABEL_COLORS = Object.values(PALETTE);
 
 function LabelEditor({ workspaceId, ticket, onChange, onCreated }: { workspaceId: string; ticket: TicketRow; onChange: (ids: string[]) => void; onCreated: (l: LabelRow) => void }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { project, labels } = useProjectInfo();
   const toast = useToast();
   const [value, setValue] = useState("");
@@ -274,7 +281,7 @@ function LabelEditor({ workspaceId, ticket, onChange, onCreated }: { workspaceId
   );
 }
 
-function describe(a: ActivityRow, t: Messages, locale: Locale): string {
+function describe(a: ActivityRow, t: Pick<Messages, "activity" | "priority">, locale: Locale): string {
   const p = a.payload as Record<string, unknown>;
   const str = (v: unknown) => (v === null || v === undefined || v === "" ? "–" : String(v));
   switch (a.type) {
@@ -292,13 +299,13 @@ function describe(a: ActivityRow, t: Messages, locale: Locale): string {
     case "subtask_removed": return t.activity.subtask_removed(str(p.title));
     case "attachment_added": return t.activity.attachment_added(str(p.fileName));
     case "attachment_removed": return t.activity.attachment_removed(str(p.fileName));
-    case "imported": return t.import.activity(str(p.source), p.ref ? String(p.ref) : "");
+    case "imported": return t.activity.imported(str(p.source), p.ref ? String(p.ref) : "");
     default: return a.type;
   }
 }
 
 function Activity({ workspaceId, ticketId }: { workspaceId: string; ticketId: string }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const locale = useLocale();
   const { data, isError } = useActivity(workspaceId, ticketId);
   return (

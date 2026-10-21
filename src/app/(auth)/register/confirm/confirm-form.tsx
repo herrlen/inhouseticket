@@ -8,12 +8,16 @@ import { trackEvent } from "@/lib/analytics";
 import { useT } from "@/lib/i18n/client";
 import { MAX_PASSWORD } from "@/lib/limits";
 import { confirmRegistrationAction, type ConfirmState } from "./actions";
+import dePassword from "@/lib/i18n/de/password";
+import deRegister from "@/lib/i18n/de/register";
+
+const MESSAGES = { password: dePassword, register: deRegister };
 
 const linkButton = "inline-flex h-9 items-center rounded-[var(--radius-badge)] px-3.5 font-medium";
 
 /** The link can't be used (any more): say why and offer the ways on. */
 export function GoneNotice({ kind }: { kind: NonNullable<ConfirmState["gone"]> }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const ref = useRef<HTMLParagraphElement>(null);
   useEffect(() => ref.current?.focus(), []);
   const text = kind === "locked" ? t.register.locked : kind === "accountExists" ? t.register.accountExists : t.register.invalid;
@@ -38,7 +42,7 @@ export function GoneNotice({ kind }: { kind: NonNullable<ConfirmState["gone"]> }
 
 /** Intro, address and password form – or why the link can't be used. */
 export function ConfirmRegistration({ token, email }: { token: string; email: string | null }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [state, action, pending] = useActionState<ConfirmState, FormData>(confirmRegistrationAction, {});
   const password = useRef<HTMLInputElement>(null);
 
