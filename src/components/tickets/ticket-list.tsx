@@ -12,6 +12,12 @@ import { TicketMeta } from "./ticket-meta";
 import type { ListColumn } from "./list-columns";
 import dynamic from "next/dynamic";
 import { AddTicketRow } from "./list-extras";
+import deList from "@/lib/i18n/de/list";
+import deMeta from "@/lib/i18n/de/meta";
+import dePriority from "@/lib/i18n/de/priority";
+import deProject from "@/lib/i18n/de/project";
+
+const MESSAGES = { list: deList, meta: deMeta, priority: dePriority, project: deProject };
 
 const SubtaskRows = dynamic(() => import("./list-lazy").then((m) => m.SubtaskRows));
 import type { TicketPatch } from "@/lib/validation/ticket";
@@ -34,7 +40,7 @@ type Props = {
 };
 
 export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect, onOpen, onPatch, today, openTicketId, hidden = [], onAddToGroup, showSubtasks }: Props) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const tl = t.list; // `t` is the ticket inside the row loop
   const tm = t.meta;
   const { workspaceId, project, statuses, labels, members } = useProjectInfo();
@@ -183,7 +189,7 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
 }
 
 function MobileMeta({ ticket, statuses, members, overdue }: { ticket: TicketRow; statuses: ReturnType<typeof useProjectInfo>["statuses"]; members: ReturnType<typeof useProjectInfo>["members"]; overdue: boolean }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const locale = useLocale();
   const status = statuses.find((x) => x.id === ticket.statusId);
   const assignee = members.find((m) => m.id === ticket.assigneeId);

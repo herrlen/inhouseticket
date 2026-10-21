@@ -11,6 +11,10 @@ import { MAX_NAME, MAX_SOURCE_OTHER } from "@/lib/limits";
 import { IMPORTABLE_TOOLS, PREVIOUS_TOOLS, SOURCES, TEAM_TYPES, type View } from "@/lib/onboarding/options";
 import { useHydrated } from "@/lib/use-hydrated";
 import type { StepProps } from "./wizard-state";
+import deLegal from "@/lib/i18n/de/legal";
+import deOnboarding from "@/lib/i18n/de/onboarding";
+
+const MESSAGES = { legal: deLegal, onboarding: deOnboarding };
 
 const ICONS = { marketing: "📣", it: "🖥️", support: "🎧", office: "🗂️", sales: "🤝", creative: "🎨", dev: "🧑‍💻", general: "📋" } as const;
 
@@ -25,7 +29,7 @@ function useTimeZones(current: string): string[] {
 }
 
 export function ProfileStep({ data, set, errors, props }: StepProps) {
-  const t = useT().onboarding.profile;
+  const t = useT(MESSAGES).onboarding.profile;
   const zones = useTimeZones(data.timezone);
   const { detectTimezone } = props.profile;
   useEffect(() => {
@@ -74,7 +78,7 @@ export function ProfileStep({ data, set, errors, props }: StepProps) {
 }
 
 export function WorkspaceStep({ data, set, errors, props }: StepProps) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const w = t.onboarding.workspace;
   return (
     <div className="flex flex-col gap-5">
@@ -109,7 +113,7 @@ export function WorkspaceStep({ data, set, errors, props }: StepProps) {
 }
 
 export function TeamStep({ data, set }: StepProps) {
-  const t = useT().onboarding.team;
+  const t = useT(MESSAGES).onboarding.team;
   return (
     <div>
       <p id="team-label" className="sr-only">{t.label}</p>
@@ -143,7 +147,7 @@ function MiniPreview({ view }: { view: View }) {
 }
 
 export function ViewStep({ data, set }: StepProps) {
-  const t = useT().onboarding.view;
+  const t = useT(MESSAGES).onboarding.view;
   return (
     <div>
       <p id="view-label" className="sr-only">{t.label}</p>
@@ -160,7 +164,7 @@ export function ViewStep({ data, set }: StepProps) {
 }
 
 export function QuestionsStep({ data, set, errors }: StepProps) {
-  const t = useT().onboarding.questions;
+  const t = useT(MESSAGES).onboarding.questions;
   const showImport = data.tools.some((tool) => IMPORTABLE_TOOLS.has(tool));
   return (
     <div className="flex flex-col gap-5">

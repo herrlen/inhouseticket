@@ -11,9 +11,15 @@ import { useT } from "@/lib/i18n/client";
 import { MAX_NAME } from "@/lib/limits";
 import { useHydrated } from "@/lib/use-hydrated";
 import { registerAction, type RegisterState } from "./actions";
+import deAuth from "@/lib/i18n/de/auth";
+import deLegal from "@/lib/i18n/de/legal";
+import deLogin from "@/lib/i18n/de/login";
+import deRegister from "@/lib/i18n/de/register";
+
+const MESSAGES = { auth: deAuth, legal: deLegal, login: deLogin, register: deRegister };
 
 export function RegisterForm({ next, email }: { next: string; email?: string }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const hydrated = useHydrated();
   const [state, action, pending] = useActionState<RegisterState, FormData>(registerAction, {});
   const { local: passwordErrors, onSubmitCheck } = useNewPasswordCheck();

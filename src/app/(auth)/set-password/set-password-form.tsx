@@ -6,9 +6,12 @@ import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n/client";
 import type { PasswordFormState } from "@/lib/password-actions";
 import { setPasswordAction } from "./actions";
+import dePassword from "@/lib/i18n/de/password";
+
+const MESSAGES = { password: dePassword };
 
 export function SetPasswordForm({ email, next }: { email: string; next: string }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [state, action, pending] = useActionState<PasswordFormState, FormData>(setPasswordAction, {});
   const { local, onSubmitCheck } = useNewPasswordCheck();
   const errors = { ...state.errors, ...local };

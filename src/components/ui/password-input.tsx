@@ -4,6 +4,9 @@ import { useId, useState, type ComponentProps } from "react";
 import { Eye, EyeOff } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
+import dePassword from "@/lib/i18n/de/password";
+
+const MESSAGES = { password: dePassword };
 
 export type PasswordInputProps = Omit<ComponentProps<"input">, "id" | "type"> & {
   label: string;
@@ -15,7 +18,7 @@ export type PasswordInputProps = Omit<ComponentProps<"input">, "id" | "type"> & 
 
 /** Password field with a show/hide toggle; the toggle is a real button, reachable by keyboard. */
 export function PasswordInput({ label, hint, error, className, ...props }: PasswordInputProps) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const id = useId();
   const [visible, setVisible] = useState(false);
   const described = [hint && !error && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(" ");

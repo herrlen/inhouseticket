@@ -25,6 +25,9 @@ import {
   type ProjectItem,
 } from "./model";
 import { ProjectRow } from "./project-row";
+import deExplorer from "@/lib/i18n/de/explorer";
+
+const MESSAGES = { explorer: deExplorer };
 
 export type ExplorerData = {
   folders: FolderItem[];
@@ -45,7 +48,7 @@ function useSynced<T>(value: T): [T, (v: T | ((prev: T) => T)) => void] {
 }
 
 export function Explorer({ data }: { data: ExplorerData }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { workspaceId, slug } = useShell();
   const toast = useToast();
   const router = useRouter();

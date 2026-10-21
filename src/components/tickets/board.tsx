@@ -28,6 +28,11 @@ import { useProjectInfo } from "./context";
 import { dueBucket, priorityKey } from "./list-model";
 import { formatDue, PriorityIcon, StatusDot } from "./pickers";
 import { TicketMeta } from "./ticket-meta";
+import deBoard from "@/lib/i18n/de/board";
+import deList from "@/lib/i18n/de/list";
+import dePriority from "@/lib/i18n/de/priority";
+
+const MESSAGES = { board: deBoard, list: deList, priority: dePriority };
 
 /**
  * ←/→ jump straight to the neighbouring column (top of its list); ↑/↓ move within a column.
@@ -61,7 +66,7 @@ type Props = {
 };
 
 export function Board({ tickets, today, onOpen, onMove, onCreate }: Props) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { statuses, project } = useProjectInfo();
   const dndId = useId();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -143,7 +148,7 @@ function Column({
   onOpen: (id: string) => void;
   onCreate: (title: string) => void;
 }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { setNodeRef, isOver } = useDroppable({ id: columnDndId(status.id) });
   const wip = wipState(cards.length, status.wipLimit);
   const headingId = `col-${status.id}`;
@@ -187,7 +192,7 @@ function Column({
 }
 
 function SortableCard({ ticket, today, onOpen }: { ticket: TicketRow; today: string; onOpen: (id: string) => void }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const pending = ticket.id.startsWith("temp-");
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cardDndId(ticket.id), disabled: pending });
   const { project } = useProjectInfo();
@@ -219,7 +224,7 @@ function SortableCard({ ticket, today, onOpen }: { ticket: TicketRow; today: str
 }
 
 function CardBody({ ticket, today, lifted }: { ticket: TicketRow; today: string; lifted?: boolean }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const locale = useLocale();
   const { project, members, labels, statuses } = useProjectInfo();
   const pending = ticket.id.startsWith("temp-");
@@ -265,7 +270,7 @@ function CardBody({ ticket, today, lifted }: { ticket: TicketRow; today: string;
 }
 
 function ColumnQuickAdd({ statusName, onCreate }: { statusName: string; onCreate: (title: string) => void }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   if (!open) {

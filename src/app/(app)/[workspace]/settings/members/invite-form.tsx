@@ -6,9 +6,14 @@ import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import { inviteAction, type ActionState } from "./actions";
+import deMembers from "@/lib/i18n/de/members";
+import deOnboarding from "@/lib/i18n/de/onboarding";
+import deRoles from "@/lib/i18n/de/roles";
+
+const MESSAGES = { members: deMembers, onboarding: deOnboarding, roles: deRoles };
 
 export function InviteForm({ workspaceId, canInviteAdmins, disabled }: { workspaceId: string; canInviteAdmins: boolean; disabled: boolean }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [state, action, pending] = useActionState<ActionState, FormData>(inviteAction, {});
   const form = useRef<HTMLFormElement>(null);
 

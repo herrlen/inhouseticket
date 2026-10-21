@@ -1,5 +1,7 @@
 import { compareKeys } from "@/lib/fractional";
-import { de, type Messages } from "@/lib/i18n/de";
+import type { Messages } from "@/lib/i18n/de";
+import deList from "@/lib/i18n/de/list";
+import dePriority from "@/lib/i18n/de/priority";
 import { intlLocale, type Locale } from "@/lib/i18n/locale";
 
 // Pure list logic (unit-tested): grouping, sorting, due-date buckets.
@@ -66,9 +68,9 @@ export function sortTickets<T extends ListTicket>(tickets: readonly T[], sortBy:
 
 export function groupTickets<T extends ListTicket>(
   tickets: readonly T[],
-  opts: { groupBy: GroupBy; sortBy: SortBy; statuses: StatusOption[]; members: Array<{ id: string; name: string }>; today: string; t?: Messages },
+  opts: { groupBy: GroupBy; sortBy: SortBy; statuses: StatusOption[]; members: Array<{ id: string; name: string }>; today: string; t?: Pick<Messages, "list" | "priority"> },
 ): Group<T>[] {
-  const t = opts.t ?? de;
+  const t = opts.t ?? { list: deList, priority: dePriority };
   const sorted = sortTickets(tickets, opts.sortBy);
   const doneIds = new Set(opts.statuses.filter((s) => s.category === "done").map((s) => s.id));
 

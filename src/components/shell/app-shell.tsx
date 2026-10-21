@@ -20,6 +20,15 @@ import { PrefsProvider } from "./prefs-context";
 import type { ListColumn } from "@/components/tickets/list-columns";
 import { QueryProvider } from "./query-provider";
 import { projectHref, ShellProvider, useShell, type ShellInfo } from "./shell-context";
+import deCommand from "@/lib/i18n/de/command";
+import deCommon from "@/lib/i18n/de/common";
+import deExplorer from "@/lib/i18n/de/explorer";
+import deInbox from "@/lib/i18n/de/inbox";
+import deLegal from "@/lib/i18n/de/legal";
+import deMe from "@/lib/i18n/de/me";
+import deShell from "@/lib/i18n/de/shell";
+
+const MESSAGES = { command: deCommand, common: deCommon, explorer: deExplorer, inbox: deInbox, legal: deLegal, me: deMe, shell: deShell };
 
 type Props = {
   shell: ShellInfo;
@@ -39,7 +48,7 @@ const ShortcutHelp = dynamic(() => import("./command-palette").then((m) => m.Sho
 const noopSubscribe = () => () => {};
 /** "⌘B" on Apple devices, "Strg+B" (en: "Ctrl+B") elsewhere – resolved after hydration. */
 function useShortcutLabel() {
-  const other = `${useT().common.ctrlKey}+B`;
+  const other = `${useT(MESSAGES).common.ctrlKey}+B`;
   return useSyncExternalStore(
     noopSubscribe,
     () => (/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘B" : other),
@@ -48,7 +57,7 @@ function useShortcutLabel() {
 }
 
 export function AppShell({ shell, user, explorer, initialCollapsed, initialConfetti, initialHiddenColumns, unread, children }: Props) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const [, startTransition] = useTransition();
   const [confetti, setConfettiState] = useState(initialConfetti);
@@ -170,7 +179,7 @@ export function AppShell({ shell, user, explorer, initialCollapsed, initialConfe
 }
 
 function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: boolean; explorer: ExplorerData; unread: number; onToggle?: () => void }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const shell = useShell();
   const pathname = usePathname();
   const home = `/${shell.slug}`;
@@ -185,11 +194,11 @@ function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: 
   const nav: Array<{ href: string; label: string; icon: ReactNode; active: boolean; badge?: number; aria?: string }> = [
     { href: me, label: t.me.title, icon: <CheckSquare />, active: pathname === me },
     { href: inbox, label: t.inbox.title, icon: <InboxIcon />, active: pathname === inbox, badge: unread, aria: t.inbox.navLabel(unread) },
-    { href: dashboard, label: t.dashboard.title, icon: <Chart />, active: pathname === dashboard },
+    { href: dashboard, label: t.shell.pages.dashboard, icon: <Chart />, active: pathname === dashboard },
     { href: home, label: t.shell.overview, icon: <Home />, active: pathname === home },
-    ...(shell.canAdmin ? [{ href: members, label: t.members.title, icon: <Users />, active: pathname.startsWith(members) }] : []),
-    { href: claude, label: t.claude.navLabel, icon: <Sparkle />, active: pathname === claude },
-    ...(shell.canAdmin ? [{ href: data, label: t.data.navLabel, icon: <Archive />, active: pathname.startsWith(data) }] : []),
+    ...(shell.canAdmin ? [{ href: members, label: t.shell.pages.members, icon: <Users />, active: pathname.startsWith(members) }] : []),
+    { href: claude, label: t.shell.pages.claudeNav, icon: <Sparkle />, active: pathname === claude },
+    ...(shell.canAdmin ? [{ href: data, label: t.shell.pages.dataNav, icon: <Archive />, active: pathname.startsWith(data) }] : []),
   ];
 
   return (
@@ -304,7 +313,7 @@ function Topbar({
   confetti: boolean;
   onToggleConfetti: () => void;
 }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const locale = useLocale();
   const shell = useShell();
   const router = useRouter();
@@ -355,10 +364,10 @@ function Topbar({
         triggerLabel={t.shell.userMenu(user.name)}
         triggerClassName="flex size-8 items-center justify-center rounded-full hover:ring-2 hover:ring-border"
         items={[
-          ...(shell.canAdmin ? [{ label: t.members.title, onSelect: () => router.push(`/${shell.slug}/settings/members`) }] : []),
-          ...(shell.isSuperadmin ? [{ label: t.admin.title, onSelect: () => router.push("/admin") }] : []),
-          { label: t.account.title, onSelect: () => router.push(`/${shell.slug}/settings/account`) },
-          { label: t.claude.title, onSelect: () => router.push(`/${shell.slug}/settings/claude`) },
+          ...(shell.canAdmin ? [{ label: t.shell.pages.members, onSelect: () => router.push(`/${shell.slug}/settings/members`) }] : []),
+          ...(shell.isSuperadmin ? [{ label: t.shell.pages.admin, onSelect: () => router.push("/admin") }] : []),
+          { label: t.shell.pages.account, onSelect: () => router.push(`/${shell.slug}/settings/account`) },
+          { label: t.shell.pages.claude, onSelect: () => router.push(`/${shell.slug}/settings/claude`) },
           { label: t.shell.switchWorkspace, onSelect: () => router.push("/start") },
           { label: confetti ? t.shell.confettiOff : t.shell.confettiOn, onSelect: onToggleConfetti },
           { label: t.command.shortcuts, onSelect: onShowHelp },
@@ -376,7 +385,7 @@ function Topbar({
 type Crumb = { label: string; href?: string };
 
 function useBreadcrumb(explorer: ExplorerData): Crumb[] {
-  const t = useT();
+  const t = useT(MESSAGES);
   const shell = useShell();
   const pathname = usePathname();
   const base = `/${shell.slug}`;
@@ -394,11 +403,11 @@ function useBreadcrumb(explorer: ExplorerData): Crumb[] {
   } else if (rest[0] === "inbox") {
     crumbs.push({ label: t.inbox.title });
   } else if (rest[0] === "dashboard") {
-    crumbs.push({ label: t.dashboard.title });
+    crumbs.push({ label: t.shell.pages.dashboard });
   } else if (rest[0] === "settings" && rest[1] === "members") {
-    crumbs.push({ label: t.members.title });
+    crumbs.push({ label: t.shell.pages.members });
   } else if (rest[0] === "settings" && rest[1] === "account") {
-    crumbs.push({ label: t.account.title });
+    crumbs.push({ label: t.shell.pages.account });
   } else if (rest.length === 0) {
     crumbs.push({ label: t.shell.overview });
   }

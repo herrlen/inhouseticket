@@ -8,15 +8,20 @@ import { Button } from "@/components/ui/button";
 import { relativeTime } from "@/lib/relative-time";
 import { cn } from "@/lib/cn";
 import { useLocale, useT } from "@/lib/i18n/client";
-import type { Messages } from "@/lib/i18n/de";
-import { describeNotification } from "@/lib/notification-text";
+import { describeNotification, type NotificationMessages } from "@/lib/notification-text";
 import { markNotificationsReadAction } from "../actions";
+import deActivity from "@/lib/i18n/de/activity";
+import deCommon from "@/lib/i18n/de/common";
+import deInbox from "@/lib/i18n/de/inbox";
+import deNotifications from "@/lib/i18n/de/notifications";
 
-const text = (n: NotificationRow, t: Messages) =>
+const MESSAGES = { activity: deActivity, common: deCommon, inbox: deInbox, notifications: deNotifications };
+
+const text = (n: NotificationRow, t: NotificationMessages) =>
   describeNotification({ type: n.type, actor: n.actorName, key: n.ticketKey, title: n.ticketTitle, payload: n.payload }, t);
 
 export function InboxList({ workspaceId, slug, items: initial }: { workspaceId: string; slug: string; items: NotificationRow[] }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const locale = useLocale();
   const router = useRouter();
   const [items, setItems] = useState(initial);

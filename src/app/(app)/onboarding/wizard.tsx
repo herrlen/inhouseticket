@@ -23,6 +23,10 @@ import { commitDraft, InviteStep, sendableEmails } from "./invite-step";
 import { ProfileStep, QuestionsStep, TeamStep, ViewStep, WorkspaceStep } from "./steps";
 import type { WizardProps } from "./types";
 import { initialData, type StepProps, type WizardData } from "./wizard-state";
+import deCommon from "@/lib/i18n/de/common";
+import deOnboarding from "@/lib/i18n/de/onboarding";
+
+const MESSAGES = { common: deCommon, onboarding: deOnboarding };
 
 const STEP_UI: Record<StepKey, ComponentType<StepProps>> = {
   profile: ProfileStep,
@@ -39,7 +43,7 @@ const TOGGLES = new Set(["checkbox", "radio"]);
 
 /** Wizard shell (docs/ONBOARDING.md §1.3): modal card, progress, Zurück/Weiter, Enter = Weiter, Überspringen. */
 export function Wizard(props: WizardProps) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const o = t.onboarding;
   const locale = useLocale();
   const router = useRouter();

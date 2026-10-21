@@ -5,9 +5,13 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import { changeRoleAction, type ActionState } from "./actions";
+import deMembers from "@/lib/i18n/de/members";
+import deRoles from "@/lib/i18n/de/roles";
+
+const MESSAGES = { members: deMembers, roles: deRoles };
 
 export function RoleForm({ workspaceId, membershipId, name, role }: { workspaceId: string; membershipId: string; name: string; role: "admin" | "member" }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [state, action, pending] = useActionState<ActionState, FormData>(changeRoleAction, {});
   const id = `role-${membershipId}`;
   return (

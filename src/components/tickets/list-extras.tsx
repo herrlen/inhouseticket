@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { Plus } from "@/components/ui/icons";
 import { useT } from "@/lib/i18n/client";
+import type { Messages } from "@/lib/i18n/de";
 import { LIST_COLUMNS, type ListColumn } from "./list-columns";
+import deList from "@/lib/i18n/de/list";
+import deProject from "@/lib/i18n/de/project";
+
+const MESSAGES = { list: deList, project: deProject };
 
 // Small additions to the list view (docs/ONBOARDING.md §4): add a ticket at the end of a status
 // group, a new status at the end of the list (admins), subtasks unfolded under a ticket and the
@@ -13,7 +18,7 @@ export const ghostRow = "flex items-center gap-1.5 py-1.5 text-xs text-muted hov
 
 /** "+ Ticket hinzufügen" at the end of a status group; Enter creates, the field stays for the next one. */
 export function AddTicketRow({ statusName, colSpan, onCreate }: { statusName: string; colSpan: number; onCreate: (title: string) => void }) {
-  const t = useT().list;
+  const t = useT(MESSAGES).list;
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   return (
@@ -52,7 +57,7 @@ export function AddTicketRow({ statusName, colSpan, onCreate }: { statusName: st
   );
 }
 
-const COLUMN_LABEL = (t: ReturnType<typeof useT>, c: ListColumn) =>
+const COLUMN_LABEL = (t: Pick<Messages, "list" | "project">, c: ListColumn) =>
   ({ status: t.project.colStatus, priority: t.project.colPriority, assignee: t.list.colAssignee, due: t.list.colDue, comments: t.list.colComments })[c];
 
 /** Toolbar switches of the list: done tickets, subtasks, columns. */
@@ -64,7 +69,7 @@ export function ListOptions(props: {
   hidden: ListColumn[];
   onHidden: (columns: ListColumn[]) => void;
 }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const toggle = "flex items-center gap-1.5 text-[13px] text-muted";
   return (
     <>

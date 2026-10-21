@@ -131,6 +131,7 @@ Legende: `[ ]` offen · `[x]` erledigt · **P** = Priorität (1 hoch)
 **Ziel:** Live auf inhouseticket.com.
 - [ ] P1 Performance-Budget prüfen (JS ≤ 200 KB gz pro Seite, eigener Code ≤ 50 KB, LCP < 1,5 s)
   - [x] JS-Budget automatisch in CI (Stand 2026-10-05: Projektseite 197 KB, übrige App-Seiten 183–186 KB, Login 157 KB)
+  - [x] Wörterbuch nach Bereichen aufgeteilt (2026-10-21): Client-Komponenten bündeln nur die Texte, die sie zeigen, statt aller ~18 KB gzip. Eigener Code vorher/nachher: Projektseite 67,5 → 55,5 KB (gesamt 195,4 → 183,3 KB), übrige App-Seiten 51,8–54,4 → 36,9–41,4 KB, Login 43,3 → 27,6 KB, Registrierung 31,5 → 16,4 KB. CI warnt ab 50 KB eigenem Code; die Projektseite liegt darüber, weil „eigen“ dort auch TanStack Query (~7 KB) und Router-Teile von Next.js (~4 KB) zählt
   - [x] LCP von einem EU-Standort messen – 2026-10-05 aus Deutschland, kalter Cache, je 5 Läufe: `/login` Median 168 ms (TTFB 79 ms), `/impressum` 156 ms (TTFB 68 ms)
 - [x] P1 Security-Review (Workspace-Scope, Rate-Limits, CSP) – Ergebnis und offene Punkte: `docs/security-review.md`
 - [ ] P1 Impressum, Datenschutz, AGB, AVV

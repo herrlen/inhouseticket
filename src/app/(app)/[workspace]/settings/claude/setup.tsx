@@ -3,10 +3,13 @@
 import { useState } from "react";
 import { useT } from "@/lib/i18n/client";
 import { TokenForm } from "./token-form";
+import deClaude from "@/lib/i18n/de/claude";
+
+const MESSAGES = { claude: deClaude };
 
 /** Token creation plus ready-to-paste config; the snippets fill in a freshly created token. */
 export function ClaudeSetup({ workspaceId, mcpUrl }: { workspaceId: string; mcpUrl: string }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [token, setToken] = useState<string | null>(null);
   const value = token ?? t.claude.tokenPlaceholder;
   const code = `claude mcp add --transport http inhouseticket ${mcpUrl} --header "Authorization: Bearer ${value}"`;

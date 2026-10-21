@@ -11,9 +11,14 @@ import { useT } from "@/lib/i18n/client";
 import { MAX_PROJECT_KEY } from "@/lib/limits";
 import { suggestProjectKey } from "@/lib/project-key";
 import type { FolderItem } from "./model";
+import deCommon from "@/lib/i18n/de/common";
+import deExplorer from "@/lib/i18n/de/explorer";
+import deProjectForm from "@/lib/i18n/de/projectForm";
+
+const MESSAGES = { common: deCommon, explorer: deExplorer, projectForm: deProjectForm };
 
 export function NewProjectDialog({ open, folderId, folders, onClose }: { open: boolean; folderId: string | null; folders: FolderItem[]; onClose: () => void }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   return (
     <Dialog open={open} onClose={onClose} title={t.explorer.newProject}>
       {/* Remount per opening so the form starts empty. */}
@@ -23,7 +28,7 @@ export function NewProjectDialog({ open, folderId, folders, onClose }: { open: b
 }
 
 function NewProjectForm({ folderId, folders, onCancel }: { folderId: string | null; folders: FolderItem[]; onCancel: () => void }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { workspaceId } = useShell();
   const [state, action, pending] = useActionState<FormState, FormData>(createProjectAction, {});
   const [name, setName] = useState("");
@@ -78,7 +83,7 @@ function NewProjectForm({ folderId, folders, onCancel }: { folderId: string | nu
 }
 
 export function FolderNameDialog({ open, folder, onClose }: { open: boolean; folder: FolderItem | null; onClose: () => void }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   return (
     <Dialog open={open} onClose={onClose} title={folder ? t.explorer.renameFolder : t.explorer.newFolder}>
       {open ? <FolderNameForm folder={folder} onDone={onClose} /> : null}
@@ -87,7 +92,7 @@ export function FolderNameDialog({ open, folder, onClose }: { open: boolean; fol
 }
 
 function FolderNameForm({ folder, onDone }: { folder: FolderItem | null; onDone: () => void }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { workspaceId } = useShell();
   const [state, action, pending] = useActionState<FormState, FormData>(folder ? renameFolderAction : createFolderAction, {});
   useEffect(() => {

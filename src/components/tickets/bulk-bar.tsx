@@ -6,11 +6,16 @@ import { useT } from "@/lib/i18n/client";
 import { useProjectInfo } from "./context";
 import { priorityKey } from "./list-model";
 import { PriorityIcon, StatusDot } from "./pickers";
+import deList from "@/lib/i18n/de/list";
+import dePriority from "@/lib/i18n/de/priority";
+import deProject from "@/lib/i18n/de/project";
+
+const MESSAGES = { list: deList, priority: dePriority, project: deProject };
 
 type Patch = { statusId?: string; priority?: number; assigneeId?: string | null };
 
 export function BulkBar({ count, onApply, onClear }: { count: number; onApply: (patch: Patch) => void; onClear: () => void }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { statuses, members } = useProjectInfo();
   if (count === 0) return null;
   return (

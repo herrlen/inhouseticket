@@ -17,6 +17,11 @@ import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_TICKET, MAX_COMMENT, MAX_DESC
 import { useProjectInfo } from "./context";
 import { partsKey, type usePartActions } from "./use-parts";
 import { ticketsKey } from "./use-tickets";
+import deCommon from "@/lib/i18n/de/common";
+import deDetail from "@/lib/i18n/de/detail";
+import deExplorer from "@/lib/i18n/de/explorer";
+
+const MESSAGES = { common: deCommon, detail: deDetail, explorer: deExplorer };
 
 type Actions = ReturnType<typeof usePartActions>;
 
@@ -27,7 +32,7 @@ const kb = (bytes: number) => `${Math.round(bytes / 1024)} KB`;
 // ---------------------------------------------------------------------------
 
 export function DescriptionField({ value, onSave }: { value: string; onSave: (v: string) => void }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const commit = () => {
@@ -83,7 +88,7 @@ export function DescriptionField({ value, onSave }: { value: string; onSave: (v:
 // ---------------------------------------------------------------------------
 
 export function Subtasks({ subtasks, actions }: { subtasks: Parts["subtasks"]; actions: Actions }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [title, setTitle] = useState("");
   const full = subtasks.length >= MAX_SUBTASKS;
   const done = subtasks.filter((s) => s.done).length;
@@ -131,7 +136,7 @@ export function Subtasks({ subtasks, actions }: { subtasks: Parts["subtasks"]; a
 type Parts = import("./use-parts").Parts;
 
 function SubtaskItem({ subtask, actions }: { subtask: Parts["subtasks"][number]; actions: Actions }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const [title, setTitle] = useState(subtask.title);
   // Local echo so the checkbox flips instantly; resyncs when the server state changes.
   const [done, setDone] = useState(subtask.done);
@@ -184,7 +189,7 @@ function SubtaskItem({ subtask, actions }: { subtask: Parts["subtasks"][number];
 // ---------------------------------------------------------------------------
 
 export function Attachments({ workspaceId, ticketId, attachments, manageAll, actions }: { workspaceId: string; ticketId: string; attachments: AttachmentRow[]; manageAll: boolean; actions: Actions }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { currentUserId } = useProjectInfo();
   const { project } = useProjectInfo();
   const qc = useQueryClient();
@@ -298,7 +303,7 @@ export function Attachments({ workspaceId, ticketId, attachments, manageAll, act
 // ---------------------------------------------------------------------------
 
 export function Comments({ comments, actions }: { comments: CommentRow[]; actions: Actions }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { currentUserId } = useProjectInfo();
   return (
     <div className="flex flex-col gap-4">
@@ -314,7 +319,7 @@ export function Comments({ comments, actions }: { comments: CommentRow[]; action
 }
 
 function CommentItem({ comment, mine, actions }: { comment: CommentRow; mine: boolean; actions: Actions }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const locale = useLocale();
   const [editing, setEditing] = useState(false);
   return (
@@ -366,7 +371,7 @@ export function CommentComposer({
   submitLabel?: string;
   onCancel?: () => void;
 }) {
-  const t = useT();
+  const t = useT(MESSAGES);
   const { members } = useProjectInfo();
   const [body, setBody] = useState(initial);
   const [query, setQuery] = useState<{ start: number; text: string } | null>(null);

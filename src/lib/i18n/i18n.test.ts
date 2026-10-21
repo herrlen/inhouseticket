@@ -31,6 +31,23 @@ describe("messages", () => {
     expect(arrays(en)).toEqual(arrays(de));
   });
 
+  it.each([
+    ["de", de],
+    ["en", en],
+  ] as const)("shell page labels match the pages' own titles (%s)", (_, m) => {
+    expect(m.shell.pages).toEqual({
+      dashboard: m.dashboard.title,
+      members: m.members.title,
+      admin: m.admin.title,
+      account: m.account.title,
+      claude: m.claude.title,
+      claudeNav: m.claude.navLabel,
+      data: m.data.title,
+      dataNav: m.data.navLabel,
+      import: m.import.title,
+    });
+  });
+
   it("legal note only in English", () => {
     expect(de.legal.germanOnly).toBe("");
     expect(en.legal.germanOnly).toMatch(/German/);
