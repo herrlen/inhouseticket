@@ -18,6 +18,8 @@
   --text: #1c1917;
   --muted: #78716c;
   --accent: #5b5bf7;
+  /* Hover fill of the accent button: a darker tone instead of opacity, text stays ≥ 4.5:1 */
+  --accent-hover: #4a4ae6;
   --accent-contrast: #ffffff;
   --focus: #5b5bf7;
 
@@ -113,6 +115,7 @@
     --text: #f4f4f5;
     --muted: #a1a1aa;
     --accent: #7c7cff;
+    --accent-hover: #9393ff;
     --accent-contrast: #0e0e11;
     --focus: #7c7cff;
     --p-indigo-ink: #7272f8;
@@ -161,6 +164,7 @@
   --text: #f4f4f5;
   --muted: #a1a1aa;
   --accent: #7c7cff;
+  --accent-hover: #9393ff;
   --accent-contrast: #0e0e11;
   --focus: #7c7cff;
   --p-indigo-ink: #7272f8;
@@ -208,6 +212,7 @@
   --color-text: var(--text);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
   --color-accent-contrast: var(--accent-contrast);
   --color-focus: var(--focus);
 

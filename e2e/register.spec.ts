@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
   completeJoinerWizard,
   confirmRegistration,
@@ -17,9 +17,10 @@ import {
 
 // Registration with name, address and password; the account follows the mailed link (ADR 005).
 
-async function axe(page: Page, label: string) {
-  // Not hovering anything: the click that led here may have left the pointer on a button.
-  await page.mouse.move(0, 0);
+async function axe(page: Page, label: string, hover?: Locator) {
+  // Not hovering anything unless asked: the click that led here may have left the pointer on a button.
+  if (hover) await hover.hover();
+  else await page.mouse.move(0, 0);
   for (const colorScheme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
     const { violations } = await new AxeBuilder({ page })
@@ -42,6 +43,8 @@ test("register by keyboard, confirm with wrong then right password, land in onbo
   await expect(form.getByRole("link", { name: "Datenschutzerklärung" })).toHaveAttribute("href", "/datenschutz");
   await expect(page.getByRole("button", { name: "Registrieren" })).toBeEnabled(); // hydrated
   await axe(page, "/register");
+  // Hover fill of the primary button keeps its text readable (--accent-hover, not opacity).
+  await axe(page, "/register hover", page.getByRole("button", { name: "Registrieren" }));
 
   // Browser checks first: name missing, password too short.
   await page.getByRole("button", { name: "Registrieren" }).click();

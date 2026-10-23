@@ -171,6 +171,7 @@ Die Fläche bleibt ruhig und neutral. **Farbe trägt Bedeutung:** Projekte, Prio
 | `--text` | `#1C1917` | `#F4F4F5` |
 | `--muted` | `#78716C` | `#A1A1AA` |
 | `--accent` (Marke) | `#5B5BF7` (Indigo-Violett) | `#7C7CFF` |
+| `--accent-hover` (Hover auf Akzentfläche, statt Deckkraft) | `#4A4AE6` | `#9393FF` |
 
 **Projektpalette (12)** – Grundfarbe für Punkte, Balken und Flächen. Für Text und Icons gibt es je Farbe eine `-ink`-Variante, die WCAG AA (4,5:1) in Light und Dark erreicht (`src/app/globals.css`, geprüft in `tokens.test.ts`). Mehrere Grundfarben (z. B. Sonne 1,6:1, Orange 2,1:1) sind auf Weiß als Text nicht lesbar.
 Coral `#FF6B5B` · Orange `#FF9F1C` · Sonne `#F5C400` · Limette `#8AC926` · Mint `#2EC4B6` · Türkis `#00B4D8` · Blau `#3A86FF` · Indigo `#5B5BF7` · Violett `#9B5DE5` · Pink `#F15BB5` · Beere `#C9184A` · Schiefer `#64748B`

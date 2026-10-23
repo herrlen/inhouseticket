@@ -101,7 +101,7 @@ export function ImportForm({ workspaceId }: { workspaceId: string }) {
       <section className={card} aria-live="polite">
         <p className="mb-3 font-medium">{t.import.done(state.tickets, state.projectKey)}</p>
         <div className="flex flex-wrap gap-2">
-          <Link href={state.url} className="inline-flex h-9 items-center rounded-[var(--radius-badge)] bg-accent px-3.5 text-sm font-medium text-accent-contrast hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+          <Link href={state.url} className="inline-flex h-9 items-center rounded-[var(--radius-badge)] bg-accent px-3.5 text-sm font-medium text-accent-contrast hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
             {t.import.openProject}
           </Link>
           <Button onClick={reset}>{t.import.another}</Button>

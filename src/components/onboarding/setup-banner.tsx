@@ -12,7 +12,7 @@ export async function SetupBanner() {
       </div>
       <Link
         href="/onboarding"
-        className="inline-flex h-9 items-center rounded-[var(--radius-badge)] bg-accent px-3.5 text-sm font-medium text-accent-contrast hover:opacity-90"
+        className="inline-flex h-9 items-center rounded-[var(--radius-badge)] bg-accent px-3.5 text-sm font-medium text-accent-contrast hover:bg-accent-hover"
       >
         {t.button}
       </Link>

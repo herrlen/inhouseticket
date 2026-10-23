@@ -58,7 +58,7 @@ export default async function Home() {
           <h1 className="mx-auto max-w-3xl text-3xl font-semibold tracking-tight text-balance md:text-5xl">{t.title}</h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-muted md:text-lg">{t.subtitle}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/register" data-cta="hero" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:opacity-90">
+            <Link href="/register" data-cta="hero" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:bg-accent-hover">
               {t.start}
             </Link>
             <a href="#claude" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] border border-border bg-surface px-4 font-medium hover:bg-bg">
@@ -181,7 +181,7 @@ export default async function Home() {
             ))}
           </div>
           <div className="mt-10 text-center">
-            <Link href="/register" data-cta="bottom" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:opacity-90">
+            <Link href="/register" data-cta="bottom" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:bg-accent-hover">
               {t.start}
             </Link>
             <p className="mt-4 text-[13px] text-muted">
