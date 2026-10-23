@@ -40,7 +40,7 @@ export default async function WorkspacePage({ params }: Props) {
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <Link
               href={`/${slug}/settings/data/import`}
-              className="inline-flex h-9 items-center rounded-[var(--radius-badge)] bg-accent px-3.5 text-sm font-medium text-accent-contrast hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              className="inline-flex h-9 items-center rounded-[var(--radius-badge)] bg-accent px-3.5 text-sm font-medium text-accent-contrast hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               {t.workspace.importButton}
             </Link>

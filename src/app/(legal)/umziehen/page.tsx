@@ -65,7 +65,7 @@ export default async function MigratePage() {
 
       <p className="mt-8">{t.outro}</p>
       <p>
-        <Link href="/register" data-cta="umziehen" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:opacity-90">
+        <Link href="/register" data-cta="umziehen" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:bg-accent-hover">
           {t.cta}
         </Link>
       </p>

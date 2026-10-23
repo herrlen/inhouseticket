@@ -51,8 +51,8 @@ describe.each([
     expect(contrast(fg, resolve(vars, "surface"))).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("--accent-contrast is readable on --accent", () => {
-    expect(contrast(resolve(vars, "accent-contrast"), resolve(vars, "accent"))).toBeGreaterThanOrEqual(4.5);
+  it.each(["accent", "accent-hover"])("--accent-contrast is readable on --%s", (fill) => {
+    expect(contrast(resolve(vars, "accent-contrast"), resolve(vars, fill))).toBeGreaterThanOrEqual(4.5);
   });
 
   it("--focus is visible (3:1) on --bg and --surface", () => {

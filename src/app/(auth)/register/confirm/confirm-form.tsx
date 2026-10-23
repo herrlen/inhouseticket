@@ -28,11 +28,11 @@ export function GoneNotice({ kind }: { kind: NonNullable<ConfirmState["gone"]> }
       </p>
       <div className="flex flex-wrap gap-2">
         {kind === "accountExists" ? null : (
-          <Link href="/register" className={`${linkButton} bg-accent text-accent-contrast`}>
+          <Link href="/register" className={`${linkButton} bg-accent text-accent-contrast hover:bg-accent-hover`}>
             {t.register.registerAgain}
           </Link>
         )}
-        <Link href="/login" className={`${linkButton} ${kind === "accountExists" ? "bg-accent text-accent-contrast" : "border border-border text-text hover:bg-bg"}`}>
+        <Link href="/login" className={`${linkButton} ${kind === "accountExists" ? "bg-accent text-accent-contrast hover:bg-accent-hover" : "border border-border text-text hover:bg-bg"}`}>
           {t.register.toLogin}
         </Link>
       </div>
