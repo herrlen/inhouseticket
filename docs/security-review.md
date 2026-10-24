@@ -44,7 +44,7 @@ gehasht gespeichert.
 ## Nachtrag 2026-10-05: OAuth für Connectors
 
 - `@better-auth/oauth-provider`: dynamische Client-Registrierung (offen, wie von MCP vorgesehen; rate-limitiert
-  durch das Plugin), Authorization Code nur mit PKCE (S256), Ressource `https://inhouseticket.com/mcp` als
+  durch das Plugin), Authorization Code nur mit PKCE (S256), Ressource `https://app.inhouseticket.com/mcp` (seit 2026-10-24; Tokens für die alte Adresse `https://inhouseticket.com/mcp` gelten weiter) als
   Zielgruppe – Tokens für andere Ressourcen werden am MCP-Endpunkt abgelehnt.
 - Access-Tokens opak, nur als sha256-Hash gespeichert, 1 h gültig; Refresh-Tokens rotieren.
 - Workspace-Bindung über die Einwilligungsseite (`oauth_workspace`); Mitgliedschaft und Sperre werden bei jedem

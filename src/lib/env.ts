@@ -4,7 +4,13 @@ import { z } from "zod";
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATABASE_URL: z.url(),
+  /** Address of the app (sign-in, workspaces, API, MCP), e.g. https://app.inhouseticket.com. */
   APP_URL: z.url(),
+  /** Marketing address (landing, legal pages), e.g. https://inhouseticket.com. Optional: without it everything runs on APP_URL. */
+  SITE_URL: z
+    .union([z.literal(""), z.url()])
+    .optional()
+    .transform((v) => v?.replace(/\/+$/, "") || undefined),
   BETTER_AUTH_SECRET: z.string().min(32),
   SMTP_HOST: z.string().min(1),
   SMTP_PORT: z.coerce.number().int().positive(),
@@ -66,6 +72,7 @@ export const env: Env = parsed.success
       NODE_ENV: "production",
       DATABASE_URL: "postgres://build:build@localhost:5432/build",
       APP_URL: "http://localhost:3000",
+      SITE_URL: undefined,
       BETTER_AUTH_SECRET: "build-phase-placeholder-not-used-at-runtime",
       SMTP_HOST: "localhost",
       SMTP_PORT: 25,

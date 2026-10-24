@@ -24,7 +24,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 PROJECT=p-flw0r0
-URL=https://inhouseticket.com
+URL=https://app.inhouseticket.com
 
 schritt() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 fehler() { printf '\033[31mFEHLER: %s\033[0m\n' "$*" >&2; exit 1; }

@@ -11,7 +11,7 @@ DESCRIPTION="inhouseticket – health check"
 MW=(pnpm dlx @mittwald/cli@1.25.0)
 
 read -r -d '' COMMAND <<'SH' || true
-node -e 'fetch("https://inhouseticket.com/api/health",{signal:AbortSignal.timeout(15000)}).then(r=>r.json()).then(j=>{if(j.status!=="ok"||j.database!=="ok"){console.error("unhealthy",JSON.stringify(j));process.exit(1)}}).catch(e=>{console.error("unreachable",e.message);process.exit(1)})'
+node -e 'fetch("https://app.inhouseticket.com/api/health",{signal:AbortSignal.timeout(15000)}).then(r=>r.json()).then(j=>{if(j.status!=="ok"||j.database!=="ok"){console.error("unhealthy",JSON.stringify(j));process.exit(1)}}).catch(e=>{console.error("unreachable",e.message);process.exit(1)})'
 SH
 
 EXISTING="$("${MW[@]}" cronjob list -p "$PROJECT" -o json 2>/dev/null | jq -r --arg d "$DESCRIPTION" '.[] | select(.description==$d) | .id')"

@@ -3,8 +3,8 @@ import { headers } from "next/headers";
 import { findMembershipById } from "@/db/queries/workspaces";
 import { auth } from "@/lib/auth";
 import { readBodyLimited } from "@/lib/body";
-import { env } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
+import { TRUSTED_ORIGINS } from "@/lib/site";
 import { hasPassword } from "@/lib/session";
 
 /** Per signed-in user across all /api/w routes – generous for a fast UI, stops scripted floods. */
@@ -36,11 +36,11 @@ export function json<T>(data: T) {
 
 /**
  * CSRF guard for cookie-authenticated mutations in route handlers (server actions have their own).
- * The browser always sends Origin on fetch POST/PATCH/DELETE; it must be our own origin.
+ * The browser always sends Origin on fetch POST/PATCH/DELETE; it must be one of ours (app or site host).
  */
 export async function requireSameOrigin(): Promise<Response | null> {
   const origin = (await headers()).get("origin");
-  if (!origin || origin !== new URL(env.APP_URL).origin) return jsonError(403, "forbidden_origin", "Anfrage nicht erlaubt.");
+  if (!origin || !TRUSTED_ORIGINS.includes(origin)) return jsonError(403, "forbidden_origin", "Anfrage nicht erlaubt.");
   return null;
 }
 

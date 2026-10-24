@@ -34,7 +34,10 @@ services:
     description: inhouseticket – Next.js
     environment:
       DATABASE_URL: postgres://inhouseticket:${POSTGRES_PASSWORD}@postgres:5432/inhouseticket
-      APP_URL: https://inhouseticket.com
+      # App on app.inhouseticket.com, landing and legal pages on inhouseticket.com (same container,
+      # both vHosts → app:3000). Both hosts need their vHost and certificate before this deploys.
+      APP_URL: https://app.inhouseticket.com
+      SITE_URL: https://inhouseticket.com
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: "${SMTP_PORT}"

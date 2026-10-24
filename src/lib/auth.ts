@@ -27,10 +27,16 @@ import { noAccountRegisterUrl, takeNoAccountMail } from "@/lib/no-account-mail";
 import { failedSignInEmail, shouldSendNoPasswordLink } from "@/lib/no-password-link";
 import { addressKey, rateLimit } from "@/lib/rate-limit";
 import { REGISTRATION_METHOD, registrationPlugin } from "@/lib/registration-plugin";
+import { COOKIE_DOMAIN, SITE_URL, TRUSTED_ORIGINS } from "@/lib/site";
 import { hashToken } from "@/lib/tokens";
 
 /** The MCP endpoint is the one protected resource OAuth clients (claude.ai connectors) get tokens for. */
 export const MCP_RESOURCE = new URL("/mcp", env.APP_URL).toString();
+/**
+ * Accepted audiences: the app address and, once the app moved to its own host, the old one on the
+ * site host – connectors set up with https://inhouseticket.com/mcp keep working (src/lib/hosts.ts).
+ */
+export const MCP_RESOURCES: readonly string[] = [...new Set([MCP_RESOURCE, new URL("/mcp", SITE_URL).toString()])];
 
 const MAGIC_LINK_TTL_SECONDS = 15 * 60;
 /** Login mails per address – the per-IP limit alone does not stop mail bombing one inbox. */
@@ -118,6 +124,11 @@ async function deliverSignInMail(email: string, verifyUrl: string, t: Messages):
 export const auth = betterAuth({
   baseURL: env.APP_URL,
   secret: env.BETTER_AUTH_SECRET,
+  trustedOrigins: TRUSTED_ORIGINS,
+  // Session cookies for inhouseticket.com and app.inhouseticket.com alike (Domain=inhouseticket.com),
+  // so the landing page sees a signed-in visitor. Still Secure (https), HttpOnly and SameSite=Lax.
+  // Without SITE_URL (local, E2E) they stay host-only.
+  advanced: COOKIE_DOMAIN ? { crossSubDomainCookies: { enabled: true, domain: COOKIE_DOMAIN } } : undefined,
   database: drizzleAdapter(db, { provider: "pg", schema }),
   session: {
     expiresIn: 60 * 60 * 24 * 30,
@@ -262,7 +273,7 @@ export const auth = betterAuth({
       allowDynamicClientRegistration: true,
       allowUnauthenticatedClientRegistration: true,
       scopes: ["openid", "profile", "email", "offline_access"],
-      resources: [MCP_RESOURCE],
+      resources: [...MCP_RESOURCES],
       clientRegistrationDefaultResources: [MCP_RESOURCE],
       storeTokens: { hash: (token) => hashToken(token) },
     }),

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { LegalLinks } from "@/components/legal-links";
 import { OPERATOR } from "@/lib/legal";
@@ -7,6 +8,7 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { getLocale, getT } from "@/lib/i18n/server";
 import { SOURCE_IDS, SOURCE_NAMES } from "@/lib/import/source";
 import { getSession } from "@/lib/session";
+import { appHref, isAppHost } from "@/lib/site";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = (await getT()).landing;
@@ -35,7 +37,10 @@ function Screenshot({ name, alt, priority = false }: { name: string; alt: string
 }
 
 export default async function Home() {
-  if (await getSession()) redirect("/start");
+  // Signed in (the session cookie is shared with the site host): straight into the app. On the app
+  // host the address belongs to the app, so a signed-out visitor lands on the sign-in page there.
+  if (await getSession()) redirect(appHref("/start"));
+  if (isAppHost((await headers()).get("host"))) redirect("/login");
   const [all, locale] = await Promise.all([getT(), getLocale()]);
   const t = all.landing;
 
@@ -47,7 +52,7 @@ export default async function Home() {
         </span>
         <div className="flex items-center gap-4">
           <LanguageToggle locale={locale} label={all.common.language} />
-          <Link href="/login" data-cta="header" className="text-[13px] font-medium hover:underline">
+          <Link href={appHref("/login")} data-cta="header" className="text-[13px] font-medium hover:underline">
             {t.login}
           </Link>
         </div>
@@ -58,7 +63,7 @@ export default async function Home() {
           <h1 className="mx-auto max-w-3xl text-3xl font-semibold tracking-tight text-balance md:text-5xl">{t.title}</h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-muted md:text-lg">{t.subtitle}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/register" data-cta="hero" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:bg-accent-hover">
+            <Link href={appHref("/register")} data-cta="hero" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:bg-accent-hover">
               {t.start}
             </Link>
             <a href="#claude" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] border border-border bg-surface px-4 font-medium hover:bg-bg">
@@ -181,7 +186,7 @@ export default async function Home() {
             ))}
           </div>
           <div className="mt-10 text-center">
-            <Link href="/register" data-cta="bottom" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:bg-accent-hover">
+            <Link href={appHref("/register")} data-cta="bottom" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:bg-accent-hover">
               {t.start}
             </Link>
             <p className="mt-4 text-[13px] text-muted">

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { env } from "@/lib/env";
+import { SITE_URL } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,6 @@ export default function robots(): MetadataRoute.Robots {
   if (!env.SITE_INDEXABLE) return { rules: [{ userAgent: "*", disallow: "/" }] };
   return {
     rules: [{ userAgent: "*", allow: "/" }],
-    sitemap: new URL("/sitemap.xml", env.APP_URL).toString(),
+    sitemap: new URL("/sitemap.xml", SITE_URL).toString(),
   };
 }
