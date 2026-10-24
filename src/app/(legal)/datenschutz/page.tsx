@@ -9,7 +9,8 @@ export const metadata: Metadata = { title: "Datenschutz", alternates: { canonica
 // and on 2026-10-17 password, reset, no-password link, rate limits (section 3/4), the lang cookie (section 7),
 // and on 2026-10-18 registration with password and its pending data (sections 3, 4, 9; ADR 005),
 // and on 2026-10-18 the measurement opt-out, DNT/GPC, no feature detection (section 5) and the
-// cookie and storage table from e2e/storage-inventory.spec.ts (section 7).
+// cookie and storage table from e2e/storage-inventory.spec.ts (section 7),
+// and on 2026-10-24 the app host app.inhouseticket.com, cookies shared by both hosts (section 7).
 // Keep in sync with new features.
 /** Every cookie the site sets – checked by e2e/storage-inventory.spec.ts (ALLOWED_COOKIES). */
 const COOKIES = [
@@ -174,7 +175,8 @@ export default function DatenschutzPage() {
         </table>
       </div>
       <p>
-        Alle Cookies gelten nur für inhouseticket.com, werden im Betrieb nur verschlüsselt übertragen (Secure; die Anmelde-Cookies tragen
+        Alle Cookies gelten nur für inhouseticket.com und die App unter app.inhouseticket.com (damit du auf beiden angemeldet bleibst
+        und deine Sprache und dein Widerspruch gegen die Messung überall gelten), werden im Betrieb nur verschlüsselt übertragen (Secure; die Anmelde-Cookies tragen
         dort das Präfix <code>__Secure-</code>) und nicht an fremde Seiten mitgeschickt (SameSite=Lax). Bis auf <code>iht_optout</code> sind
         sie für Skripte im Browser nicht lesbar (HttpOnly). Inhalte von Drittanbietern (Schriften, Skripte, Bilder) laden wir nicht.
       </p>

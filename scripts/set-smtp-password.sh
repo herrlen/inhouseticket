@@ -16,4 +16,4 @@ printf '\n'
 
 SMTP_PASSWORD="$PASSWORD" scripts/deploy.sh
 unset PASSWORD
-echo "SMTP-Passwort gesetzt. Test: auf https://inhouseticket.com/login einen Anmeldelink anfordern."
+echo "SMTP-Passwort gesetzt. Test: auf https://app.inhouseticket.com/login einen Anmeldelink anfordern."

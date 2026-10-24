@@ -15,8 +15,16 @@ Fortgeschrieben nach jedem Deploy, der etwas an der Infrastruktur ändert.
 
 | Host | Ziel |
 |---|---|
-| `inhouseticket.com` | Container `app`, `3000/tcp` |
+| `app.inhouseticket.com` | Container `app`, `3000/tcp` – die App (`APP_URL`) |
+| `inhouseticket.com` | Container `app`, `3000/tcp` – Landingpage und Rechtstexte (`SITE_URL`) |
 | `www.inhouseticket.com` | 301 → `https://inhouseticket.com/` |
+
+**Zwei Hosts, ein Container (2026-10-24, `src/lib/hosts.ts`):** Auf `inhouseticket.com` beantwortet die App
+nur `/`, `/umziehen`, die Rechtstexte, robots/sitemap, Icons, `/landing/*`, `/opengraph-image`, `/stat` und
+`/.well-known/*`; alle anderen Seiten und `GET /api/auth/*` leiten per 301 (andere Methoden 308) auf
+`app.inhouseticket.com` weiter. `/mcp` und API-Aufrufe ohne GET bleiben auf beiden Hosts erreichbar, damit
+Connectors mit der alten Adresse weiterlaufen (Tokens für `https://inhouseticket.com/mcp` gelten weiter).
+Sitzungs-, Sprach- und Opt-out-Cookie tragen `Domain=inhouseticket.com` (gilt für beide Hosts).
 | `p-flw0r0.project.space` | Standardseite |
 
 TLS: Let's Encrypt über mittwald, automatisch.
@@ -41,7 +49,7 @@ scripts/set-smtp-password.sh                        # SMTP-Passwort setzen (frag
 
 Seit 2026-10-10 ist die Beta-Liste leer (Registrierung offen) und `SITE_INDEXABLE=true`.
 
-Migrationen laufen beim Start des App-Containers. Prüfung: `https://inhouseticket.com/api/health` meldet
+Migrationen laufen beim Start des App-Containers. Prüfung: `https://app.inhouseticket.com/api/health` meldet
 `status`, `database` und `version` (= `sha-<commit>`).
 
 Logs: `mw container logs -p p-flw0r0 app`
@@ -81,7 +89,7 @@ Liegt der benötigte Dump nicht mehr im Volume: in mStudio das Projekt-Backup de
 - **Health-Check:** mittwald-Cronjob im App-Container alle 5 Minuten (`scripts/setup-monitoring.sh`, ID
   `883c622f-…`). Ruft die öffentliche URL `/api/health` ab (Proxy, TLS, App, Datenbank); bei Fehler Mail an
   hello@. Erkennt **keinen** Komplettausfall von mittwald – dafür zusätzlich einen externen Dienst nutzen
-  (z. B. UptimeRobot oder Better Stack, Check auf `https://inhouseticket.com/api/health`, Schlüsselwort `"ok"`).
+  (z. B. UptimeRobot oder Better Stack, Check auf `https://app.inhouseticket.com/api/health`, Schlüsselwort `"ok"`).
 - **E-Mail-Authentifizierung:** SPF (`include:agenturserver.de`), DKIM von mittwald (Selektoren `agenturserver`,
   `agenturserver2048`), DMARC seit 2026-10-07 `p=none` mit Berichten an hello@ (Zone `_dmarc` per API angelegt).
   Nach einigen Wochen ohne Auffälligkeiten auf `p=quarantine` anheben.
@@ -159,7 +167,7 @@ Absicherung (Security-Review 2026-10-17):
   *Len: prüfen, dass das live gesetzte Token so eingeschränkt ist.*
 
 Einrichten in Matomo (Superuser):
-1. Website anlegen: `inhouseticket.com`, Zeitzone Europe/Berlin, eigene IP ausschließen.
+1. Website anlegen: `inhouseticket.com` (Alias-URL `app.inhouseticket.com`), Zeitzone Europe/Berlin, eigene IP ausschließen.
 2. Eigenen Benutzer für den Proxy anlegen (z. B. `iht-proxy`), **kein** Superuser, Recht **Schreiben** nur auf
    diese Site; für ihn ein Token erzeugen (nur HTTPS-POST erlauben).
 3. `MATOMO_SITE_ID=<id> MATOMO_TOKEN=<token> scripts/deploy.sh`.
@@ -180,8 +188,9 @@ Einrichten in Matomo (Superuser):
 Prüfen nach einem Deploy:
 
 ```bash
-curl -sI https://inhouseticket.com/login | grep -i x-robots-tag        # noindex, nofollow
-curl -sI https://inhouseticket.com/api/health | grep -i x-robots-tag   # noindex, nofollow
+curl -sI https://app.inhouseticket.com/login | grep -i x-robots-tag    # noindex, nofollow
+curl -sI https://inhouseticket.com/login | grep -i -E "^(HTTP|location)" # 301 → https://app.inhouseticket.com/login
+curl -sI https://app.inhouseticket.com/api/health | grep -i x-robots-tag # noindex, nofollow
 curl -sI https://inhouseticket.com/ | grep -i x-robots-tag             # (leer)
 curl -s https://inhouseticket.com/robots.txt                           # Allow: / + Sitemap
 curl -s https://inhouseticket.com/sitemap.xml                          # nur öffentliche Seiten

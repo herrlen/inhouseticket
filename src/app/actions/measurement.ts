@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { OPTOUT_COOKIE, OPTOUT_MAX_AGE } from "@/lib/optout";
+import { COOKIE_DOMAIN } from "@/lib/site";
 
 /**
  * "Messung auf diesem Gerät deaktivieren/aktivieren" (privacy policy section 5). Stores the
@@ -14,12 +15,14 @@ export async function setMeasurement(formData: FormData) {
   if (value === "off") {
     jar.set(OPTOUT_COOKIE, "1", {
       path: "/",
+      // An opt-out on inhouseticket.com also holds on app.inhouseticket.com and vice versa.
+      domain: COOKIE_DOMAIN,
       maxAge: OPTOUT_MAX_AGE,
       sameSite: "lax",
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
     });
   } else if (value === "on") {
-    jar.delete(OPTOUT_COOKIE);
+    jar.delete({ name: OPTOUT_COOKIE, path: "/", domain: COOKIE_DOMAIN });
   }
 }

@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { needsNoindex } from "./indexing";
 
-vi.mock("@/lib/env", () => ({ env: { SITE_INDEXABLE: true, APP_URL: "https://inhouseticket.com" } }));
+vi.mock("@/lib/env", () => ({ env: { SITE_INDEXABLE: true, APP_URL: "https://app.inhouseticket.com" } }));
+// Public pages live on the site host, not on APP_URL.
+vi.mock("@/lib/site", () => ({ SITE_URL: "https://inhouseticket.com" }));
 
 describe("needsNoindex", () => {
   it.each(["/", "/umziehen", "/impressum", "/datenschutz/", "/agb", "/avv", "/robots.txt", "/sitemap.xml", "/landing/board-light.jpg", "/opengraph-image", "/_next/static/chunks/a.js", "/.well-known/security.txt"])(

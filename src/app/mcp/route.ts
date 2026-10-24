@@ -1,8 +1,8 @@
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { authenticateApiToken } from "@/db/queries/api-tokens";
 import { authenticateOAuthAccessToken } from "@/db/queries/oauth";
-import { MCP_RESOURCE } from "@/lib/auth";
-import { PROTECTED_RESOURCE_METADATA_URL } from "@/lib/oauth-metadata";
+import { MCP_RESOURCES } from "@/lib/auth";
+import { protectedResourceMetadataUrl } from "@/lib/oauth-metadata";
 import { tooManyRequests } from "@/lib/api";
 import { rateLimit } from "@/lib/rate-limit";
 import { createMcpServer } from "@/mcp/server";
@@ -24,13 +24,13 @@ async function messageCount(request: Request): Promise<number> {
 }
 
 /** 401 with the RFC 9728 pointer, so OAuth clients can discover where to sign in. */
-function unauthorized() {
+function unauthorized(request: Request) {
   return new Response(JSON.stringify({ error: { code: "unauthorized", message: "Gültiges API-Token oder Anmeldung erforderlich." } }), {
     status: 401,
     headers: {
       "Content-Type": "application/json",
       "Cache-Control": "no-store",
-      "WWW-Authenticate": `Bearer realm="inhouseticket", resource_metadata="${PROTECTED_RESOURCE_METADATA_URL}"`,
+      "WWW-Authenticate": `Bearer realm="inhouseticket", resource_metadata="${protectedResourceMetadataUrl(request.headers.get("host"))}"`,
     },
   });
 }
@@ -39,12 +39,12 @@ async function authenticate(request: Request) {
   const match = /^Bearer\s+(\S+)$/i.exec(request.headers.get("authorization") ?? "");
   const raw = match?.[1];
   if (!raw) return null;
-  return raw.startsWith("iht_") ? authenticateApiToken(raw) : authenticateOAuthAccessToken(raw, MCP_RESOURCE);
+  return raw.startsWith("iht_") ? authenticateApiToken(raw) : authenticateOAuthAccessToken(raw, MCP_RESOURCES);
 }
 
 export async function POST(request: Request) {
   const auth = await authenticate(request);
-  if (!auth) return unauthorized();
+  if (!auth) return unauthorized(request);
 
   const cost = await messageCount(request);
   const limited =
@@ -65,6 +65,6 @@ export async function POST(request: Request) {
 // Stateless server: no SSE stream, no sessions to delete.
 // Unauthenticated probes still get the 401 discovery hint.
 const notAllowed = async (request: Request) =>
-  (await authenticate(request)) ? new Response(null, { status: 405, headers: { Allow: "POST" } }) : unauthorized();
+  (await authenticate(request)) ? new Response(null, { status: 405, headers: { Allow: "POST" } }) : unauthorized(request);
 export const GET = notAllowed;
 export const DELETE = notAllowed;

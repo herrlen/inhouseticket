@@ -8,7 +8,7 @@ import type { TokenActor } from "./api-tokens";
 // OAuth connections (claude.ai connectors). Tokens are bound to a person; the workspace comes from
 // the choice on the consent page. Membership and workspace lock are checked on every call.
 
-export async function authenticateOAuthAccessToken(raw: string, resource: string): Promise<TokenActor | null> {
+export async function authenticateOAuthAccessToken(raw: string, resources: readonly string[]): Promise<TokenActor | null> {
   if (raw.length > 200) return null;
   const now = new Date();
   const [row] = await db
@@ -21,9 +21,9 @@ export async function authenticateOAuthAccessToken(raw: string, resource: string
     .where(and(eq(oauthAccessToken.token, hashToken(raw)), isNull(oauthAccessToken.revoked), gt(oauthAccessToken.expiresAt, now)))
     .limit(1);
   if (!row?.userId) return null;
-  // Audience: only tokens issued for this resource. A token without one (no RFC 8707 `resource`
-  // in the request) is not valid here either; older rows were backfilled (migration 0010).
-  if (!row.resources?.includes(resource)) return null;
+  // Audience: only tokens issued for one of these resources. A token without one (no RFC 8707
+  // `resource` in the request) is not valid here either; older rows were backfilled (migration 0010).
+  if (!resources.some((r) => row.resources?.includes(r))) return null;
   return { tokenId: `oauth:${row.id}`, userId: row.userId, workspaceId: row.workspaceId };
 }
 

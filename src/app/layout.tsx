@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { connection } from "next/server";
 import { MatomoTracker } from "@/components/matomo-tracker";
 import { env } from "@/lib/env";
+import { SITE_URL } from "@/lib/site";
 import { LocaleProvider } from "@/lib/i18n/locale-provider";
 import { getLocale, getT } from "@/lib/i18n/server";
 import "./globals.css";
@@ -20,7 +21,8 @@ const jetbrainsMono = JetBrains_Mono({
 export async function generateMetadata(): Promise<Metadata> {
   const [locale, t] = await Promise.all([getLocale(), getT()]);
   return {
-    metadataBase: new URL(env.APP_URL),
+    // Canonicals and the Open Graph image point at the site host (inhouseticket.com); app pages are noindex anyway.
+    metadataBase: new URL(SITE_URL),
     title: { default: "inhouseticket", template: "%s · inhouseticket" },
     description: t.landing.subtitle,
     robots: env.SITE_INDEXABLE ? { index: true, follow: true } : { index: false, follow: false },

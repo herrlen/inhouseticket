@@ -35,10 +35,14 @@ afterAll(async () => {
 
 describe("authenticateOAuthAccessToken – audience", () => {
   it("accepts a token issued for the MCP resource", async () => {
-    expect(await authenticateOAuthAccessToken(`${run}-mcp`, MCP)).toEqual({ tokenId: `oauth:${run}-mcp`, userId, workspaceId });
+    expect(await authenticateOAuthAccessToken(`${run}-mcp`, [MCP])).toEqual({ tokenId: `oauth:${run}-mcp`, userId, workspaceId });
+  });
+
+  it("accepts it among several audiences (old and new address of /mcp)", async () => {
+    expect(await authenticateOAuthAccessToken(`${run}-mcp`, ["https://app.inhouseticket.test/mcp", MCP])).toEqual({ tokenId: `oauth:${run}-mcp`, userId, workspaceId });
   });
 
   it.each(["other", "none", "empty"])("rejects a token with audience %s", async (id) => {
-    expect(await authenticateOAuthAccessToken(`${run}-${id}`, MCP)).toBeNull();
+    expect(await authenticateOAuthAccessToken(`${run}-${id}`, [MCP])).toBeNull();
   });
 });

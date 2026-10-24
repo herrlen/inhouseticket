@@ -134,7 +134,7 @@ Alle Kacheln klickbar → springt in gefilterte Liste.
 
 **Ziel:** Claude kann Tickets lesen, anlegen und pflegen – z. B. „Leg mir aus diesem Meeting-Protokoll Tickets an“ oder „Wer ist diese Woche überlastet?“.
 
-- **Transport:** Remote-MCP über Streamable HTTP unter `https://inhouseticket.com/mcp`.
+- **Transport:** Remote-MCP über Streamable HTTP unter `https://app.inhouseticket.com/mcp` (die alte Adresse `https://inhouseticket.com/mcp` bleibt für bestehende Connectors erreichbar).
 - **Auth:** MVP mit persönlichem API-Token (in den User-Einstellungen erzeugbar, widerrufbar, gehasht gespeichert). Später OAuth 2.1, damit es als Connector in claude.ai eingebunden werden kann.
 - **Rechte:** Token erbt die Rechte des Users, workspace-gescoped. Rate-Limit pro Token.
 
@@ -292,7 +292,8 @@ api_token        id, user_id, workspace_id, name, token_hash, last_used_at, crea
 - **Storage (geändert 2026-10-04, ADR 002):** Bild-Anhänge (≤ 100 KB) direkt in Postgres (`bytea`), ausgeliefert nach Mitgliedschaftsprüfung, Cache-Header lang. Höchstens 20 Anhänge pro Ticket.
 - **Budget (angepasst 2026-10-04):** JS initial ≤ 200 KB gzip pro Seite, davon eigener Code ≤ 50 KB über der Framework-Grundlast (Next.js + React ≈ 173 KB); LCP < 1,5 s, Interaktion < 100 ms. Die ursprünglichen 150 KB liegen unter der Grundlast von Next.js. Ausnahme (Len, 2026-10-04): ein Direktlink mit geöffnetem Ticket (`?t=…`) darf knapp darüber liegen (~203 KB); Drag & Drop der Seitenleiste wird in Sprint 9 nachgeladen.
 - **Hosting:** Docker-Container, EU (z. B. Mittwald), Postgres managed, tägliche Backups.
-- **URLs (entschieden 2026-10-04):** Pfade statt Subdomains – `inhouseticket.com/{workspace}/p/{KEY}`. Der Workspace-Slug wird aus der E-Mail-Domain abgeleitet (`firma.de` → `firma`, bei Kollision `firma-2`). Ein vHost für `inhouseticket.com`, normales Let's-Encrypt-Zertifikat. Subdomains (`firma.inhouseticket.com`) bräuchten Wildcard-DNS und -Zertifikat; als mögliche Pro-Option im Backlog, nachrüstbar ohne Datenmigration.
+- **App-Host (2026-10-24):** Die App läuft unter `app.inhouseticket.com` (`APP_URL`), Landingpage und Rechtstexte unter `inhouseticket.com` (`SITE_URL`), beide auf demselben Container; App-Pfade auf der Root-Domain leiten per 301 weiter (`src/lib/hosts.ts`), das Sitzungs-Cookie gilt für beide Hosts.
+- **URLs (entschieden 2026-10-04):** Pfade statt Subdomains – `app.inhouseticket.com/{workspace}/p/{KEY}`. Der Workspace-Slug wird aus der E-Mail-Domain abgeleitet (`firma.de` → `firma`, bei Kollision `firma-2`). Ein vHost für `inhouseticket.com`, normales Let's-Encrypt-Zertifikat. Subdomains (`firma.inhouseticket.com`) bräuchten Wildcard-DNS und -Zertifikat; als mögliche Pro-Option im Backlog, nachrüstbar ohne Datenmigration.
 - **Server (korrigiert 2026-10-04):** Kein eigener vServer nötig. Lens mittwald Space-Server `s-r0ud3w` betreibt bereits Container-Stacks inkl. Postgres-Container (luibui). inhouseticket wird dort ein neues Projekt (Stack: App + Postgres, vHost `inhouseticket.com` → App). RAM nach dem Livegang messen; hochstufen nur bei Engpass. Nie auf denselben Server wie die luibui-Sandbox.
 - **Sicherheit:** Rate-Limits (Login, API, MCP), CSRF über Server Actions, CSP-Header, Audit-Log.
 

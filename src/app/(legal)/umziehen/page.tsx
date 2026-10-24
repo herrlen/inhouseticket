@@ -4,6 +4,7 @@ import { intlLocale } from "@/lib/i18n/locale";
 import { getLocale, getT } from "@/lib/i18n/server";
 import { MAX_IMPORT_BYTES, MAX_IMPORT_TICKETS } from "@/lib/import/plan";
 import { SOURCE_IDS } from "@/lib/import/source";
+import { appHref } from "@/lib/site";
 import { MAX_DESCRIPTION, MAX_SUBTASKS, MAX_TITLE } from "@/lib/limits";
 
 // Public help page for moving from another tool. Lives in the (legal) group for its
@@ -65,7 +66,7 @@ export default async function MigratePage() {
 
       <p className="mt-8">{t.outro}</p>
       <p>
-        <Link href="/register" data-cta="umziehen" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:bg-accent-hover">
+        <Link href={appHref("/register")} data-cta="umziehen" className="inline-flex h-10 items-center rounded-[var(--radius-badge)] bg-accent px-4 font-medium text-accent-contrast hover:bg-accent-hover">
           {t.cta}
         </Link>
       </p>
