@@ -2,7 +2,7 @@ export default {
   title: "Daten & Workspace",
   navLabel: "Daten",
   exportTitle: "Daten exportieren",
-  exportText: "Alle Daten dieses Workspace zum Mitnehmen. JSON enthält alles (Mitglieder, Projekte, Status, Labels, Tickets mit Unteraufgaben und Kommentaren, Anhänge als Metadaten); CSV ist eine Ticket-Liste für Excel.",
+  exportText: "Alle Daten dieses Workspace zum Mitnehmen. JSON enthält alles (Mitglieder, Projekte, Status, Labels, Tickets mit Unteraufgaben, Kommentaren, Verlauf und Anhängen, gespeicherte Ansichten und Favoriten) – damit zieht ihr auch nach emuchat um; CSV ist eine Ticket-Liste für Excel.",
   exportJson: "JSON herunterladen",
   exportCsv: "CSV herunterladen",
   deleteTitle: "Workspace löschen",
