@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { createLabel, TicketError, type LabelRow } from "@/db/queries/tickets";
+import { convertChecklistItem, createLabel, TicketError, type LabelRow, type TicketRow } from "@/db/queries/tickets";
 import {
   createComment,
   createSubtask,
@@ -82,6 +82,18 @@ export async function deleteSubtaskAction(input: { workspaceId: string; subtaskI
   try {
     await deleteSubtask({ userId: ctx.user.id, workspaceId: ctx.workspace.id }, parsed.data.subtaskId);
     return { ok: true, data: null };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** "In Unteraufgabe umwandeln": checklist item → ticket of type subtask under the same ticket. */
+export async function convertChecklistItemAction(input: { workspaceId: string; subtaskId: string }): Promise<ActionResult<TicketRow>> {
+  const parsed = z.object({ workspaceId: z.uuid(), subtaskId: z.uuid() }).safeParse(input);
+  if (!parsed.success) return issue(parsed.error);
+  const ctx = await requireMember({ workspaceId: parsed.data.workspaceId });
+  try {
+    return { ok: true, data: await convertChecklistItem({ userId: ctx.user.id, workspaceId: ctx.workspace.id }, parsed.data.subtaskId) };
   } catch (e) {
     return fail(e);
   }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MAX_DESCRIPTION, MAX_TITLE } from "@/lib/limits";
+import { TICKET_TYPES } from "@/lib/ticket-hierarchy";
 
 export const PRIORITY_VALUES = [0, 1, 2, 3, 4] as const; // none, low, medium, high, urgent
 
@@ -23,6 +24,8 @@ export const dueDateSchema = z
 
 export const prioritySchema = z.number().int().min(0).max(4);
 
+export const ticketTypeSchema = z.enum(TICKET_TYPES);
+
 export const createTicketSchema = z.object({
   workspaceId: z.uuid(),
   projectId: z.uuid(),
@@ -31,6 +34,9 @@ export const createTicketSchema = z.object({
   priority: prioritySchema.optional(),
   assigneeId: z.string().min(1).max(100).nullable().optional(),
   dueDate: dueDateSchema.optional(),
+  type: ticketTypeSchema.optional(),
+  /** Parent ticket in the same project (rules: src/lib/ticket-hierarchy.ts). */
+  parentId: z.uuid().nullable().optional(),
 });
 
 /** Partial update; only present keys change. */
@@ -43,6 +49,8 @@ export const ticketPatchSchema = z
     assigneeId: z.string().min(1).max(100).nullable(),
     dueDate: dueDateSchema,
     labelIds: z.array(z.uuid()).max(20),
+    type: ticketTypeSchema,
+    parentId: z.uuid().nullable(),
     /** Fractional sort key (board/list drag & drop). */
     sort: z.string().min(1).max(200).regex(/^[0-9A-Za-z]+$/),
   })

@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { dueBucket, formatDue, priorityKey, type Group } from "./list-model";
 import { AssigneePicker, DueDateInput, PriorityIcon, PriorityPicker, StatusDot, StatusPicker } from "./pickers";
 import { TicketMeta } from "./ticket-meta";
+import { TypeIcon } from "./type-icon";
 import type { ListColumn } from "./list-columns";
 import dynamic from "next/dynamic";
 import { AddTicketRow } from "./list-extras";
@@ -129,7 +130,12 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
                         className="size-4 accent-[var(--accent)]"
                       />
                     </td>
-                    <td className="py-1 pr-2 font-mono text-xs whitespace-nowrap text-muted">{key}</td>
+                    <td className="py-1 pr-2 font-mono text-xs whitespace-nowrap text-muted">
+                      <span className="inline-flex items-center gap-1.5">
+                        <TypeIcon type={t.type} id={`type-${t.id}`} />
+                        <span>{key}</span>
+                      </span>
+                    </td>
                     <td className="py-1 pr-3 max-md:w-full max-md:max-w-0">
                       <button
                         type="button"
@@ -137,6 +143,7 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
                         onClick={() => onOpen(t.id)}
                         className="flex w-full min-w-0 items-center gap-2 text-left hover:underline"
                         aria-label={tl.open(key, t.title)}
+                        aria-describedby={`type-${t.id}`}
                       >
                         <span className="truncate">{t.title}</span>
                         {ticketLabels.map((l) => (

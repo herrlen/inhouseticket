@@ -130,7 +130,7 @@ test("detail: edit title and description, labels, activity, keyboard navigation"
   await expect(detail(page).getByText(/Labels hinzugefügt: Newsletter/)).toBeVisible();
 
   // ↓ goes to the next ticket in list order, ↑ back.
-  await detail(page).getByRole("heading", { name: "Unteraufgaben" }).click();
+  await detail(page).getByRole("heading", { name: "Checkliste" }).click();
   await page.keyboard.press("ArrowDown");
   await expect(page).toHaveURL(/\?t=MKT-3$/);
   await page.keyboard.press("ArrowUp");
@@ -226,10 +226,10 @@ test("list additions: add in a group, subtasks, columns, new status", async ({ p
 
   // Subtasks unfold under their ticket (the tutorial ticket MKT-3 has three).
   // The switch reflects the URL (?subtasks=1), which updates right after the click.
-  await page.getByRole("checkbox", { name: "Unteraufgaben anzeigen" }).click();
-  await expect(page.getByRole("checkbox", { name: "Unteraufgaben anzeigen" })).toBeChecked();
+  await page.getByRole("checkbox", { name: "Checklisten anzeigen" }).click();
+  await expect(page.getByRole("checkbox", { name: "Checklisten anzeigen" })).toBeChecked();
   await expect(page).toHaveURL(/subtasks=1/);
-  await expect(page.getByRole("list", { name: "Unteraufgaben von MKT-3" }).getByRole("listitem")).toHaveCount(3);
+  await expect(page.getByRole("list", { name: "Checkliste von MKT-3" }).getByRole("listitem")).toHaveCount(3);
 
   // Columns: comments shown as a column; switching "Fällig" off is remembered per person.
   await expect(table(page).getByRole("columnheader", { name: "Kommentare" })).toBeVisible();

@@ -53,7 +53,7 @@ describe("completeOnboarding", () => {
     expect(tickets.map((t) => t.title)).toEqual([
       "Drück C – und leg dein erstes eigenes Ticket an",
       "Zieh mich nach „In Bearbeitung“ →",
-      "Öffne mich und hak die Unteraufgaben ab",
+      "Öffne mich und hak die Checkliste ab",
       "Lade dein Team ein",
       "Kunde fragt nach einer Rechnungskopie",
     ]);

@@ -1,5 +1,5 @@
 // Shared by client and server: which URL parameters make up a saved view.
-export const VIEW_PARAMS = ["assignee", "priority", "due", "label", "q", "group", "sort", "view", "done", "subtasks"] as const;
+export const VIEW_PARAMS = ["assignee", "priority", "due", "label", "type", "q", "group", "sort", "view", "done", "subtasks"] as const;
 
 export function cleanViewQuery(query: string | URLSearchParams): string {
   const input = typeof query === "string" ? new URLSearchParams(query) : query;

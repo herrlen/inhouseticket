@@ -65,7 +65,7 @@ test("ticket shortcuts 1–4/0 and A in the detail panel", async ({ page }) => {
   await page.goto(`${path}/p/MKT?t=MKT-2`);
   const dialog = page.getByRole("dialog");
   await waitForHydration(dialog.getByRole("textbox", { name: "Titel" }));
-  await dialog.getByRole("heading", { name: "Unteraufgaben" }).click();
+  await dialog.getByRole("heading", { name: "Checkliste" }).click();
   await page.keyboard.press("1");
   await expect(dialog.getByRole("button", { name: /^Priorität von MKT-2: Dringend/ })).toBeVisible();
   await page.keyboard.press("0");

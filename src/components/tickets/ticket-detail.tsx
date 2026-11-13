@@ -16,6 +16,7 @@ import { useProjectInfo } from "./context";
 import { dueBucket, todayInBerlin } from "./list-model";
 import { AssigneePicker, DueDateInput, PriorityPicker, StatusPicker } from "./pickers";
 import { Attachments, Comments, DescriptionField, Subtasks } from "./detail-parts";
+import { ChildTickets, HierarchyFields } from "./hierarchy-parts";
 import { usePartActions, useParts } from "./use-parts";
 import { useActivity } from "./use-tickets";
 import deActivity from "@/lib/i18n/de/activity";
@@ -23,11 +24,17 @@ import deDetail from "@/lib/i18n/de/detail";
 import deList from "@/lib/i18n/de/list";
 import dePriority from "@/lib/i18n/de/priority";
 import deProject from "@/lib/i18n/de/project";
+import deHierarchy from "@/lib/i18n/de/hierarchy";
+import { isTicketType, type TicketType } from "@/lib/ticket-hierarchy";
 
-const MESSAGES = { activity: deActivity, detail: deDetail, list: deList, priority: dePriority, project: deProject };
+const MESSAGES = { activity: deActivity, detail: deDetail, hierarchy: deHierarchy, list: deList, priority: dePriority, project: deProject };
 
 type Props = {
   ticket: TicketRow;
+  /** All tickets of the project: parent candidates and child tickets come from here. */
+  tickets: TicketRow[];
+  onOpen: (ticketId: string) => void;
+  onCreateChild: (input: { title: string; type: TicketType }) => void;
   onPatch: (patch: TicketPatch) => void;
   onNavigate: (direction: 1 | -1) => void;
   onLabelCreated: (label: LabelRow) => void;
@@ -58,7 +65,7 @@ function useDraft(initial: string, save: (value: string) => void) {
   return { draft, setDraft, commit };
 }
 
-export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Props) {
+export function TicketDetail({ ticket, tickets, onOpen, onCreateChild, onPatch, onNavigate, onLabelCreated }: Props) {
   const t = useT(MESSAGES);
   const { project, workspaceId, statuses } = useProjectInfo();
   const key = `${project.key}-${ticket.number}`;
@@ -137,6 +144,7 @@ export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Pr
       </div>
 
       <dl className="grid grid-cols-[7rem_1fr] items-center gap-x-3 gap-y-1 text-[13px]">
+        <HierarchyFields ticket={ticket} tickets={tickets} onPatch={onPatch} onOpen={onOpen} />
         <dt className="text-muted">{t.project.colStatus}</dt>
         <dd><StatusPicker value={ticket.statusId} ticketLabel={key} onChange={(statusId) => onPatch({ statusId })} /></dd>
         <dt className="text-muted">{t.project.colPriority}</dt>
@@ -160,9 +168,11 @@ export function TicketDetail({ ticket, onPatch, onNavigate, onLabelCreated }: Pr
 
       <DescriptionField value={ticket.description ?? ""} onSave={(v) => onPatch({ description: v })} />
 
+      <ChildTickets ticket={ticket} tickets={tickets} onOpen={onOpen} onCreate={onCreateChild} />
+
       {parts.data ? (
         <>
-          <Subtasks subtasks={parts.data.subtasks} actions={actions} />
+          <Subtasks subtasks={parts.data.subtasks} actions={actions} canConvert={ticket.type === "story" || ticket.type === "task"} />
           <Attachments workspaceId={workspaceId} ticketId={ticket.id} attachments={parts.data.attachments} manageAll={parts.data.manageAttachments} actions={actions} />
         </>
       ) : parts.isError ? (
@@ -281,7 +291,7 @@ function LabelEditor({ workspaceId, ticket, onChange, onCreated }: { workspaceId
   );
 }
 
-function describe(a: ActivityRow, t: Pick<Messages, "activity" | "priority">, locale: Locale): string {
+function describe(a: ActivityRow, t: Pick<Messages, "activity" | "priority" | "hierarchy">, locale: Locale): string {
   const p = a.payload as Record<string, unknown>;
   const str = (v: unknown) => (v === null || v === undefined || v === "" ? "–" : String(v));
   switch (a.type) {
@@ -300,6 +310,9 @@ function describe(a: ActivityRow, t: Pick<Messages, "activity" | "priority">, lo
     case "attachment_added": return t.activity.attachment_added(str(p.fileName));
     case "attachment_removed": return t.activity.attachment_removed(str(p.fileName));
     case "imported": return t.activity.imported(str(p.source), p.ref ? String(p.ref) : "");
+    case "type": return t.activity.type(isTicketType(p.from) ? t.hierarchy.types[p.from] : str(p.from), isTicketType(p.to) ? t.hierarchy.types[p.to] : str(p.to));
+    case "parent": return p.to ? t.activity.parent(str(p.to)) : t.activity.parentRemoved;
+    case "checklist_converted": return t.activity.checklist_converted(str(p.title), str(p.key));
     default: return a.type;
   }
 }

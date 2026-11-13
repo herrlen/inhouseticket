@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/toast";
 import { trackEvent } from "@/lib/analytics";
 import { keyBetween } from "@/lib/fractional";
 import { useT } from "@/lib/i18n/client";
+import type { TicketType } from "@/lib/ticket-hierarchy";
 import type { TicketPatch } from "@/lib/validation/ticket";
 import deCommon from "@/lib/i18n/de/common";
 import deExplorer from "@/lib/i18n/de/explorer";
@@ -112,6 +113,8 @@ export function useUpdateTicket(workspaceId: string, projectId: string, category
   return mutation;
 }
 
+export type NewTicketInput = { title: string; statusId?: string; priority?: number; assigneeId?: string | null; dueDate?: string | null; type?: TicketType; parentId?: string | null };
+
 export function useCreateTicket(workspaceId: string, projectId: string) {
   const t = useT(MESSAGES);
   const qc = useQueryClient();
@@ -119,7 +122,7 @@ export function useCreateTicket(workspaceId: string, projectId: string) {
   const router = useRouter();
   return useMutation({
     mutationKey: ["tickets", projectId],
-    mutationFn: (input: { title: string; statusId?: string; priority?: number; assigneeId?: string | null; dueDate?: string | null }) =>
+    mutationFn: (input: NewTicketInput) =>
       send<TicketRow>("POST", `/api/w/${workspaceId}/projects/${projectId}/tickets`, input),
     onMutate: async (input) => {
       await qc.cancelQueries({ queryKey: ticketsKey(projectId) });
@@ -130,6 +133,8 @@ export function useCreateTicket(workspaceId: string, projectId: string) {
         id: `temp-${crypto.randomUUID()}`,
         projectId,
         number: 0, // shown as "…" until the server answers
+        type: input.type ?? "task",
+        parentId: input.parentId ?? null,
         title: input.title,
         description: null,
         statusId: input.statusId ?? "",

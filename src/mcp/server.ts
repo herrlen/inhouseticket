@@ -7,7 +7,10 @@ import { createComment, createSubtask, listSubtasks, PartError, updateSubtask } 
 import { createTicket, TicketError, updateTicket, type Actor } from "@/db/queries/tickets";
 import { todayInBerlin } from "@/components/tickets/list-model";
 import { MAX_COMMENT, MAX_DESCRIPTION, MAX_SUBTASKS, MAX_TITLE } from "@/lib/limits";
-import { findProject, findTicketByKey, listMembersForTool, parsePriority, resolveMember, resolveStatus, searchForTool, ticketDetail, ToolInputError } from "./data";
+import { TICKET_TYPES, type TicketType } from "@/lib/ticket-hierarchy";
+import deHierarchy from "@/lib/i18n/de/hierarchy";
+import deTickets from "@/lib/i18n/de/tickets";
+import { findProject, findTicketByKey, listMembersForTool, parsePriority, resolveMember, resolveParent, resolveStatus, searchForTool, ticketDetail, ToolInputError } from "./data";
 
 // inhouseticket MCP server (KONZEPT §4). Stateless: one server per request, bound to the token's
 // user and workspace. Every write goes through the same data layer as the web app (limits,
@@ -23,8 +26,8 @@ async function run(fn: () => Promise<Result>): Promise<Result> {
   } catch (e) {
     const message =
       e instanceof ToolInputError ? e.message
-      : e instanceof TicketError ? ({ not_found: "Nicht gefunden.", invalid_status: "Ungültiger Status.", invalid_assignee: "Diese Person ist kein aktives Mitglied.", invalid_label: "Ungültiges Label.", project_archived: "Das Projekt ist archiviert." } as const)[e.code]
-      : e instanceof PartError ? ({ not_found: "Nicht gefunden.", max_subtasks: `Höchstens ${MAX_SUBTASKS} Unteraufgaben pro Ticket.`, max_attachments: "Zu viele Anhänge.", too_large: "Zu groß.", invalid_image: "Kein gültiges Bild.", forbidden: "Keine Berechtigung." } as const)[e.code]
+      : e instanceof TicketError ? (({ not_found: "Nicht gefunden.", invalid_status: "Ungültiger Status.", invalid_assignee: "Diese Person ist kein aktives Mitglied.", invalid_label: "Ungültiges Label.", project_archived: "Das Projekt ist archiviert." } as Partial<Record<string, string>>)[e.code] ?? deTickets.errors[e.code])
+      : e instanceof PartError ? ({ not_found: "Nicht gefunden.", max_subtasks: `Höchstens ${MAX_SUBTASKS} Punkte pro Checkliste.`, max_attachments: "Zu viele Anhänge.", too_large: "Zu groß.", invalid_image: "Kein gültiges Bild.", forbidden: "Keine Berechtigung." } as const)[e.code]
       : null;
     if (message) return { content: [{ type: "text", text: `Fehler: ${message}` }], isError: true };
     console.error("mcp: tool failed", e instanceof Error ? e.message : e);
@@ -37,9 +40,16 @@ const priorityInput = z
   .describe('Priorität: "dringend", "hoch", "mittel", "niedrig" oder "keine" (alternativ 4–0)');
 const dateInput = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("Datum im Format YYYY-MM-DD");
 const keyInput = z.string().min(3).max(25).describe('Ticket-Key, z. B. "MKT-12"');
+const typeInput = z
+  .enum(TICKET_TYPES)
+  .describe('Tickettyp: "epic", "story", "task" (Aufgabe) oder "subtask" (Unteraufgabe). Epic hat keine Eltern; Story/Aufgabe optional ein Epic; Unteraufgabe braucht eine Story oder Aufgabe.');
+const parentInput = z
+  .union([z.number().int().min(1), z.string().min(1).max(25)])
+  .describe('Übergeordnetes Ticket im selben Projekt: Ticketnummer (z. B. 12) oder Key ("MKT-12")');
+const typeName = (type: TicketType) => deHierarchy.types[type];
 
-function ticketLine(t: { key: string; title: string; status: string; priority: string; assignee: string | null; due_date: string | null }) {
-  return `- **${t.key}** ${t.title} — ${t.status}, ${t.priority}${t.assignee ? `, ${t.assignee}` : ""}${t.due_date ? `, fällig ${t.due_date}` : ""}`;
+function ticketLine(t: { key: string; type: TicketType; title: string; status: string; priority: string; assignee: string | null; due_date: string | null }) {
+  return `- **${t.key}** [${typeName(t.type)}] ${t.title} — ${t.status}, ${t.priority}${t.assignee ? `, ${t.assignee}` : ""}${t.due_date ? `, fällig ${t.due_date}` : ""}`;
 }
 
 export function createMcpServer(actor: Actor & { via: "mcp" }) {
@@ -77,6 +87,7 @@ export function createMcpServer(actor: Actor & { via: "mcp" }) {
         assignee: z.string().max(200).optional().describe('"me", E-Mail oder Name; "none" für nicht zugewiesen'),
         due_before: dateInput.optional().describe("Nur Tickets, die spätestens an diesem Datum fällig sind (YYYY-MM-DD)"),
         include_done: z.boolean().optional().describe("Auch erledigte Tickets einbeziehen"),
+        type: typeInput.optional(),
         limit: z.number().int().min(1).max(50).default(20),
         offset: z.number().int().min(0).default(0),
       },
@@ -94,6 +105,7 @@ export function createMcpServer(actor: Actor & { via: "mcp" }) {
           assigneeId,
           dueBefore: args.due_before,
           includeDone: args.include_done,
+          type: args.type,
           limit: args.limit,
           offset: args.offset,
         });
@@ -109,7 +121,7 @@ export function createMcpServer(actor: Actor & { via: "mcp" }) {
     "inhouseticket_get_ticket",
     {
       title: "Ticket lesen",
-      description: "Liefert ein Ticket mit Beschreibung, Status, Priorität, Person, Fälligkeit, Labels, Unteraufgaben und den letzten 20 Kommentaren.",
+      description: "Liefert ein Ticket mit Typ, übergeordnetem Ticket, untergeordneten Tickets, Beschreibung, Status, Priorität, Person, Fälligkeit, Labels, Checkliste und den letzten 20 Kommentaren.",
       inputSchema: { key: keyInput },
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
@@ -119,11 +131,15 @@ export function createMcpServer(actor: Actor & { via: "mcp" }) {
         const t = await ticketDetail(ws, id);
         const lines = [
           `# ${t.key}: ${t.title}`,
+          `Typ: ${typeName(t.type)}${t.parent ? ` · Übergeordnet: ${t.parent.key} ${t.parent.title}` : ""}`,
           `Projekt: ${t.project} · Status: ${t.status} · Priorität: ${t.priority} · Person: ${t.assignee ?? "nicht zugewiesen"} · Fällig: ${t.due_date ?? "–"}`,
           t.labels.length ? `Labels: ${t.labels.join(", ")}` : "",
           "",
           t.description ? t.description : "_Keine Beschreibung._",
-          t.subtasks.length ? `\n## Unteraufgaben\n${t.subtasks.map((s) => `${s.index}. [${s.done ? "x" : " "}] ${s.title}`).join("\n")}` : "",
+          t.children.length
+            ? `\n## ${t.type === "epic" ? deHierarchy.epicChildren : deHierarchy.subtaskChildren} (${deHierarchy.progress(t.children.filter((c) => c.done).length, t.children.length)})\n${t.children.map((c) => `- **${c.key}** [${typeName(c.type)}] ${c.title} — ${c.status}${c.assignee ? `, ${c.assignee}` : ""}`).join("\n")}`
+            : "",
+          t.subtasks.length ? `\n## Checkliste\n${t.subtasks.map((s) => `${s.index}. [${s.done ? "x" : " "}] ${s.title}`).join("\n")}` : "",
           t.comments.length ? `\n## Kommentare\n${t.comments.map((c) => `- ${c.author} (${c.created_at.slice(0, 10)}): ${c.body}`).join("\n")}` : "",
         ].filter((l) => l !== "");
         return ok(lines.join("\n"), t);
@@ -134,7 +150,7 @@ export function createMcpServer(actor: Actor & { via: "mcp" }) {
     "inhouseticket_create_ticket",
     {
       title: "Ticket anlegen",
-      description: `Legt ein Ticket in einem Projekt an, optional mit Beschreibung, Status, Priorität, Person, Fälligkeit und bis zu ${MAX_SUBTASKS} Unteraufgaben. Gibt den neuen Key zurück.`,
+      description: `Legt ein Ticket in einem Projekt an, optional mit Typ (Epic, Story, Aufgabe, Unteraufgabe), übergeordnetem Ticket, Beschreibung, Status, Priorität, Person, Fälligkeit und bis zu ${MAX_SUBTASKS} Checklistenpunkten. Gibt den neuen Key zurück.`,
       inputSchema: {
         project_key: z.string().max(10).describe('Projektkürzel, z. B. "MKT"'),
         title: z.string().min(1).max(MAX_TITLE),
@@ -143,7 +159,9 @@ export function createMcpServer(actor: Actor & { via: "mcp" }) {
         priority: priorityInput.optional(),
         assignee: z.string().max(200).optional().describe('"me", E-Mail oder Name eines Mitglieds'),
         due_date: dateInput.optional(),
-        subtasks: z.array(z.string().min(1).max(MAX_TITLE)).max(MAX_SUBTASKS).optional(),
+        subtasks: z.array(z.string().min(1).max(MAX_TITLE)).max(MAX_SUBTASKS).optional().describe("Checklistenpunkte (Text zum Abhaken, keine eigenen Tickets)"),
+        type: typeInput.optional().describe('Tickettyp, Standard "task" (Aufgabe)'),
+        parent_number: parentInput.optional(),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
@@ -152,8 +170,11 @@ export function createMcpServer(actor: Actor & { via: "mcp" }) {
         const p = await findProject(ws, args.project_key);
         const statusId = args.status ? (await resolveStatus(ws, p.id, args.status)).id : undefined;
         const assigneeId = args.assignee ? await resolveMember(ws, args.assignee, actor.userId) : undefined;
+        const parentId = args.parent_number !== undefined ? await resolveParent(ws, p.id, p.key, args.parent_number) : undefined;
         const created = await createTicket(actor, {
           projectId: p.id,
+          type: args.type,
+          parentId,
           title: args.title.trim(),
           statusId,
           priority: args.priority === undefined ? undefined : parsePriority(args.priority),
@@ -163,7 +184,8 @@ export function createMcpServer(actor: Actor & { via: "mcp" }) {
         if (args.description?.trim()) await updateTicket(actor, created.id, { description: args.description });
         for (const s of args.subtasks ?? []) await createSubtask(actor, created.id, s.trim());
         const key = `${p.key}-${created.number}`;
-        return ok(`Ticket **${key}** angelegt: ${args.title}`, { key, project_key: p.key });
+        const d = await ticketDetail(ws, created.id);
+        return ok(`${typeName(d.type)} **${key}** angelegt${d.parent ? ` in ${d.parent.key}` : ""}: ${args.title}`, { key, project_key: p.key, type: d.type, parent_number: d.parent_number });
       }),
   );
 
@@ -171,7 +193,7 @@ export function createMcpServer(actor: Actor & { via: "mcp" }) {
     "inhouseticket_update_ticket",
     {
       title: "Ticket ändern",
-      description: "Ändert Titel, Beschreibung, Status, Priorität, Person oder Fälligkeit eines Tickets. Nur angegebene Felder ändern sich. assignee = null bzw. due_date = null entfernt den Wert.",
+      description: "Ändert Titel, Beschreibung, Status, Priorität, Person, Fälligkeit, Typ oder übergeordnetes Ticket. Nur angegebene Felder ändern sich. assignee, due_date bzw. parent_number = null entfernt den Wert.",
       inputSchema: {
         key: keyInput,
         title: z.string().min(1).max(MAX_TITLE).optional(),
@@ -180,6 +202,8 @@ export function createMcpServer(actor: Actor & { via: "mcp" }) {
         priority: priorityInput.optional(),
         assignee: z.string().max(200).nullable().optional(),
         due_date: dateInput.nullable().optional(),
+        type: typeInput.optional(),
+        parent_number: parentInput.nullable().optional(),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
@@ -193,10 +217,12 @@ export function createMcpServer(actor: Actor & { via: "mcp" }) {
         if (args.priority !== undefined) patch.priority = parsePriority(args.priority);
         if (args.assignee !== undefined) patch.assigneeId = args.assignee === null ? null : await resolveMember(ws, args.assignee, actor.userId);
         if (args.due_date !== undefined) patch.dueDate = args.due_date;
+        if (args.type !== undefined) patch.type = args.type;
+        if (args.parent_number !== undefined) patch.parentId = await resolveParent(ws, t.projectId, t.projectKey, args.parent_number);
         if (Object.keys(patch).length === 0) throw new ToolInputError("Keine Änderung angegeben.");
         await updateTicket(actor, t.id, patch);
         const d = await ticketDetail(ws, t.id);
-        return ok(`**${d.key}** aktualisiert — ${d.status}, ${d.priority}${d.assignee ? `, ${d.assignee}` : ""}${d.due_date ? `, fällig ${d.due_date}` : ""}`, { key: d.key, status: d.status, priority: d.priority, assignee: d.assignee, due_date: d.due_date });
+        return ok(`**${d.key}** aktualisiert — ${typeName(d.type)}${d.parent ? ` in ${d.parent.key}` : ""}, ${d.status}, ${d.priority}${d.assignee ? `, ${d.assignee}` : ""}${d.due_date ? `, fällig ${d.due_date}` : ""}`, { key: d.key, type: d.type, parent_number: d.parent_number, status: d.status, priority: d.priority, assignee: d.assignee, due_date: d.due_date });
       }),
   );
 
@@ -219,11 +245,11 @@ export function createMcpServer(actor: Actor & { via: "mcp" }) {
   server.registerTool(
     "inhouseticket_toggle_subtask",
     {
-      title: "Unteraufgabe abhaken",
-      description: "Hakt eine Unteraufgabe ab oder öffnet sie wieder. Unteraufgabe per Nummer (1–5, wie in inhouseticket_get_ticket) oder Titel.",
+      title: "Checklistenpunkt abhaken",
+      description: "Hakt einen Punkt der Checkliste ab oder öffnet ihn wieder. Punkt per Nummer (1–5, wie in inhouseticket_get_ticket) oder Text. Unteraufgaben als eigene Tickets ändert inhouseticket_update_ticket.",
       inputSchema: {
         key: keyInput,
-        subtask: z.union([z.number().int().min(1).max(MAX_SUBTASKS), z.string().min(1).max(MAX_TITLE)]).describe("Nummer oder Titel der Unteraufgabe"),
+        subtask: z.union([z.number().int().min(1).max(MAX_SUBTASKS), z.string().min(1).max(MAX_TITLE)]).describe("Nummer oder Text des Checklistenpunkts"),
         done: z.boolean().default(true),
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
@@ -234,7 +260,7 @@ export function createMcpServer(actor: Actor & { via: "mcp" }) {
         const subtasks = await listSubtasks(ws, t.id);
         const target =
           typeof args.subtask === "number" ? subtasks[args.subtask - 1] : subtasks.find((s) => s.title.toLowerCase() === String(args.subtask).trim().toLowerCase());
-        if (!target) throw new ToolInputError(`Unteraufgabe nicht gefunden. Vorhanden: ${subtasks.map((s, i) => `${i + 1}. ${s.title}`).join("; ") || "keine"}.`);
+        if (!target) throw new ToolInputError(`Checklistenpunkt nicht gefunden. Vorhanden: ${subtasks.map((s, i) => `${i + 1}. ${s.title}`).join("; ") || "keine"}.`);
         await updateSubtask(actor, target.id, { done: args.done });
         return ok(`„${target.title}“ ${args.done ? "abgehakt" : "wieder geöffnet"}.`, { key: args.key.toUpperCase(), subtask: target.title, done: args.done });
       }),

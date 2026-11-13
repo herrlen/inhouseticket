@@ -75,7 +75,7 @@ test("core flow with the keyboard only: skip link, create, open, change priority
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
-  await dialog.getByRole("heading", { name: "Unteraufgaben" }).click(); // move focus off the title field
+  await dialog.getByRole("heading", { name: "Checkliste" }).click(); // move focus off the title field
   await Promise.all([ticketSaved(page), page.keyboard.press("1")]); // 1 = Dringend … 4 = Niedrig
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
