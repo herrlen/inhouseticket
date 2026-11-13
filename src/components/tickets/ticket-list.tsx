@@ -130,12 +130,7 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
                         className="size-4 accent-[var(--accent)]"
                       />
                     </td>
-                    <td className="py-1 pr-2 font-mono text-xs whitespace-nowrap text-muted">
-                      <span className="inline-flex items-center gap-1.5">
-                        <TypeIcon type={t.type} id={`type-${t.id}`} />
-                        <span>{key}</span>
-                      </span>
-                    </td>
+                    <td className="py-1 pr-2 font-mono text-xs whitespace-nowrap text-muted">{key}</td>
                     <td className="py-1 pr-3 max-md:w-full max-md:max-w-0">
                       <button
                         type="button"
@@ -145,6 +140,8 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
                         aria-label={tl.open(key, t.title)}
                         aria-describedby={`type-${t.id}`}
                       >
+                        {/* The button's name is key + title; the type is its description (aria-describedby). */}
+                        <TypeIcon type={t.type} id={`type-${t.id}`} />
                         <span className="truncate">{t.title}</span>
                         {ticketLabels.map((l) => (
                           <span key={l.id} className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-1.5 text-[11px] text-muted">
