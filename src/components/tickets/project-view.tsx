@@ -3,10 +3,11 @@
 import { useIsMutating } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { LabelRow, MemberOption, TicketRow } from "@/db/queries/tickets";
 import type { SavedViewRow } from "@/db/queries/views";
 import { trackEvent } from "@/lib/analytics";
+import { announceOpenCount } from "@/lib/explorer-events";
 import { cleanViewQuery } from "@/lib/view-query";
 import { FilterBar } from "./filter-bar";
 import { applyFilters, readFilters } from "./filters";
@@ -60,7 +61,35 @@ type Props = {
   savedViews: SavedViewRow[];
 };
 
-/** Updates the query string without a server round trip (Next syncs useSearchParams). */
+// Query string as live state. Since Next 16.4, useSearchParams follows history.pushState/
+// replaceState only through an asynchronous history restore: an opened ticket stayed on the old
+// one, ↑ after ↓ started from a stale ticket, and a router.refresh() racing the change wrote the
+// older URL back (the dialog flipped tickets and lost what was typed – hence no router.refresh in
+// the project view, see explorer-events). So the view reads the address bar itself: setParams
+// notifies, back/forward arrive as popstate. During hydration the snapshot is Next's value in
+// the same normalised form, so server and client agree and nothing re-renders early.
+const paramListeners = new Set<() => void>();
+function subscribeParams(listener: () => void) {
+  paramListeners.add(listener);
+  window.addEventListener("popstate", listener);
+  return () => {
+    paramListeners.delete(listener);
+    window.removeEventListener("popstate", listener);
+  };
+}
+const addressBarQuery = () => new URLSearchParams(window.location.search).toString();
+function useLiveSearchParams(): URLSearchParams {
+  const fromNext = useSearchParams().toString();
+  const query = useSyncExternalStore(subscribeParams, addressBarQuery, () => fromNext);
+  // Router navigations (command palette, links) render before Next writes the address bar:
+  // read it again once that commit is done.
+  useEffect(() => {
+    for (const listener of paramListeners) listener();
+  }, [fromNext]);
+  return useMemo(() => new URLSearchParams(query), [query]);
+}
+
+/** Updates the query string without a server round trip. */
 function setParams(patch: Record<string, string | null>, mode: "push" | "replace" = "replace") {
   const url = new URL(window.location.href);
   for (const [k, v] of Object.entries(patch)) {
@@ -68,6 +97,7 @@ function setParams(patch: Record<string, string | null>, mode: "push" | "replace
     else url.searchParams.set(k, v);
   }
   window.history[mode === "push" ? "pushState" : "replaceState"](null, "", url);
+  for (const listener of paramListeners) listener();
 }
 
 /** List/board switch by the person (button or L/B) – reported to Matomo only when it changes. */
@@ -83,7 +113,7 @@ const isEditable = (el: EventTarget | null) =>
 
 export function ProjectView({ info, statuses, members, labels: initialLabels, initialTickets, savedViews }: Props) {
   const t = useT(MESSAGES);
-  const params = useSearchParams();
+  const params = useLiveSearchParams();
   const groupBy = (GROUPS.find((g) => g === params.get("group")) ?? "status") as GroupBy;
   const sortBy = (SORTS.find((s) => s === params.get("sort")) ?? "manual") as SortBy;
   const openKey = params.get("t");
@@ -122,6 +152,9 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [saving]);
   const doneStatusIds = useMemo(() => new Set(statuses.filter((s) => s.category === "done").map((s) => s.id)), [statuses]);
+  // Sidebar count, same rule as the server (status not done) – replaces router.refresh().
+  const openCount = tickets.filter((x) => !doneStatusIds.has(x.statusId)).length;
+  useEffect(() => announceOpenCount({ projectId: project.id, openCount }), [project.id, openCount]);
   const filtered = useMemo(
     () => applyFilters(tickets, filters, { currentUserId: info.currentUserId, today, doneStatusIds, projectKey: project.key }),
     [tickets, filters, info.currentUserId, today, doneStatusIds, project.key],
@@ -161,13 +194,20 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
     const t = tickets.find((x) => x.id === ticketId);
     if (t) setParams({ t: `${project.key}-${t.number}` }, openKey ? "replace" : "push");
   };
+  // Return focus to where the ticket was opened from (list row or board card) – once the dialog
+  // is really gone; focusing right after setParams would land inside the still-open modal.
+  const returnFocusTo = useRef<string | null>(null);
+  useEffect(() => {
+    const id = returnFocusTo.current;
+    if (openKey || !id) return;
+    returnFocusTo.current = null;
+    requestAnimationFrame(() =>
+      document.querySelector<HTMLElement>(`[data-ticket-row="${id}"] button, [data-card="${id}"]`)?.focus(),
+    );
+  }, [openKey]);
   const close = () => {
-    // Return focus to where the ticket was opened from: the list row or the board card.
-    const row = openTicket
-      ? document.querySelector<HTMLElement>(`[data-ticket-row="${openTicket.id}"] button, [data-card="${openTicket.id}"]`)
-      : null;
+    returnFocusTo.current = openTicket?.id ?? null;
     setParams({ t: null });
-    requestAnimationFrame(() => row?.focus());
   };
   const navigate = (direction: 1 | -1) => {
     if (!openTicket) return;

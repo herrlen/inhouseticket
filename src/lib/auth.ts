@@ -18,6 +18,7 @@ import { isCompanyEmail } from "@/lib/freemail";
 import { isExemptEmail } from "@/lib/superadmin";
 import { MAX_NAME, MAX_PASSWORD, MIN_PASSWORD } from "@/lib/limits";
 import { setPasswordUrl } from "@/lib/password-gate";
+import { hashPassword, needsRehash, verifyPassword } from "@/lib/password-hash";
 import type { Messages } from "@/lib/i18n/de";
 import { getTOrDefault } from "@/lib/i18n/server";
 import { buttonMail, sendMail } from "@/lib/mail";
@@ -72,6 +73,21 @@ async function mailNoPasswordLink(email: string, headers: Headers | undefined): 
   } catch (e) {
     // Never log the address (or anything carrying it).
     console.error("auth: no-password link not sent", isAPIError(e) ? e.body?.code : e instanceof Error ? e.name : "unknown");
+  }
+}
+
+/**
+ * After a successful password sign-in: replace a scrypt (or weaker Argon2id) hash with today's
+ * Argon2id. Runs after the response; a failure only means the next sign-in tries again.
+ */
+async function rehashIfNeeded(userId: string, password: string): Promise<void> {
+  try {
+    const ctx = await auth.$context;
+    const credential = (await ctx.internalAdapter.findAccounts(userId)).find((a) => a.providerId === "credential");
+    if (!credential?.password || !needsRehash(credential.password)) return;
+    await ctx.internalAdapter.updatePassword(userId, await hashPassword(password));
+  } catch (e) {
+    console.error("auth: password rehash failed", e instanceof Error ? e.name : "unknown");
   }
 }
 
@@ -147,6 +163,9 @@ export const auth = betterAuth({
     maxPasswordLength: MAX_PASSWORD,
     resetPasswordTokenExpiresIn: RESET_LINK_TTL_SECONDS,
     revokeSessionsOnPasswordReset: true,
+    // Argon2id instead of Better Auth's scrypt default; old scrypt hashes still verify and are
+    // replaced at the next password sign-in (after hook below).
+    password: { hash: hashPassword, verify: verifyPassword },
     // A reset means "I lost control of this account": API tokens and connector access end too.
     onPasswordReset: async ({ user }) => {
       await revokeAllConnections(user.id);
@@ -224,6 +243,13 @@ export const auth = betterAuth({
     }),
     after: createAuthMiddleware(async (ctx) => {
       if (ctx.path !== "/sign-in/email") return;
+      const signedIn = ctx.context.newSession?.user.id;
+      const password: unknown = ctx.body?.password;
+      if (signedIn && typeof password === "string") {
+        // The only moment the plain password is at hand: lift a legacy hash to Argon2id.
+        afterResponse(() => rehashIfNeeded(signedIn, password));
+        return;
+      }
       const returned = ctx.context.returned;
       const email = failedSignInEmail(isAPIError(returned) ? returned.statusCode : undefined, ctx.body?.email);
       // Not awaited: the lookup and the mail must not show up in the response time.
