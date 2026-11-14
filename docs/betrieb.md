@@ -240,6 +240,24 @@ dig +short TXT inhouseticket.com                                       # Search-
 
 ## Deploys
 
+### 2026-11-14 — ClickUp-Integration, `ee0d0be` (#9 API, #10 CSV, #11 Webhooks)
+
+- Sicherung `cron-iqf97w` vorher (Complete). Migrationen 0016 (Integrationen), 0017 (`import_upload`),
+  0018 (Webhooks) beim Start. `INTEGRATION_SECRET` vom Deploy einmalig erzeugt – nie ändern.
+- Prüfung: `/api/health` ok (`sha-ee0d0be`), Webhook-Endpunkt mit unbekannter Verbindung 404, GET 405,
+  Einstellungen ohne Anmeldung → Login. Direkt nach dem Start einmal 500 (wie bei jedem Start, Sekunden).
+- Upload-Grenze 50 MB: ohne Anmeldung nicht prüfbar – die App antwortet 401, bevor sie den Body liest, der
+  mittwald-Proxy meldet dann 502 (schon ab 1 MB). Erst ein angemeldeter Upload zeigt, ob der Proxy 50 MB durchlässt.
+
+### 2026-11-14 — Sicherheits-Audit, `9e73054` (#6)
+
+- Next.js 16.4.5 (kritische RCE-Lücken in 16.3.8), zod/nodemailer/MCP-SDK, HSTS, Argon2id mit Rehash beim
+  Passwort-Login, getrennter Rate-Limit-Schlüssel. Keine Migration.
+- Next 16.4 übernimmt `history.replaceState` nur noch asynchron: die Projektansicht liest die Query selbst
+  (`useLiveSearchParams`), Seitenleisten-Zähler kommen per Ereignis statt `router.refresh()`
+  (`src/lib/explorer-events.ts`).
+- Prüfung: `/api/health` ok (`sha-9e73054`), `Strict-Transport-Security` gesetzt, Seiten 200.
+
 ### 2026-11-14 — Weiterleitung auf emuchat entfernt, `3ab9519` (Export v2 #5, Ticket-Hierarchie #7)
 
 - Vom 10.11. bis 14.11.2026 leiteten alle vHosts per 301 auf emuchat weiter (`inhouseticket.com` →
