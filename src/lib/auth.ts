@@ -13,7 +13,7 @@ import { deletePendingForEmail } from "@/db/queries/registrations";
 import * as schema from "@/db/schema";
 import { env } from "@/lib/env";
 import { magicLinkConfirmUrl } from "@/lib/magic-link-url";
-import { mayEnterBeta } from "@/lib/beta";
+import { closedMessage, mayEnterBeta } from "@/lib/beta";
 import { isCompanyEmail } from "@/lib/freemail";
 import { isExemptEmail } from "@/lib/superadmin";
 import { MAX_NAME, MAX_PASSWORD, MIN_PASSWORD } from "@/lib/limits";
@@ -232,7 +232,7 @@ export const auth = betterAuth({
         throw new APIError("BAD_REQUEST", { code: "FREEMAIL_NOT_ALLOWED", message: t.auth.freemail });
       }
       if (!(await mayEnterBeta(email))) {
-        throw new APIError("FORBIDDEN", { code: "BETA_CLOSED", message: t.auth.betaClosed });
+        throw new APIError("FORBIDDEN", { code: "BETA_CLOSED", message: closedMessage(t) });
       }
       if (
         env.NODE_ENV === "production" &&

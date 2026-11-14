@@ -31,6 +31,7 @@ pnpm db:generate    # Drizzle Migration erzeugen
 pnpm db:migrate     # Migration ausführen
 pnpm db:studio      # Drizzle Studio
 scripts/deploy.sh   # Ausrollen auf mittwald (Details: docs/betrieb.md)
+selfhost/           # Firmen-Instanz auf eigenem Server (SELF_HOSTED, src/lib/instance.ts; Anleitung: docs/selbst-hosten.md)
 ```
 
 ## Ordnerstruktur

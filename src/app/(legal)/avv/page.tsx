@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { GermanOnly } from "@/components/german-only";
+import { instanceLegal } from "@/components/instance-legal";
 import { OPERATOR } from "@/lib/legal";
 import { PrintButton } from "./print-button";
 
@@ -8,6 +9,8 @@ export const metadata: Metadata = { title: "Auftragsverarbeitungsvertrag", alter
 // Data processing agreement (Art. 28 GDPR), reviewed by a lawyer (2026-10-10). The technical measures describe
 // what the code and operations actually do (docs/security-review.md, docs/betrieb.md).
 export default function AvvPage() {
+  const instance = instanceLegal("dpa");
+  if (instance) return instance;
   return (
     <GermanOnly>
       <h1>Auftragsverarbeitungsvertrag (AVV)</h1>

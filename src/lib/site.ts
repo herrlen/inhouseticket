@@ -1,6 +1,7 @@
 import "server-only";
 import { env } from "@/lib/env";
 import { hostname, sharedCookieDomain, siteHost, trustedOrigins, type Hosts } from "@/lib/hosts";
+import { legalLinks, type Instance } from "@/lib/instance";
 
 // The two public addresses, derived once from APP_URL and SITE_URL (src/lib/hosts.ts).
 
@@ -32,3 +33,14 @@ export function isSiteHost(hostHeader: string | null): boolean {
 export function isAppHost(hostHeader: string | null): boolean {
   return siteHost(HOSTS) !== null && !isSiteHost(hostHeader);
 }
+
+/** Company instance settings (SELF_HOSTED, src/lib/instance.ts). */
+export const INSTANCE: Instance = {
+  selfHosted: env.SELF_HOSTED,
+  name: env.INSTANCE_NAME,
+  imprintUrl: env.IMPRINT_URL,
+  privacyUrl: env.PRIVACY_URL,
+};
+
+/** Legal links for footers, menus and forms on this deployment. */
+export const LEGAL_LINKS = legalLinks(INSTANCE);

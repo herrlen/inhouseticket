@@ -4,6 +4,7 @@ import { SetupBanner } from "@/components/onboarding/setup-banner";
 import { AppShell } from "@/components/shell/app-shell";
 import { cleanHiddenColumns } from "@/components/tickets/list-columns";
 import { isSuperadminEmail } from "@/lib/superadmin";
+import { LEGAL_LINKS } from "@/lib/site";
 import { getExplorer } from "@/db/queries/explorer";
 import { unreadCount } from "@/db/queries/notifications";
 import { hasRole, requireMember } from "@/lib/authz";
@@ -31,6 +32,7 @@ export default async function WorkspaceLayout({ children, params }: Props) {
         canAdmin: hasRole(ctx, "admin"),
         isSuperadmin: isSuperadminEmail(ctx.user.email),
         defaultView: prefs.defaultView,
+        legalLinks: LEGAL_LINKS,
       }}
       user={{ id: ctx.user.id, name: ctx.user.name, email: ctx.user.email, image: ctx.user.image }}
       explorer={{

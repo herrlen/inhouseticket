@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { applyInstance } from "@/lib/instance";
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -61,6 +62,28 @@ const envSchema = z.object({
     .optional()
     .transform((v) => v?.trim() || undefined)
     .pipe(z.string().min(32).optional()),
+  /**
+   * Company instance on its own server (selfhost/, docs/selbst-hosten.md): "true" turns off the
+   * landing page, search engines and our legal texts (src/lib/instance.ts).
+   */
+  SELF_HOSTED: z
+    .string()
+    .optional()
+    .transform((v) => v === "true"),
+  /** Company instance: name of the operating company for the legal note, e.g. "Firma GmbH". */
+  INSTANCE_NAME: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim().slice(0, 100) || undefined),
+  /** Company instance: the company's own legal notice and privacy policy (links instead of our pages). */
+  IMPRINT_URL: z
+    .union([z.literal(""), z.url({ protocol: /^https?$/ })])
+    .optional()
+    .transform((v) => v || undefined),
+  PRIVACY_URL: z
+    .union([z.literal(""), z.url({ protocol: /^https?$/ })])
+    .optional()
+    .transform((v) => v || undefined),
   /** Test-only override of the ClickUp API base (mock server in E2E). Ignored in production. */
   CLICKUP_API_URL: z
     .union([z.literal(""), z.url()])
@@ -70,7 +93,7 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
-const parsed = envSchema.safeParse(process.env);
+const parsed = envSchema.transform(applyInstance).safeParse(process.env);
 
 // `next build` loads route modules to collect config; secrets only exist at runtime (container
 // env). During the build phase we tolerate missing values – nothing connects at import time.
@@ -101,4 +124,8 @@ export const env: Env = parsed.success
       MATOMO_TOKEN: undefined,
       INTEGRATION_SECRET: undefined,
       CLICKUP_API_URL: undefined,
+      SELF_HOSTED: false,
+      INSTANCE_NAME: undefined,
+      IMPRINT_URL: undefined,
+      PRIVACY_URL: undefined,
     } satisfies Env);

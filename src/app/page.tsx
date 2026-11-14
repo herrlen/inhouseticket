@@ -8,7 +8,7 @@ import { LanguageToggle } from "@/components/language-toggle";
 import { getLocale, getT } from "@/lib/i18n/server";
 import { SOURCE_IDS, SOURCE_NAMES } from "@/lib/import/source";
 import { getSession } from "@/lib/session";
-import { appHref, isAppHost } from "@/lib/site";
+import { appHref, INSTANCE, isAppHost } from "@/lib/site";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = (await getT()).landing;
@@ -40,7 +40,8 @@ export default async function Home() {
   // Signed in (the session cookie is shared with the site host): straight into the app. On the app
   // host the address belongs to the app, so a signed-out visitor lands on the sign-in page there.
   if (await getSession()) redirect(appHref("/start"));
-  if (isAppHost((await headers()).get("host"))) redirect("/login");
+  // A company instance (SELF_HOSTED) has no landing page: "/" is its sign-in.
+  if (INSTANCE.selfHosted || isAppHost((await headers()).get("host"))) redirect("/login");
   const [all, locale] = await Promise.all([getT(), getLocale()]);
   const t = all.landing;
 

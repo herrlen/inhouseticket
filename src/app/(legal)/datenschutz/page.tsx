@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { GermanOnly } from "@/components/german-only";
+import { instanceLegal } from "@/components/instance-legal";
 import { MeasurementToggle } from "@/components/measurement-toggle";
 import { OPERATOR } from "@/lib/legal";
 
@@ -47,6 +48,8 @@ const COOKIES = [
 ] as const;
 
 export default function DatenschutzPage() {
+  const instance = instanceLegal("privacy");
+  if (instance) return instance;
   return (
     <GermanOnly>
       <h1>Datenschutzerklärung</h1>

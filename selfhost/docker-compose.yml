@@ -1,0 +1,108 @@
+# inhouseticket auf einem eigenen Server (Anleitung: docs/selbst-hosten.md).
+#
+# Drei Container: PostgreSQL (nur im internen Netz, nie aus dem Internet erreichbar), die App und
+# Caddy als Reverse-Proxy mit automatischem Let's-Encrypt-Zertifikat für ${DOMAIN}. Nach außen
+# offen sind nur 80 und 443 (Caddy). Alle Werte kommen aus .env (install.sh legt sie an).
+#
+# Diese Datei nicht von Hand ändern – update.sh ersetzt sie mit jeder neuen Version. Eigene
+# Anpassungen gehören in docker-compose.override.yml (liest docker compose automatisch mit).
+
+name: inhouseticket
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: inhouseticket
+      POSTGRES_USER: inhouseticket
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD fehlt in .env}
+    volumes:
+      # Der einzige Zustand: Tickets, Konten, Anhänge (liegen als bytea in der Datenbank).
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inhouseticket -d inhouseticket"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    shm_size: 256mb
+    networks: [internal]
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  app:
+    image: ${IMAGE:-ghcr.io/herrlen/inhouseticket}:${IMAGE_TAG:?IMAGE_TAG fehlt in .env}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Das Passwort ist hex (install.sh) – braucht in der URL keine Maskierung.
+      DATABASE_URL: postgres://inhouseticket:${POSTGRES_PASSWORD}@postgres:5432/inhouseticket
+      APP_URL: https://${DOMAIN:?DOMAIN fehlt in .env}
+      SELF_HOSTED: "true"
+      INSTANCE_NAME: ${INSTANCE_NAME:-}
+      IMPRINT_URL: ${IMPRINT_URL:-}
+      PRIVACY_URL: ${PRIVACY_URL:-}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET fehlt in .env}
+      INTEGRATION_SECRET: ${INTEGRATION_SECRET:?INTEGRATION_SECRET fehlt in .env}
+      SMTP_HOST: ${SMTP_HOST:?SMTP_HOST fehlt in .env}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:?MAIL_FROM fehlt in .env}
+      MAIL_REPLY_TO: ${MAIL_REPLY_TO:-}
+      BETA_ALLOWED_DOMAINS: ${BETA_ALLOWED_DOMAINS:-}
+      SUPERADMIN_EMAILS: ${SUPERADMIN_EMAILS:-}
+      TESTER_EMAILS: ${TESTER_EMAILS:-}
+      # Heap unter dem Container-Limit halten (großer ClickUp-Abgleich).
+      NODE_OPTIONS: --max-old-space-size=1024
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      # Migrationen laufen beim Start – die erste Prüfung erst danach.
+      start_period: 60s
+    # Kein "ports": die App ist nur über Caddy erreichbar.
+    networks: [internal, web]
+    deploy:
+      resources:
+        limits:
+          memory: 1536m
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [app]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL fehlt in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Zertifikate und ACME-Konto – bei Verlust holt Caddy neue (Let's-Encrypt-Limits beachten).
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [web]
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+networks:
+  # Ohne Weg nach außen: nur App und Datenbank.
+  internal:
+    internal: true
+  # App (ClickUp-API, SMTP) und Caddy (Let's Encrypt) brauchen das Internet.
+  web: {}
+
+volumes:
+  pgdata: {}
+  caddy_data: {}
+  caddy_config: {}
