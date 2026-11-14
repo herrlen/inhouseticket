@@ -27,3 +27,6 @@ export async function mayEnterBeta(email: string): Promise<boolean> {
     .limit(1);
   return Boolean(invited);
 }
+
+/** Refusal for a sign-up outside the allowed domains: closed beta, or a company instance (SELF_HOSTED). */
+export const closedMessage = (t: { auth: { betaClosed: string; instanceClosed: string } }) => (env.SELF_HOSTED ? t.auth.instanceClosed : t.auth.betaClosed);

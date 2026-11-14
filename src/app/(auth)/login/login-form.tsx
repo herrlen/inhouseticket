@@ -27,7 +27,8 @@ type State =
 /** Failed password sign-in: a visible box; `attempt` re-announces and re-animates it each time. */
 type Failure = { lead: string; hint?: string; attempt: number };
 
-export function LoginForm({ next }: { next: string }) {
+/** `selfHosted`: company instance – a refused address gets the instance text, not the beta one. */
+export function LoginForm({ next, selfHosted = false }: { next: string; selfHosted?: boolean }) {
   const t = useT(MESSAGES);
   const hydrated = useHydrated();
   const [state, setState] = useState<State>({ kind: "idle" });
@@ -89,7 +90,7 @@ export function LoginForm({ next }: { next: string }) {
           error.code === "FREEMAIL_NOT_ALLOWED"
             ? t.auth.freemail
             : error.code === "BETA_CLOSED"
-              ? t.auth.betaClosed
+              ? selfHosted ? t.auth.instanceClosed : t.auth.betaClosed
               : error.status === 429
                 ? t.login.tooMany
                 : (error.status ?? 0) >= 500

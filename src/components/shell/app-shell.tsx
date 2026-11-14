@@ -374,10 +374,11 @@ function Topbar({
           { label: confetti ? t.shell.confettiOff : t.shell.confettiOn, onSelect: onToggleConfetti },
           { label: t.command.shortcuts, onSelect: onShowHelp },
           { label: t.common.signOut, onSelect: () => void signOut() },
-          { label: t.legal.imprint, onSelect: () => router.push("/impressum") },
-          { label: t.legal.privacy, onSelect: () => router.push("/datenschutz") },
-          { label: t.legal.terms, onSelect: () => router.push("/agb") },
-          { label: t.legal.dpa, onSelect: () => router.push("/avv") },
+          // Ours, or the company instance's own pages (opened in a new tab).
+          ...shell.legalLinks.map((l) => ({
+            label: t.legal[l.key],
+            onSelect: () => (l.external ? window.open(l.href, "_blank", "noopener,noreferrer") : router.push(l.href)),
+          })),
         ]}
       />
     </header>

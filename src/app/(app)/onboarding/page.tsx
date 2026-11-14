@@ -17,6 +17,7 @@ import { workspaceNameFromDomain } from "@/lib/onboarding/names";
 import { DEFAULT_VIEW, JOINER_STEPS, OWNER_STEPS, TEAM_TYPES, stepKeyOf, type StepKey, type TeamType } from "@/lib/onboarding/options";
 import { PALETTE } from "@/lib/palette";
 import { requireUser } from "@/lib/session";
+import { INSTANCE } from "@/lib/site";
 import { isPersonalWorkspaceDomain, workspaceDomainOf } from "@/lib/workspace-domain";
 import { Backdrop } from "./backdrop";
 import type { WizardProps } from "./types";
@@ -69,6 +70,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
   const initialStep = requested && index(requested) >= 0 && index(requested) <= index(furthest) ? requested : steps[Math.max(0, index(saved))]!;
 
   const props: WizardProps = {
+    selfHosted: INSTANCE.selfHosted,
     mode,
     steps,
     initialStep,

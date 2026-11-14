@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { GermanOnly } from "@/components/german-only";
+import { instanceLegal } from "@/components/instance-legal";
 import { OPERATOR } from "@/lib/legal";
 
 export const metadata: Metadata = { title: "Impressum", alternates: { canonical: "/impressum" } };
 
 export default function ImpressumPage() {
+  const instance = instanceLegal("imprint");
+  if (instance) return instance;
   return (
     <GermanOnly>
       <h1>Impressum</h1>

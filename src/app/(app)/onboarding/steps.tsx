@@ -99,7 +99,7 @@ export function WorkspaceStep({ data, set, errors, props }: StepProps) {
           </span>
         </label>
       )}
-      {props.workspace.id ? null : (
+      {props.workspace.id || props.selfHosted ? null : (
         <p className="text-xs text-muted">
           {w.termsBefore}
           <Link href="/agb" target="_blank" className="text-accent underline">{t.legal.terms}</Link>

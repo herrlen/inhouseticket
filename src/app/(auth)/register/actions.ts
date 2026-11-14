@@ -5,7 +5,7 @@ import { after } from "next/server";
 import { passwordStateByEmail } from "@/db/queries/credentials";
 import { deleteExpiredRegistrations, upsertPendingRegistration } from "@/db/queries/registrations";
 import { auth } from "@/lib/auth";
-import { mayEnterBeta } from "@/lib/beta";
+import { closedMessage, mayEnterBeta } from "@/lib/beta";
 import { env } from "@/lib/env";
 import { isCompanyEmail } from "@/lib/freemail";
 import type { Messages } from "@/lib/i18n/de";
@@ -46,7 +46,7 @@ export async function registerAction(_: RegisterState, formData: FormData): Prom
   if (env.NODE_ENV === "production" && !takeRegistrationRequest(clientIp(await headers()), email)) {
     return { errors: { form: t.login.tooMany }, values };
   }
-  if (!(await mayEnterBeta(email))) return { errors: { email: t.auth.betaClosed }, values };
+  if (!(await mayEnterBeta(email))) return { errors: { email: closedMessage(t) }, values };
 
   const target = safeNext(String(formData.get("next") ?? ""));
   const next = target === "/start" || target.length > MAX_NEXT_PATH ? null : target;
