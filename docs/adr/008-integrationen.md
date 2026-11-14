@@ -51,6 +51,33 @@ Connector-Framework vor, das später auch in emuchat läuft (Jira, Slack, Miro f
 - **Polling** alle 5 Minuten im App-Container (`instrumentation.ts`, nur Produktion); „Jetzt abgleichen“ startet
   sofort per `after()`. Webhooks: nur als TODO in der Schnittstelle (`handleWebhook`).
 
+## Nachtrag 2026-11-14: ClickUp-CSV-Import über denselben Weg (PR `feat/clickup-csv`, Migration 0017)
+Ein echter Workspace-Export (12,8 MB, 17.806 Zeilen, 17.120 Aufgaben, 33 Spaces, 62 Status, 10.326 Unteraufgaben)
+lief durch den alten CSV-Import nicht (5 MB / 5.000 Tickets, ein Projekt, Unteraufgaben als Checkliste).
+- **Eine Quelle mehr, kein zweiter Weg:** `src/lib/import/clickup.ts` liest jede Zeile als `ExternalTask`
+  (dieselbe Form wie der Connector); `src/lib/integrations/csv-import.ts` schreibt über den `SyncWriter`
+  (`createOnly`, Personen per Name). Damit gelten Projekt je Space, Ordner/Liste/Tags/„Meilenstein“ als Labels,
+  Status über `field_mapping`, Checklisten-Regel, Hierarchie (`linkHierarchy`) und Idempotenz über `external_ref`
+  unverändert. Jira, Notion und monday.com bleiben beim alten Import.
+- **Integration ohne Token:** Ohne API-Verbindung legt der Import eine `integration`-Zeile ohne Zugangsdaten an
+  (`credentials = ''`, kein `tokenHint`, Status `setup`); die Einstellungen zeigen „Nicht verbunden“. Wird später
+  ein Token eingetragen, füllt er diese Zeile – der API-Abgleich erkennt die importierten Aufgaben an der Task-ID.
+  Projekte: Die CSV kennt nur Space-Namen (`csv:<name>`); `projectFor()` übernimmt ein Projekt dieser Integration
+  mit dem Namen des Space, in beide Richtungen. Kommentare haben in der CSV keine IDs (abgeleitet aus Task,
+  Position und Inhalt); gleicher Text innerhalb von zwei Minuten gilt beim jeweils anderen Weg als derselbe
+  Kommentar. Vorhandene Tickets fasst der CSV-Import nie an (die CSV ist der ältere Stand).
+- **Datei:** `import_upload` (Text in Postgres wie Anhänge in ADR 002, kein Volume), höchstens 50 MB und
+  50.000 Zeilen (`limits.ts`); eine nicht gestartete Datei je Workspace, nach dem Lauf gelöscht, Reste nach 24 h.
+  Gelesen wird zeilenweise (`csvRows()`), Dubletten nach Task-ID verworfen.
+- **Lauf:** `sync_run` mit `trigger = 'csv'` und eigenem Cursor (`uploadId`, Phase, erledigte Aufgaben). Hält die
+  Lease der Integration (nie neben einem API-Lauf); Stand alle 100 Aufgaben; nach einem Neustart setzt der
+  Poller oder die Fortschrittsabfrage der Seite fort. Datenbankfehler: bis zu drei Versuche, dann Abbruch mit
+  Fehler (angelegte Tickets bleiben). API-Läufe übergehen CSV-Läufe (`openRun`, `lastDeltaMark`).
+- **Gemessen** (lokal, echter Export): 17.120 Tickets, 6.959 Kommentare, 33 Projekte in 230 s; derselbe Export
+  noch einmal: 0 neu in 27 s.
+- **Verworfen:** geparste Zeilen einzeln speichern (mehr Schreiblast, gleiche Wirkung wie die Datei neu zu lesen –
+  das dauert 0,4 s); Anhänge herunterladen (Links bleiben in der Beschreibung).
+
 ## Bewusst (noch) nicht
 - Schreiben nach ClickUp, Löschungen (das Delta zeigt gelöschte Aufgaben nicht; erst mit Webhooks), Anhänge,
   Zeitschätzung/-erfassung, Startdatum, weitere Zuständige als Beobachter (gibt es in inhouseticket nicht).

@@ -30,6 +30,8 @@ export default {
     `Mehr als ${subtasks} Unteraufgaben pro Ticket landen als Checkliste in der Beschreibung.`,
     "Enthält eine Datei mehrere Projekte, kommen sie zusammen in ein Projekt.",
   ],
+  clickupLimits: (mb: number, rows: string) =>
+    `ClickUp: der Export eines ganzen Workspace, höchstens ${mb} MB und ${rows} Zeilen. Jeder Space wird ein Projekt, Ordner und Liste werden Labels, Unteraufgaben bleiben Unteraufgaben, Anhänge kommen als Links mit. Der Import läuft im Hintergrund; dieselbe Datei noch einmal legt nichts doppelt an.`,
   outro: "Und wenn du wieder gehen willst: Unter Daten & Workspace exportierst du alles als CSV oder JSON.",
   cta: "Kostenlos starten",
 } as const;

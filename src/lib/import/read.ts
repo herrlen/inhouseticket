@@ -1,18 +1,21 @@
 import { decodeText, parseCsv } from "./csv-parse";
-import { readClickUp } from "./clickup";
 import { readJira } from "./jira";
 import { readMonday } from "./monday";
 import { readNotion } from "./notion";
 import { MAX_IMPORT_TICKETS } from "./plan";
 import type { SourceError, SourceFile, SourceId } from "./source";
 
-const READERS = { jira: readJira, clickup: readClickUp, notion: readNotion, monday: readMonday } as const;
+// ClickUp has its own path (a whole workspace, imported in the background): clickup-plan.ts and
+// src/lib/integrations/csv-import.ts.
+const READERS = { jira: readJira, notion: readNotion, monday: readMonday } as const;
+export type FileSourceId = Exclude<SourceId, "clickup">;
+export const isFileSource = (s: SourceId): s is FileSourceId => s in READERS;
 
 // Generous row cap before mapping: sub-tasks also occupy rows, the ticket cap applies after.
 const MAX_ROWS = MAX_IMPORT_TICKETS * 4;
 
 /** Reads an uploaded export file of `source`. Only CSV for now (decided 2026-10-08). */
-export function readImportFile(source: SourceId, bytes: Uint8Array): { ok: true; file: SourceFile } | { ok: false; error: SourceError } {
+export function readImportFile(source: FileSourceId, bytes: Uint8Array): { ok: true; file: SourceFile } | { ok: false; error: SourceError } {
   const csv = parseCsv(decodeText(bytes), MAX_ROWS + 1);
   if (!csv.ok) return csv;
   if (csv.rows.length < 2) return { ok: false, error: "empty" };

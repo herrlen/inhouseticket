@@ -5,7 +5,7 @@ import { getLocale, getT } from "@/lib/i18n/server";
 import { MAX_IMPORT_BYTES, MAX_IMPORT_TICKETS } from "@/lib/import/plan";
 import { SOURCE_IDS } from "@/lib/import/source";
 import { appHref } from "@/lib/site";
-import { MAX_DESCRIPTION, MAX_SUBTASKS, MAX_TITLE } from "@/lib/limits";
+import { MAX_CLICKUP_CSV_BYTES, MAX_CLICKUP_CSV_ROWS, MAX_DESCRIPTION, MAX_SUBTASKS, MAX_TITLE } from "@/lib/limits";
 
 // Public help page for moving from another tool. Lives in the (legal) group for its
 // plain page layout; the export steps are the same texts the import page shows.
@@ -62,6 +62,7 @@ export default async function MigratePage() {
         {t.limits(MAX_IMPORT_BYTES / 1024 / 1024, num(MAX_IMPORT_TICKETS), num(MAX_TITLE), num(MAX_DESCRIPTION), MAX_SUBTASKS).map((item) => (
           <li key={item}>{item}</li>
         ))}
+        <li>{t.clickupLimits(MAX_CLICKUP_CSV_BYTES / 1024 / 1024, num(MAX_CLICKUP_CSV_ROWS))}</li>
       </ul>
 
       <p className="mt-8">{t.outro}</p>

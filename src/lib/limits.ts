@@ -76,3 +76,13 @@ export const MAX_SOURCE_OTHER = 100;
 export const MAX_TIMEZONE = 64;
 /** Addresses in one paste of the wizard's invite step (the seat limit above still applies). */
 export const MAX_INVITES_PER_STEP = 50;
+
+/**
+ * ClickUp CSV import (workspace export, 2026-11-14): a real export had 12.8 MB and 17,806 rows;
+ * these leave room for larger teams. The file waits in Postgres (`import_upload`) until the
+ * background run is through, at most IMPORT_UPLOAD_TTL_MS. Other tools keep their own, smaller
+ * limits in src/lib/import/plan.ts (one project, written in one transaction).
+ */
+export const MAX_CLICKUP_CSV_BYTES = 50 * 1024 * 1024;
+export const MAX_CLICKUP_CSV_ROWS = 50_000;
+export const IMPORT_UPLOAD_TTL_MS = 24 * 60 * 60_000;

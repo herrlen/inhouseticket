@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MAX_DESCRIPTION, MAX_SUBTASKS, MAX_TITLE } from "../limits";
-import { berlinDay, desiredParents, matchPeople, suggestStatus, targetCategory, taskLabels, ticketFields } from "./mapping";
+import { berlinDay, desiredParents, matchByName, matchPeople, suggestStatus, targetCategory, taskLabels, ticketFields } from "./mapping";
 import type { ExternalTask } from "./types";
 
 function task(over: Partial<ExternalTask> = {}): ExternalTask {
@@ -41,6 +41,13 @@ describe("suggestStatus", () => {
     [{ name: "Neu", type: "custom" }, "Offen", "open"],
     [{ name: "not started", type: "custom" }, "Offen", "open"],
     [{ name: "irgendwas", type: "open" }, "Offen", "open"],
+    // Seen in a real CSV export (no status type there).
+    [{ name: 'closed "archiv"', type: "" }, "Erledigt", "done"],
+    [{ name: "Closed", type: "" }, "Erledigt", "done"],
+    [{ name: "achived", type: "" }, "Erledigt", "done"],
+    [{ name: "Archived", type: "" }, "Erledigt", "done"],
+    [{ name: "archiv", type: "" }, "Erledigt", "done"],
+    [{ name: "new", type: "" }, "Offen", "open"],
   ] as const)("%o → %s", (status, target, category) => {
     expect(suggestStatus(status)).toEqual({ target, category });
   });
@@ -54,6 +61,19 @@ describe("suggestStatus", () => {
     expect(targetCategory("Erledigt", "open")).toBe("done");
     expect(targetCategory("Review", "open")).toBe("active");
     expect(targetCategory("own", "done")).toBe("done");
+  });
+});
+
+describe("matchByName", () => {
+  it("matches the exact name, ignoring case and spaces; shared names match nobody", () => {
+    const match = matchByName([
+      { id: "u1", name: "Ina  Example" },
+      { id: "u2", name: "Tom Muster" },
+      { id: "u3", name: "tom muster" },
+    ]);
+    expect(match(" ina example ")).toBe("u1");
+    expect(match("Ina")).toBeNull();
+    expect(match("Tom Muster")).toBeNull();
   });
 });
 

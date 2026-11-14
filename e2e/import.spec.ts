@@ -58,7 +58,7 @@ test("import a Jira CSV: preview, then a new project with the tickets", async ({
   expect(res.status()).toBe(404);
 });
 
-test("import a ClickUp CSV", async ({ page }) => {
+test("import a ClickUp workspace export: one project per space, in the background, idempotent", async ({ page }) => {
   const path = await createWorkspace(page, `ina@${uniqueDomain("clickup")}`, "Klick GmbH");
   await page.goto(`${path}/settings/data/import`);
   const select = page.getByLabel("Altes Tool");
@@ -66,17 +66,36 @@ test("import a ClickUp CSV", async ({ page }) => {
   await select.selectOption("clickup");
   await expect(page.getByText("Einstellungen → Import/Export → Exportieren")).toBeVisible();
   const file = [
-    "Task ID,Task Name,Task Content,Status,Date Created,Parent ID,Assignees,Tags,Priority,List Name",
-    "a1,Newsletter planen,,in progress,1756717200000,,[],[mail],2,Kampagnen",
-    "a2,Texte schreiben,,complete,1756717300000,a1,[],[],,Kampagnen",
+    "Task ID,Task Link,Task Name,Task Content,Status,Date Created,Parent ID,Assignees,Tags,Priority,List Name,Folder Name/Path,Space Name",
+    'a1,https://app.clickup.com/t/a1,Newsletter planen,,in progress,1756717200000,null,[],[mail],2,Kampagnen,"[""Marketing""]",Team',
+    "a2,https://app.clickup.com/t/a2,Texte schreiben,,complete,1756717300000,a1,[],[],null,Kampagnen,,Team",
+    "a3,https://app.clickup.com/t/a3,Korrektur lesen,,achived,1756717400000,a2,[],[],null,Kampagnen,,Team",
+    "a3,https://app.clickup.com/t/a3,Korrektur lesen,,achived,1756717400000,a2,[],[],null,Kampagnen,,Team",
+    "b1,https://app.clickup.com/t/b1,Release planen,,warten auf kunde,1756717500000,null,[Tom Fremd],[],1,Backlog,,Produkt",
   ].join("\n");
-  await page.getByLabel("Export-Datei (CSV)").setInputFiles({ name: "clickup.csv", mimeType: "text/csv", buffer: Buffer.from(file) });
-  await page.getByRole("button", { name: "Vorschau anzeigen" }).click();
-  await expect(page.getByRole("region", { name: "Vorschau" })).toContainText("1 Tickets, 1 Unteraufgaben, 0 Kommentare, 1 Labels");
-  await expect(page.getByLabel("Name", { exact: true })).toHaveValue("Kampagnen");
-  await expect(page.getByLabel("Kürzel")).toHaveValue("KAM");
-  await page.getByRole("button", { name: "1 Tickets importieren" }).click();
-  await expect(page.getByText("1 Tickets in KAM importiert.")).toBeVisible();
+  const upload = async () => {
+    await page.getByLabel("Export-Datei (CSV)").setInputFiles({ name: "clickup.csv", mimeType: "text/csv", buffer: Buffer.from(file) });
+    await page.getByRole("button", { name: "Vorschau anzeigen" }).click();
+    return page.getByRole("region", { name: "Vorschau" });
+  };
+
+  const preview = await upload();
+  await expect(preview).toContainText("2 Projekte – eins pro Space");
+  await expect(preview).toContainText("1 doppelte Zeilen (gleiche Task ID) werden verworfen.");
+  await expect(preview).toContainText("1 Person hat kein passendes Mitglied");
+  await expect(page.getByLabel("Ziel für den Status „achived“")).toHaveValue("Erledigt");
+  await expect(page.getByLabel("Ziel für den Status „warten auf kunde“")).toHaveValue("own");
+  await page.getByLabel("Ziel für den Status „warten auf kunde“").selectOption("Review");
+
+  await page.getByRole("button", { name: "4 Aufgaben importieren" }).click();
+  await expect(page.getByRole("heading", { name: "Import abgeschlossen" })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText("4 Tickets angelegt")).toBeVisible();
+
+  // Same file again: everything is known, nothing to import.
+  await page.getByRole("button", { name: "Weitere Datei importieren" }).click();
+  const again = await upload();
+  await expect(again).toContainText("4 Aufgaben gibt es schon");
+  await expect(page.getByRole("button", { name: "0 Aufgaben importieren" })).toBeDisabled();
 });
 
 test("import Notion and monday.com CSVs; the preview lists the detected columns", async ({ page }) => {

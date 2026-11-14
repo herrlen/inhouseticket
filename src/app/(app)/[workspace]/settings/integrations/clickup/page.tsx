@@ -31,7 +31,8 @@ const linkButton =
 
 /** Which screen to show: the wizard's next step, or a step reopened from the finished setup (?schritt=). */
 function currentStep(integ: IntegrationView | null, param: string | undefined): Step {
-  if (!integ) return "token";
+  // A row without token exists after a CSV import only (the tickets hang on it): not connected yet.
+  if (!integ?.config.tokenHint) return "token";
   const step = integ.config.step ?? "account";
   if (step !== "done") return step;
   if (param === "token") return "token";
