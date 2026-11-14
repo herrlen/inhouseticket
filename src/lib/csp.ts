@@ -22,6 +22,9 @@ export function contentSecurityPolicy(nonce: string, dev: boolean): string {
 
 /** Headers for every response (pages, API, MCP, static files) – see next.config.ts. */
 export const SECURITY_HEADERS = [
+  // HTTPS only for a year, on every subdomain too (app., www.). Browsers ignore it over plain http,
+  // so local and E2E runs on http://localhost are unaffected. No preload: that is hard to undo.
+  { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
   // Invite links carry their token in the path – never leak it to other sites.

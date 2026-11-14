@@ -2,13 +2,14 @@
 
 import type { Announcements, DragEndEvent, DragOverEvent } from "@dnd-kit/core";
 import { usePathname, useRouter } from "next/navigation";
-import { useId, useState, useTransition } from "react";
+import { useEffect, useId, useState, useTransition } from "react";
 import { deleteFolderAction, moveFolderAction, moveProjectAction, savePrefsAction, setProjectArchivedAction } from "@/app/(app)/[workspace]/actions";
 import { useShell } from "@/components/shell/shell-context";
 import { Plus, Star } from "@/components/ui/icons";
 import { useToast } from "@/components/ui/toast";
 import { keyBetween } from "@/lib/fractional";
 import { useT } from "@/lib/i18n/client";
+import { onOpenCount } from "@/lib/explorer-events";
 import { FolderNameDialog, NewProjectDialog } from "./dialogs";
 import { DndRoot, SortableList } from "./dnd-bridge";
 import { FolderRow } from "./folder-row";
@@ -59,6 +60,11 @@ export function Explorer({ data }: { data: ExplorerData }) {
   const [folders, setFolders] = useSynced(data.folders);
   const [expanded, setExpanded] = useSynced(data.expandedFolders);
   const [favorites, setFavorites] = useSynced(data.favorites);
+  // Counts change while someone works in a project view (no router.refresh, see explorer-events).
+  useEffect(
+    () => onOpenCount(({ projectId, openCount }) => setProjects((list) => list.map((p) => (p.id === projectId && p.openCount !== openCount ? { ...p, openCount } : p)))),
+    [setProjects],
+  );
   const [overFolder, setOverFolder] = useState<string | null>(null);
   // Stable id: dnd-kit otherwise numbers its aria ids differently on server and client.
   const dndId = useId();

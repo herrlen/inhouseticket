@@ -1,7 +1,6 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import type { ActivityRow, TicketRow } from "@/db/queries/tickets";
 import { useToast } from "@/components/ui/toast";
 import { trackEvent } from "@/lib/analytics";
@@ -82,7 +81,6 @@ export function useUpdateTicket(workspaceId: string, projectId: string, category
   const t = useT(MESSAGES);
   const qc = useQueryClient();
   const toast = useToast();
-  const router = useRouter();
 
   const mutation = useMutation({
     mutationKey: ["tickets", projectId],
@@ -106,7 +104,6 @@ export function useUpdateTicket(workspaceId: string, projectId: string, category
       qc.setQueryData<TicketRow[]>(ticketsKey(projectId), (list) => list?.map((t) => (t.id === row.id ? row : t)));
       void qc.invalidateQueries({ queryKey: activityKey(row.id) });
       trackStatusChange(patch.statusId, categoryOf);
-      if (patch.statusId) router.refresh(); // explorer counts
     },
     onSettled: () => settle(qc, projectId),
   });
@@ -119,7 +116,6 @@ export function useCreateTicket(workspaceId: string, projectId: string) {
   const t = useT(MESSAGES);
   const qc = useQueryClient();
   const toast = useToast();
-  const router = useRouter();
   return useMutation({
     mutationKey: ["tickets", projectId],
     mutationFn: (input: NewTicketInput) =>
@@ -161,7 +157,6 @@ export function useCreateTicket(workspaceId: string, projectId: string) {
     onSuccess: (row, _input, context) => {
       qc.setQueryData<TicketRow[]>(ticketsKey(projectId), (list) => list?.map((t) => (t.id === context?.tempId ? row : t)));
       trackEvent("Ticket", "Created");
-      router.refresh(); // explorer counts
     },
     onSettled: () => settle(qc, projectId),
   });
@@ -171,7 +166,6 @@ export function useBulkUpdate(workspaceId: string, projectId: string, categoryOf
   const t = useT(MESSAGES);
   const qc = useQueryClient();
   const toast = useToast();
-  const router = useRouter();
   return useMutation({
     mutationKey: ["tickets", projectId],
     mutationFn: ({ ticketIds, patch }: { ticketIds: string[]; patch: Pick<TicketPatch, "statusId" | "priority" | "assigneeId"> }) =>
@@ -191,7 +185,6 @@ export function useBulkUpdate(workspaceId: string, projectId: string, categoryOf
       qc.setQueryData<TicketRow[]>(ticketsKey(projectId), (list) => list?.map((t) => byId.get(t.id) ?? t));
       toast({ message: t.list.bulkDone(rows.length), tone: "success" });
       trackStatusChange(patch.statusId, categoryOf);
-      if (patch.statusId) router.refresh();
     },
     onSettled: () => settle(qc, projectId),
   });

@@ -150,7 +150,7 @@ export const pendingRegistration = pgTable(
     id: uuid().primaryKey().defaultRandom(),
     email: text().notNull().unique(),
     name: text().notNull(),
-    /** Better Auth's scrypt hash, moved into the credential account on confirmation. */
+    /** Argon2id hash (older rows: Better Auth's scrypt), moved into the credential account on confirmation. */
     passwordHash: text().notNull(),
     /** SHA-256 of the link token. */
     tokenHash: text().notNull().unique(),
