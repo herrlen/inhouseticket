@@ -72,7 +72,7 @@ async function processRegistration(reg: Registration, t: Messages): Promise<void
       return;
     }
 
-    // Better Auth's own hasher (scrypt) – the hash moves unchanged into the credential account.
+    // Better Auth's configured hasher (Argon2id, src/lib/password-hash.ts) – the hash moves unchanged into the credential account.
     const passwordHash = await (await auth.$context).password.hash(reg.password);
     const token = newToken();
     await upsertPendingRegistration({

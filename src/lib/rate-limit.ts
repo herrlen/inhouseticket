@@ -27,11 +27,10 @@ export function rateLimit(
 }
 
 /**
- * HMAC key for per-address counters: the auth secret, or a random key per process (the counters
- * live in this process only, so a stable key is not needed). Read from process.env directly so
- * the pure callers stay unit-testable without the full env validation.
+ * HMAC key for per-address counters: random per process. The counters live in this module's map
+ * only, so a stable key is not needed – and the auth secret is never reused for a second purpose.
  */
-const ADDRESS_KEY: string | Buffer = process.env.BETTER_AUTH_SECRET || randomBytes(32);
+const ADDRESS_KEY = randomBytes(32);
 
 /**
  * Counter key for an e-mail address: prefix plus HMAC-SHA-256 of the normalized address. The

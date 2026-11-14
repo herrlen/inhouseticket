@@ -1,3 +1,11 @@
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+# Security floors for transitive dependencies (pnpm audit, 2026-11-06). Each one only lifts the
+# vulnerable range; drop an entry once the parent package ships the fixed version itself.
+overrides:
+  body-parser@>=2.0.0 <2.4.0: ^2.4.0
+  fast-uri@>=3.0.0 <3.1.9: ^3.1.9
+  ip-address@<10.7.4: ^10.7.4
+  qs@>=6.7.0 <6.16.1: ^6.16.1
+  vite: ^8.3.3 # peer of vitest (dev only); the range form does not reach peer resolutions

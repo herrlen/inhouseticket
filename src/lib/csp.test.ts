@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contentSecurityPolicy } from "./csp";
+import { contentSecurityPolicy, SECURITY_HEADERS } from "./csp";
 
 describe("contentSecurityPolicy", () => {
   it("allows only nonce scripts and forbids framing in production", () => {
@@ -20,5 +20,12 @@ describe("contentSecurityPolicy", () => {
     expect(csp).toContain("'unsafe-eval'");
     expect(csp).toContain("connect-src 'self' ws:");
     expect(csp).not.toContain("upgrade-insecure-requests");
+  });
+});
+
+describe("SECURITY_HEADERS", () => {
+  it("sends HSTS for a year including subdomains, without preload", () => {
+    const hsts = SECURITY_HEADERS.find((h) => h.key === "Strict-Transport-Security");
+    expect(hsts?.value).toBe("max-age=31536000; includeSubDomains");
   });
 });
