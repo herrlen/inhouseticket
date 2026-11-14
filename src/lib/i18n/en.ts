@@ -1171,7 +1171,7 @@ export const en: Messages = {
     title: "Data & workspace",
     navLabel: "Data",
     exportTitle: "Export data",
-    exportText: "All data of this workspace to take with you. JSON contains everything (members, projects, statuses, labels, tickets with subtasks and comments, attachments as metadata); CSV is a ticket list for Excel.",
+    exportText: "All data of this workspace to take with you. JSON contains everything (members, projects, statuses, labels, tickets with subtasks, comments, history and attachments, saved views and favorites) – also for moving to emuchat; CSV is a ticket list for Excel.",
     exportJson: "Download JSON",
     exportCsv: "Download CSV",
     deleteTitle: "Delete workspace",
