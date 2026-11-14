@@ -22,6 +22,7 @@ import { tokenHint } from "@/lib/integrations/crypto";
 import { connectorFor, runSync } from "@/lib/integrations/engine";
 import { STATUS_TARGETS, suggestStatus } from "@/lib/integrations/mapping";
 import { ConnectorError } from "@/lib/integrations/types";
+import { registerWebhook, removeWebhook } from "@/lib/integrations/webhook-sync";
 import { rateLimit } from "@/lib/rate-limit";
 import { loadContainers, loadPeople } from "./data";
 
@@ -74,6 +75,9 @@ export async function connectAction(_: TokenState, formData: FormData): Promise<
   const id = await saveIntegrationToken({ workspaceId: ctx.workspace.id, userId: ctx.user.id }, "clickup", parsed.data.token, config);
   if (!sameAccount && existing) await updateIntegrationConfig(ctx.workspace.id, id, config, "setup");
   await logIntegrationEvent(ctx.workspace.id, ctx.user.id, "integration_connected", { provider: "clickup" });
+  // Webhooks belong to the token that created them: a new token registers anew (or removes it
+  // when the wizard starts over).
+  refreshWebhook(ctx.workspace.id, id);
   revalidatePath(page(ctx.workspace.slug));
   redirect(page(ctx.workspace.slug));
 }
@@ -118,6 +122,7 @@ export async function saveSelectionAction(_: SelectionState, formData: FormData)
   if (!spaces.length && !listIds.length) return { error: t.integrations.clickup.containersEmpty };
   const done = integ.config.step === "done";
   await updateIntegrationConfig(ctx.workspace.id, integ.id, { spaceIds: spaces.map((s) => s.id), listIds, fullResync: true, step: done ? "done" : "mapping" });
+  if (done) refreshWebhook(ctx.workspace.id, integ.id);
   revalidatePath(page(ctx.workspace.slug));
   redirect(done ? `${page(ctx.workspace.slug)}?schritt=zuordnung` : page(ctx.workspace.slug));
 }
@@ -156,7 +161,10 @@ export async function saveMappingAction(formData: FormData) {
 
   const first = integ.config.step !== "done";
   await updateIntegrationConfig(ctx.workspace.id, integ.id, { step: "done" }, first ? "active" : undefined);
-  if (first) await startSync(ctx.workspace.id, integ.id, ctx.user.id, "initial");
+  if (first) {
+    await startSync(ctx.workspace.id, integ.id, ctx.user.id, "initial");
+    refreshWebhook(ctx.workspace.id, integ.id);
+  }
   revalidatePath(page(ctx.workspace.slug));
   redirect(page(ctx.workspace.slug));
 }
@@ -167,6 +175,13 @@ async function startSync(workspaceId: string, integrationId: string, userId: str
   // Runs after the response; the lease keeps it single next to the 5-minute poller.
   after(() =>
     runSync(integrationId, trigger).catch((e: unknown) => console.error("integration sync: background run failed", e instanceof Error ? e.message.slice(0, 80) : "unknown")),
+  );
+}
+
+/** (Re-)registers the real-time webhook after the response (ClickUp round trips, never fails the action). */
+function refreshWebhook(workspaceId: string, integrationId: string) {
+  after(() =>
+    registerWebhook(workspaceId, integrationId).catch((e: unknown) => console.error("integration webhook: background registration failed", e instanceof Error ? e.message.slice(0, 80) : "unknown")),
   );
 }
 
@@ -187,6 +202,8 @@ export async function disconnectAction(formData: FormData) {
   if (!parsed.success || formData.get("confirm") !== "yes") return;
   const ctx = await requireRole({ workspaceId: parsed.data.workspaceId }, "admin");
   const integ = await findIntegration(ctx.workspace.id, "clickup");
+  // Before the row (and the token) is gone: the webhook at ClickUp needs the token to be removed.
+  if (integ) await removeWebhook(ctx.workspace.id, integ.id);
   if (integ && (await deleteIntegration(ctx.workspace.id, integ.id))) {
     await logIntegrationEvent(ctx.workspace.id, ctx.user.id, "integration_disconnected", { provider: "clickup" });
   }

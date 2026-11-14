@@ -19,6 +19,8 @@ export class CredentialsError extends Error {
 }
 
 export const credentialsAad = (integrationId: string) => `integration.credentials:${integrationId}`;
+/** Webhook id and secret (`integration.webhook`): own AAD, so the two sealed columns never swap. */
+export const webhookAad = (integrationId: string) => `integration.webhook:${integrationId}`;
 
 function key(secret: string): Buffer {
   if (!secret || secret.length < 32) throw new CredentialsError("no_secret");

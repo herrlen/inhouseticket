@@ -1,7 +1,6 @@
 import "server-only";
 import {
   claimIntegration,
-  dueIntegrationIds,
   errorCode,
   finishRun,
   lastDeltaMark,
@@ -15,12 +14,10 @@ import {
   type RunCursor,
   type SyncIntegration,
 } from "@/db/queries/integration-sync";
-import { deleteExpiredUploads } from "@/db/queries/clickup-import";
 import { openIntegrationToken } from "@/db/queries/integrations";
 import { env } from "@/lib/env";
 import { CredentialsError } from "./crypto";
-import { resumeCsvImports } from "./csv-import";
-import { POLL_INTERVAL_MS, PROVIDER_NAMES, type ProviderId, type SyncTrigger } from "./providers";
+import { PROVIDER_NAMES, type ProviderId, type SyncTrigger } from "./providers";
 import { createConnector } from "./registry";
 import { ConnectorError, type Connector } from "./types";
 
@@ -29,7 +26,7 @@ import { ConnectorError, type Connector } from "./types";
 // runs per integration, across restarts and containers. Progress is saved after every page, so a
 // crashed run resumes from its cursor. Logs carry ids and error codes only – never tokens or content.
 
-const LEASE_MS = 5 * 60_000;
+export const LEASE_MS = 5 * 60_000;
 /** Comments cost one request per task: at most this long per run, the rest follows next time. */
 const COMMENT_BUDGET_MS = 4 * 60_000;
 const COMMENT_BATCH = 25;
@@ -141,7 +138,7 @@ export async function runSync(integrationId: string, trigger: SyncTrigger, optio
   }
 }
 
-async function syncComments(integ: SyncIntegration, connector: Connector, writer: SyncWriter, counts: RunCounts, budgetMs: number, save: () => Promise<void>) {
+export async function syncComments(integ: SyncIntegration, connector: Connector, writer: SyncWriter, counts: RunCounts, budgetMs: number, save: () => Promise<void>) {
   const until = Date.now() + budgetMs;
   while (Date.now() < until) {
     const batch = await writer.pendingCommentTasks(COMMENT_BATCH);
@@ -164,28 +161,4 @@ async function syncComments(integ: SyncIntegration, connector: Connector, writer
     await save();
     await renewLease(integ.id, LEASE_MS);
   }
-}
-
-let polling = false;
-
-/**
- * Production scheduler (src/instrumentation.ts), every minute: CSV imports left open by a restart
- * (no token needed), expired uploads, then due integrations one after another.
- */
-export function startIntegrationPolling() {
-  const tick = async () => {
-    if (polling) return;
-    polling = true;
-    try {
-      await resumeCsvImports();
-      await deleteExpiredUploads();
-      if (env.INTEGRATION_SECRET) for (const id of await dueIntegrationIds(POLL_INTERVAL_MS)) await runSync(id, "schedule");
-    } catch (e) {
-      console.error("integration sync: poll failed", errorCode(e));
-    } finally {
-      polling = false;
-    }
-  };
-  setTimeout(tick, 90_000);
-  setInterval(tick, 60_000);
 }

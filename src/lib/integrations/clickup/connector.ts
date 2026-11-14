@@ -6,7 +6,9 @@
 //   GET /team/{id}/task            → tasks, 100 per page, page from 0, filters space_ids[]/list_ids[],
 //                                    include_closed, subtasks, date_updated_gt (Unix ms)
 //   GET /task/{id}/comment         → 25 newest comments, older ones via start + start_id
-// Read-only. Responses are parsed defensively: unknown or missing fields never throw.
+//   GET /task/{id}                 → one task (webhook events), 404 when gone
+//   POST/GET /team/{id}/webhook, DELETE /webhook/{id} → real-time events (see ./webhook.ts)
+// Read-only towards tasks (webhooks are the only thing created). Responses are parsed defensively: unknown or missing fields never throw.
 
 import { mapClickUpPriority } from "../../import/clickup";
 import type {
@@ -21,8 +23,11 @@ import type {
   PullOptions,
   PullPage,
   PullScope,
+  WebhookApi,
 } from "../types";
+import { ConnectorError } from "../types";
 import { ClickUpClient, type ClientOptions } from "./client";
+import { CLICKUP_WEBHOOK_EVENTS } from "./webhook";
 
 export const PAGE_SIZE = 100;
 const COMMENT_PAGE = 25;
@@ -203,6 +208,45 @@ export class ClickUpConnector implements Connector {
       }
     }
   }
+
+  /** GET /task/{id} – same task shape as the list endpoint; 404 → null. */
+  async getTask(taskId: string): Promise<ExternalTask | null> {
+    try {
+      const res = await this.client.get<Obj>(`/task/${encodeURIComponent(taskId)}`, { include_markdown_description: true });
+      return toExternalTask(res);
+    } catch (e) {
+      if (e instanceof ConnectorError && e.code === "not_found") return null;
+      throw e;
+    }
+  }
+
+  readonly webhooks: WebhookApi = {
+    create: async (accountId, endpoint, options = {}) => {
+      const res = await this.client.request<Obj>("POST", `/team/${encodeURIComponent(accountId)}/webhook`, {
+        body: { endpoint, events: [...CLICKUP_WEBHOOK_EVENTS], ...(options.spaceId && /^\d+$/.test(options.spaceId) ? { space_id: Number(options.spaceId) } : {}) },
+      });
+      const hook = obj(res.webhook);
+      const id = str(res.id) || str(hook.id);
+      const secret = str(hook.secret);
+      if (!id || !secret) throw new ConnectorError("bad_response");
+      return { id, secret };
+    },
+    list: async (accountId) => {
+      const res = await this.client.get<Obj>(`/team/${encodeURIComponent(accountId)}/webhook`);
+      return arr(res.webhooks)
+        .map(obj)
+        .map((w) => ({ id: str(w.id), endpoint: str(w.endpoint), status: str(obj(w.health).status) || "active", failCount: Number(obj(w.health).fail_count) || 0 }))
+        .filter((w) => w.id);
+    },
+    remove: async (webhookId) => {
+      try {
+        await this.client.request<Obj>("DELETE", `/webhook/${encodeURIComponent(webhookId)}`);
+      } catch (e) {
+        if (e instanceof ConnectorError && e.code === "not_found") return;
+        throw e;
+      }
+    },
+  };
 
   async *pullComments(taskId: string): AsyncIterable<ExternalComment> {
     let start: { date: string; id: string } | null = null;

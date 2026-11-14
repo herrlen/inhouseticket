@@ -59,19 +59,34 @@ export class ClickUpClient {
     this.limiter = options.limiter ?? limiterFor(options.token, options.requestsPerMinute, this.clock);
   }
 
-  async get<T>(path: string, query?: Query): Promise<T> {
-    const url = buildUrl(this.base, path, query);
+  get<T>(path: string, query?: Query): Promise<T> {
+    return this.request<T>("GET", path, { query });
+  }
+
+  /**
+   * One API call. POST is not repeated after a network error or 5xx (it may have gone through –
+   * a second webhook would be created); 429 is safe to repeat, ClickUp did not process it.
+   */
+  async request<T>(method: "GET" | "POST" | "DELETE", path: string, options: { query?: Query; body?: unknown } = {}): Promise<T> {
+    const url = buildUrl(this.base, path, options.query);
+    const retry = method !== "POST";
     for (let attempt = 1; ; attempt++) {
       await this.limiter.acquire();
       let res: Response;
       try {
         res = await this.doFetch(url, {
-          headers: { Authorization: this.options.token, Accept: "application/json" },
+          method,
+          headers: {
+            Authorization: this.options.token,
+            Accept: "application/json",
+            ...(options.body !== undefined ? { "Content-Type": "application/json" } : {}),
+          },
+          body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
           signal: AbortSignal.timeout(TIMEOUT_MS),
           cache: "no-store",
         });
       } catch {
-        if (attempt >= MAX_ATTEMPTS) throw new ConnectorError("unavailable");
+        if (!retry || attempt >= MAX_ATTEMPTS) throw new ConnectorError("unavailable");
         await this.clock.sleep(1000 * 2 ** attempt);
         continue;
       }
@@ -91,7 +106,7 @@ export class ClickUpClient {
       }
       if (res.status >= 500) {
         await res.body?.cancel();
-        if (attempt >= MAX_ATTEMPTS) throw new ConnectorError("unavailable", res.status);
+        if (!retry || attempt >= MAX_ATTEMPTS) throw new ConnectorError("unavailable", res.status);
         await this.clock.sleep(1000 * 2 ** attempt);
         continue;
       }
@@ -100,7 +115,9 @@ export class ClickUpClient {
         throw new ConnectorError("bad_response", res.status);
       }
       try {
-        return (await res.json()) as T;
+        // DELETE answers `{}` – or nothing at all.
+        const text = await res.text();
+        return (text.trim() ? JSON.parse(text) : {}) as T;
       } catch {
         throw new ConnectorError("bad_response", res.status);
       }

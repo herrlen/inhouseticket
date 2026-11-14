@@ -50,6 +50,31 @@ beim nächsten Mal an seiner Seite fortgesetzt (`sync_run.cursor`). Kommentare h
 (ein Aufruf pro Aufgabe), der Rest folgt in den nächsten Läufen. Logs enthalten nur IDs und Fehlercodes:
 `mw container logs -p p-flw0r0 app | grep "integration sync"`.
 
+### Echtzeit (ClickUp-Webhooks, ADR 008 Nachtrag)
+
+Nur in Produktion mit `APP_URL` auf https (keine neue Variable, kein neuer Schlüssel – das Webhook-Geheimnis liegt
+mit `INTEGRATION_SECRET` versiegelt in `integration.webhook`). Nach der Einrichtung, nach „Auswahl ändern“ und
+„Token ersetzen“ registriert die App einen Webhook je Verbindung bei ClickUp; „Trennen“ entfernt ihn dort. Endpunkt:
+`POST https://app.inhouseticket.com/api/integrations/clickup/webhook/<integration-id>` (ohne Sitzung, nur mit
+gültiger Signatur `X-Signature`; muss von außen erreichbar sein – keine IP-Sperre davor, ClickUp hat keine festen
+Absender-IPs). Solange der Webhook gesund ist, läuft das Polling nur noch alle 30 Minuten als Sicherheitsnetz.
+
+- **Zustand ansehen:** Einstellungen → Integrationen → ClickUp zeigt „Echtzeit: aktiv“ bzw. „… – Polling alle 5 Min.“
+  und „Letztes Ereignis“. In der Datenbank:
+  `select id, webhook_status, webhook_event_at, webhook_checked_at, last_sync_at from integration;` und die
+  Warteschlange `select integration_id, count(*) from integration_event group by 1;` (sollte fast immer leer sein).
+- **Gesundheit:** Nach jedem geplanten Lauf fragt die App `GET /team/{id}/webhook` ab. ClickUp meldet `failing`
+  (Antwort kein 2xx oder > 7 s; jedes Ereignis wird 5-mal versucht, dann verworfen) → Status `failing`, Polling wieder
+  alle 5 Minuten. `suspended` (100 Fehlschläge oder einmal 401/410), gelöscht oder andere Adresse → die App
+  registriert neu. Schlägt die Registrierung fehl (`failed`), versucht der Poller es stündlich erneut.
+- **Was bei Ausfall passiert:** nichts geht verloren, was das Polling sieht – Änderungen kommen spätestens mit dem
+  nächsten Abgleich. Nur Löschungen sieht allein der Webhook (Label „In ClickUp gelöscht“, das Ticket bleibt).
+- **Ereignisse:** werden in `integration_event` eingereiht (eine Zeile je Aufgabe und Art) und unter dem Lease der
+  Verbindung abgearbeitet – nie parallel zu einem Abgleich; was wartet, holt der Poller jede Minute nach. Mehr als
+  600 Ereignisse pro Minute oder 5 000 offene Zeilen werden zu einem Delta-Abgleich zusammengefasst.
+- **Logs:** `mw container logs -p p-flw0r0 app | grep "integration webhook"`.
+- **Adresse geändert** (`APP_URL`): der nächste geplante Lauf registriert den Webhook mit der neuen Adresse.
+
 ## Ausrollen
 
 ```sh

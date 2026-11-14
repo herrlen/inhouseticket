@@ -32,5 +32,20 @@ export type FieldMappingKind = (typeof FIELD_MAPPING_KINDS)[number];
 export const SYNC_TRIGGERS = ["initial", "manual", "schedule", "csv"] as const;
 export type SyncTrigger = (typeof SYNC_TRIGGERS)[number];
 
-/** Polling interval for the delta sync (no webhooks yet). */
+/** Polling interval for the delta sync without a healthy webhook. */
 export const POLL_INTERVAL_MS = 5 * 60_000;
+
+/**
+ * Real-time webhook of an integration (ADR 008, addendum webhooks): `active` – registered and
+ * healthy · `failing` – the provider reports failed deliveries · `failed` – registration failed.
+ * Null: no webhook (no public URL, nothing selected yet).
+ */
+export const WEBHOOK_STATUSES = ["active", "failing", "failed"] as const;
+export type WebhookStatus = (typeof WEBHOOK_STATUSES)[number];
+
+/** Safety-net polling while the webhook is healthy. */
+export const WEBHOOK_POLL_INTERVAL_MS = 30 * 60_000;
+
+/** What a queued webhook event asks for: re-read the task, mark it deleted, or fetch its comments. */
+export const WEBHOOK_EVENT_KINDS = ["task", "deleted", "comment"] as const;
+export type WebhookEventKind = (typeof WEBHOOK_EVENT_KINDS)[number];

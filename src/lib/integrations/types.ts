@@ -80,13 +80,28 @@ export interface Connector {
   pull(scope: PullScope, options?: PullOptions): AsyncIterable<PullPage>;
   /** Comments of one task (second, lower-priority phase). */
   pullComments(taskId: string): AsyncIterable<ExternalComment>;
-  /**
-   * TODO(webhooks): verify the provider's signature (ClickUp: X-Signature, HMAC-SHA256 over the
-   * raw body with the webhook secret) and return the ids of changed items; the engine then runs a
-   * delta for them. Needs a public URL and webhook registration – until then polling every 5 min.
-   */
-  handleWebhook?(request: Request): Promise<{ changedIds: string[]; deletedIds: string[] }>;
+  /** One task as it is now; null when the provider no longer has it (deleted, no access). */
+  getTask?(taskId: string): Promise<ExternalTask | null>;
+  /** Real-time events (optional): register, inspect and remove the provider webhook. */
+  webhooks?: WebhookApi;
 }
+
+/** A registered webhook. `secret` signs every event; it is stored sealed, never shown. */
+export type RegisteredWebhook = { id: string; secret: string };
+
+export type WebhookHealth = { id: string; endpoint: string; status: string; failCount: number };
+
+export interface WebhookApi {
+  /** `spaceId` narrows the events to one space (only when the whole selection is one space). */
+  create(accountId: string, endpoint: string, options?: { spaceId?: string }): Promise<RegisteredWebhook>;
+  /** Webhooks of this token in the account, with the provider's health. */
+  list(accountId: string): Promise<WebhookHealth[]>;
+  /** Removing one that is already gone is no error. */
+  remove(webhookId: string): Promise<void>;
+}
+
+/** A verified event, reduced to what the engine needs: which task, and what to do with it. */
+export type WebhookEvent = { webhookId: string; taskId: string; kind: "task" | "deleted" | "comment" };
 
 export type ConnectorErrorCode = "unauthorized" | "not_found" | "rate_limited" | "unavailable" | "bad_response";
 

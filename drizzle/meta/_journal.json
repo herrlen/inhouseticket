@@ -127,6 +127,13 @@
       "when": 1794662233753,
       "tag": "0017_clickup_csv_import",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794665117360,
+      "tag": "0018_integration_webhooks",
+      "breakpoints": true
     }
   ]
 }

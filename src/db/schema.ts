@@ -42,6 +42,8 @@ import {
   INTEGRATION_PROVIDERS,
   INTEGRATION_STATUSES,
   SYNC_TRIGGERS,
+  WEBHOOK_EVENT_KINDS,
+  WEBHOOK_STATUSES,
 } from "../lib/integrations/providers";
 
 /** `col IN ('a', 'b', …)` for CHECK constraints from a constant list (no user input). */
@@ -831,6 +833,17 @@ export const integration = pgTable(
     /** Set by "Jetzt abgleichen"; the poller picks it up even before the interval is over. */
     syncRequestedAt: timestamp({ withTimezone: true }),
     lockedUntil: timestamp({ withTimezone: true }),
+    /**
+     * Sealed JSON `{ id, secret }` of the provider webhook (same crypto as `credentials`, AAD
+     * `integration.webhook:<id>`); null without a webhook. Never selected for the UI.
+     */
+    webhook: text(),
+    /** WEBHOOK_STATUSES or null (no webhook: polling every 5 minutes). */
+    webhookStatus: varchar({ length: 20 }),
+    /** Last signed event that arrived (shown as "letztes Ereignis"). */
+    webhookEventAt: timestamp({ withTimezone: true }),
+    /** Last registration attempt or health check (retries are spaced by this). */
+    webhookCheckedAt: timestamp({ withTimezone: true }),
     createdBy: text().references(() => user.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -840,6 +853,33 @@ export const integration = pgTable(
     unique().on(t.id, t.workspaceId),
     check("integration_provider", sql`${t.provider} in (${oneOf(INTEGRATION_PROVIDERS)})`),
     check("integration_status", sql`${t.status} in (${oneOf(INTEGRATION_STATUSES)})`),
+    check("integration_webhook_status", sql`${t.webhookStatus} in (${oneOf(WEBHOOK_STATUSES)})`),
+  ],
+);
+
+/**
+ * Queue of webhook events not yet processed: one row per task and kind (a second event for the
+ * same task only refreshes `receivedAt` – the task is read fresh anyway). Processed under the
+ * integration's lease, never next to a poll; rows go when their task is through.
+ */
+export const integrationEvent = pgTable(
+  "integration_event",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    workspaceId: uuid().notNull(),
+    integrationId: uuid().notNull(),
+    externalId: varchar({ length: 100 }).notNull(),
+    kind: varchar({ length: 20 }).notNull(),
+    receivedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique().on(t.integrationId, t.externalId, t.kind),
+    foreignKey({
+      columns: [t.integrationId, t.workspaceId],
+      foreignColumns: [integration.id, integration.workspaceId],
+    }).onDelete("cascade"),
+    index().on(t.integrationId, t.receivedAt),
+    check("integration_event_kind", sql`${t.kind} in (${oneOf(WEBHOOK_EVENT_KINDS)})`),
   ],
 );
 

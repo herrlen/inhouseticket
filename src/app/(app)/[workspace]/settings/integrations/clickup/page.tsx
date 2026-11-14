@@ -295,13 +295,21 @@ async function Overview({ t, ws, slug, integ, fmt }: { t: T; ws: string; slug: s
           <dd>{integ.lastSyncAt ? fmt.format(integ.lastSyncAt) : o.never}</dd>
           <dt className="text-muted">{o.status}</dt>
           <dd aria-live="polite">{busy ? o.running : o.selection(integ.config.spaceIds?.length ?? 0, integ.config.listIds?.length ?? 0)}</dd>
+          <dt className="text-muted">{o.realtime}</dt>
+          <dd>{o.realtimeState[integ.webhookStatus ?? "off"]}</dd>
+          {integ.webhookStatus ? (
+            <>
+              <dt className="text-muted">{o.lastEvent}</dt>
+              <dd>{integ.webhookEventAt ? fmt.format(integ.webhookEventAt) : o.noEvent}</dd>
+            </>
+          ) : null}
         </dl>
         {integ.lastError ? (
           <p role="alert" className="mt-3 text-[13px] text-prio-urgent-ink">
             {o.errors[errorKey]}
           </p>
         ) : null}
-        <p className="mt-3 text-[13px] text-muted">{o.nextSync}</p>
+        <p className="mt-3 text-[13px] text-muted">{integ.webhookStatus === "active" ? o.nextSyncRealtime : o.nextSync}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <form action={syncNowAction}>
             <input type="hidden" name="workspaceId" value={ws} />
