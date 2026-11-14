@@ -32,8 +32,23 @@ TLS: Let's Encrypt über mittwald, automatisch.
 ## Geheimnisse
 
 Nur in der Stack-Konfiguration bei mittwald, keine lokale Kopie: `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`
-(beim ersten Deploy erzeugt), `SMTP_PASSWORD` (setzt Len mit `scripts/set-smtp-password.sh`), `MATOMO_TOKEN`.
+(beim ersten Deploy erzeugt), `SMTP_PASSWORD` (setzt Len mit `scripts/set-smtp-password.sh`), `MATOMO_TOKEN`,
+`INTEGRATION_SECRET` (Schlüssel für die gespeicherten Integrations-Tokens, ADR 008).
 `scripts/deploy.sh` liest sie aus dem laufenden Stack und gibt sie nie aus.
+
+`INTEGRATION_SECRET` erzeugt `scripts/deploy.sh` einmalig, wenn der Stack noch keinen hat, und übernimmt ihn danach
+immer. **Nie ändern:** Mit einem neuen Wert sind alle gespeicherten ClickUp-Tokens unlesbar – jede Verbindung zeigt
+dann einen Fehler und braucht einen neuen Token. Ohne den Wert zeigt „Integrationen“ nur „nicht eingerichtet“.
+
+## Integrationen (ClickUp)
+
+Lesender Abgleich, Einrichtung unter Einstellungen → Integrationen (nur Admins). Der Abgleich läuft im App-Container
+(`src/instrumentation.ts` → `startIntegrationPolling()`): jede Minute werden fällige Verbindungen abgearbeitet, je
+Verbindung alle 5 Minuten bzw. sofort nach „Jetzt abgleichen“. Ein Lease (`integration.locked_until`) sorgt dafür, dass
+pro Verbindung nur ein Lauf gleichzeitig läuft – auch bei mehreren Containern. Ein abgebrochener Lauf (Neustart) wird
+beim nächsten Mal an seiner Seite fortgesetzt (`sync_run.cursor`). Kommentare holt jeder Lauf höchstens 4 Minuten lang
+(ein Aufruf pro Aufgabe), der Rest folgt in den nächsten Läufen. Logs enthalten nur IDs und Fehlercodes:
+`mw container logs -p p-flw0r0 app | grep "integration sync"`.
 
 ## Ausrollen
 

@@ -51,6 +51,7 @@ import deAdmin from "./de/admin";
 import deOauth from "./de/oauth";
 import deData from "./de/data";
 import deImport from "./de/import";
+import deIntegrations from "./de/integrations";
 
 export const de = {
   common: deCommon,
@@ -105,6 +106,7 @@ export const de = {
   oauth: deOauth,
   data: deData,
   import: deImport,
+  integrations: deIntegrations,
 } as const;
 
 /** Literal types widened to string, so other locales can follow the same shape. */

@@ -11,6 +11,7 @@ import {
   updateCommentAction,
   updateSubtaskAction,
 } from "@/app/(app)/[workspace]/ticket-actions";
+import type { TicketSource } from "@/db/queries/integrations";
 import type { AttachmentRow, CommentRow, SubtaskRow } from "@/db/queries/ticket-parts";
 import { useToast } from "@/components/ui/toast";
 import { useT } from "@/lib/i18n/client";
@@ -19,8 +20,11 @@ import deExplorer from "@/lib/i18n/de/explorer";
 
 const MESSAGES = { explorer: deExplorer };
 
-/** `manageAttachments`: the viewer may delete every attachment (ticket author or admin), not just their own. */
-export type Parts = { subtasks: SubtaskRow[]; attachments: AttachmentRow[]; comments: CommentRow[]; manageAttachments: boolean };
+/**
+ * `manageAttachments`: the viewer may delete every attachment (ticket author or admin), not just their own.
+ * `source`: the tool the ticket is synced from ("Quelle: ClickUp"), null for tickets made here.
+ */
+export type Parts = { subtasks: SubtaskRow[]; attachments: AttachmentRow[]; comments: CommentRow[]; manageAttachments: boolean; source: TicketSource | null };
 export const partsKey = (ticketId: string) => ["parts", ticketId] as const;
 
 export function useParts(workspaceId: string, ticketId: string) {
