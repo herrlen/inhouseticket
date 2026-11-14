@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { createStatusAction } from "@/app/(app)/[workspace]/actions";
-import { Plus } from "@/components/ui/icons";
+import { Check, Plus } from "@/components/ui/icons";
 import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
 import { ghostRow } from "./list-extras";
@@ -47,9 +47,9 @@ export function NewStatusRow({ workspaceId, projectKey }: { workspaceId: string;
         aria-describedby="new-status-hint"
         placeholder={t.list.newStatusName}
         onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
-        className="h-7 w-56 rounded-[var(--radius-badge)] border border-border bg-surface px-2 text-[13px]"
+        className="h-8 w-56 rounded-[var(--radius-field)] border border-border bg-content px-2 text-sm"
       />
-      <button type="submit" disabled={pending} className="h-7 rounded-[var(--radius-badge)] bg-accent px-2.5 text-[13px] font-medium text-accent-contrast disabled:opacity-50">
+      <button type="submit" disabled={pending} className="h-8 rounded-[var(--radius-field)] bg-accent px-3 text-sm font-medium text-accent-contrast hover:bg-accent-hover disabled:opacity-50">
         {t.common.create}
       </button>
       <span id="new-status-hint" className="w-full text-xs text-muted">
@@ -64,15 +64,15 @@ export function SubtaskRows({ workspaceId, ticketId, ticketKey, colSpan }: { wor
   const t = useT(MESSAGES);
   const { data } = useParts(workspaceId, ticketId);
   return (
-    <tr className="border-b border-border bg-bg/40">
+    <tr className="border-b border-border-subtle bg-hover">
       <td />
       <td colSpan={colSpan} className="py-1.5 pl-6">
         {data ? (
-          <ul aria-label={t.list.subtasksOf(ticketKey)} className="flex flex-col gap-0.5 text-[13px]">
+          <ul aria-label={t.list.subtasksOf(ticketKey)} className="flex flex-col gap-0.5 text-sm">
             {data.subtasks.map((s) => (
               <li key={s.id} className="flex items-center gap-2">
-                <span aria-hidden className={cn("flex size-3.5 items-center justify-center rounded-sm border text-[9px]", s.done ? "border-status-done bg-status-done text-surface" : "border-border")}>
-                  {s.done ? "✓" : ""}
+                <span aria-hidden className={cn("flex size-3.5 items-center justify-center rounded-sm border", s.done ? "border-status-done bg-status-done text-status-fg" : "border-border")}>
+                  {s.done ? <Check size={10} strokeWidth={3} /> : null}
                 </span>
                 <span className={cn(s.done && "text-muted line-through")}>{s.title}</span>
                 <span className="sr-only">({t.list.subtaskState(s.done)})</span>

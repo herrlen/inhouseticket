@@ -61,7 +61,7 @@ export function Dialog({ open, onClose, title, hideTitle, children, placement = 
             <h2 id={titleId} className={cn("font-semibold", hideTitle && "sr-only")}>
               {title}
             </h2>
-            <button type="button" onClick={onClose} aria-label={t.common.close} className="ml-auto rounded-[var(--radius-badge)] p-1 text-muted hover:bg-bg hover:text-text">
+            <button type="button" onClick={onClose} aria-label={t.common.close} className="ml-auto rounded-[var(--radius-badge)] p-1 text-muted hover:bg-hover hover:text-text">
               <Close />
             </button>
           </div>

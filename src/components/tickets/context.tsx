@@ -7,7 +7,7 @@ import type { StatusOption } from "./list-model";
 export type ProjectInfo = {
   workspaceId: string;
   slug: string;
-  project: { id: string; key: string; name: string; color: string };
+  project: { id: string; key: string; name: string; color: string; icon?: string | null };
   statuses: StatusOption[];
   members: MemberOption[];
   labels: LabelRow[];

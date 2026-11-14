@@ -74,14 +74,14 @@ function ProjectRowView({ project, folders, favorite, onToggleFavorite, onMoveTo
   ];
 
   const row = (
-    <div className={cn("group flex h-8 items-center gap-1 rounded-[var(--radius-badge)] pr-1 pl-1", active ? "bg-bg" : "hover:bg-bg")}>
+    <div className={cn("group flex h-8 items-center gap-1 rounded-[var(--radius-badge)] pr-1 pl-1", active ? "bg-content shadow-[inset_3px_0_0_var(--accent)]" : "hover:bg-hover")}>
       {handle ?? <span className="w-5 shrink-0" />}
-      <Link href={projectHref(shell, project.key)} aria-current={active ? "page" : undefined} className="flex min-w-0 flex-1 items-center gap-2 py-1 text-[13px]">
+      <Link href={projectHref(shell, project.key)} aria-current={active ? "page" : undefined} className={cn("flex min-w-0 flex-1 items-center gap-2 py-1 text-sm", active ? "font-semibold text-accent-strong" : "text-secondary hover:text-text")}>
         <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
         {project.icon ? <span aria-hidden>{project.icon}</span> : null}
         <span className="truncate">{project.name}</span>
         {project.openCount > 0 ? (
-          <span className="ml-auto text-xs text-muted tabular-nums" aria-label={t.explorer.openCount(project.openCount)}>
+          <span className="ml-auto text-xs font-normal text-muted tabular-nums" aria-label={t.explorer.openCount(project.openCount)}>
             {project.openCount}
           </span>
         ) : null}
@@ -90,7 +90,7 @@ function ProjectRowView({ project, folders, favorite, onToggleFavorite, onMoveTo
         align="end"
         trigger={<More />}
         triggerLabel={t.explorer.projectMenu(project.name)}
-        triggerClassName="flex size-6 shrink-0 items-center justify-center rounded text-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100 hover:bg-border/60"
+        triggerClassName="flex size-6 shrink-0 items-center justify-center rounded text-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100 hover:bg-hover"
         items={items}
       />
     </div>

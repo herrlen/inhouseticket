@@ -3,8 +3,8 @@ import { cn } from "@/lib/cn";
 
 const variants = {
   primary: "bg-accent text-accent-contrast hover:bg-accent-hover",
-  secondary: "border border-border bg-surface text-text hover:bg-bg",
-  ghost: "text-text hover:bg-border/50",
+  secondary: "border border-border bg-surface text-text hover:bg-hover",
+  ghost: "text-text hover:bg-hover",
   danger: "border border-prio-urgent-ink bg-surface text-prio-urgent-ink hover:bg-prio-urgent/10",
 } as const;
 
@@ -24,7 +24,7 @@ export function Button({ variant = "secondary", size = "md", type = "button", cl
     <button
       type={type}
       className={cn(
-        "inline-flex shrink-0 items-center rounded-[var(--radius-badge)] font-medium whitespace-nowrap",
+        "inline-flex shrink-0 items-center rounded-[var(--radius-field)] font-medium whitespace-nowrap",
         "transition-[background-color,opacity] duration-micro ease-out-quick",
         "disabled:pointer-events-none disabled:opacity-50",
         variants[variant],

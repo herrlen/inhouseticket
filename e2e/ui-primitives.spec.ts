@@ -66,9 +66,9 @@ test.describe("UI primitives preview", () => {
 
   test("dark mode follows the OS setting", async ({ page }) => {
     const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    expect(await bg()).toBe("rgb(250, 250, 249)");
+    expect(await bg()).toBe("rgb(250, 247, 243)");
     await page.emulateMedia({ colorScheme: "dark" });
-    expect(await bg()).toBe("rgb(14, 14, 17)");
+    expect(await bg()).toBe("rgb(35, 29, 25)");
   });
 });
 

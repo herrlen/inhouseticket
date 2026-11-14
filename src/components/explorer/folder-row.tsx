@@ -34,7 +34,7 @@ export function FolderRow({ folder, projects, expanded, onToggle, onRename, onDe
     <SortableItem id={folderDndId(folder.id)}>
       {(s) => (
     <li ref={s.setNodeRef} style={s.style} className={cn(s.isDragging && "relative z-10 opacity-60")}>
-      <div className={cn("group flex h-8 items-center gap-1 rounded-[var(--radius-badge)] pr-1 pl-1 hover:bg-bg", dropTarget && "bg-accent/10 ring-1 ring-accent")}>
+      <div className={cn("group flex h-8 items-center gap-1 rounded-[var(--radius-badge)] pr-1 pl-1 hover:bg-hover", dropTarget && "bg-accent-soft ring-1 ring-accent")}>
         <button
           ref={s.setActivatorNodeRef}
           type="button"
@@ -49,9 +49,9 @@ export function FolderRow({ folder, projects, expanded, onToggle, onRename, onDe
           aria-expanded={expanded}
           aria-controls={listId}
           onClick={() => onToggle(folder.id)}
-          className="flex min-w-0 flex-1 items-center gap-1.5 py-1 text-left text-[13px] font-medium"
+          className="flex min-w-0 flex-1 items-center gap-1.5 py-1 text-left text-sm font-medium text-secondary"
         >
-          {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          {expanded ? <ChevronDown size={14} className="shrink-0 text-muted" /> : <ChevronRight size={14} className="shrink-0 text-muted" />}
           <span className="truncate">{folder.name}</span>
           {!expanded && openCount > 0 ? <span className="ml-auto text-xs font-normal text-muted tabular-nums">{openCount}</span> : null}
         </button>
@@ -59,7 +59,7 @@ export function FolderRow({ folder, projects, expanded, onToggle, onRename, onDe
           align="end"
           trigger={<More />}
           triggerLabel={t.explorer.folderMenu(folder.name)}
-          triggerClassName="flex size-6 shrink-0 items-center justify-center rounded text-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100 hover:bg-border/60"
+          triggerClassName="flex size-6 shrink-0 items-center justify-center rounded text-muted opacity-0 group-hover:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100 hover:bg-hover"
           items={[
             { label: t.explorer.newProjectHere, onSelect: () => onNewProject(folder.id) },
             { label: t.explorer.rename, onSelect: () => onRename(folder) },

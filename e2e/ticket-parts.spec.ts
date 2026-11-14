@@ -41,6 +41,7 @@ test("subtasks: max 5, progress in list and board, activity", async ({ page }) =
 
 test("attachments: upload, auto-shrink, preview, reject fakes, remove", async ({ page }) => {
   await openTicket(page, "attach");
+  await detail(page).getByRole("tab", { name: /^Dateien/ }).click();
   const fileInput = detail(page).locator('input[type="file"]');
 
   await fileInput.setInputFiles({ name: "verlauf.png", mimeType: "image/png", buffer: png(40, 30) });
@@ -70,6 +71,7 @@ test("attachments: upload, auto-shrink, preview, reject fakes, remove", async ({
 test("attachments are served to members only", async ({ browser }) => {
   const a = await browser.newPage();
   await openTicket(a, "attach-a");
+  await detail(a).getByRole("tab", { name: /^Dateien/ }).click();
   await detail(a).locator('input[type="file"]').setInputFiles({ name: "intern.png", mimeType: "image/png", buffer: png(20, 20) });
   const img = detail(a).getByRole("img", { name: "intern.png" });
   await expect(img).toBeVisible();
@@ -107,7 +109,7 @@ test("comments with @mention and Markdown; description renders Markdown", async 
   const list = detail(page).getByRole("tabpanel");
   await expect(list.getByText("@Lea Becker")).toBeVisible();
   await expect(list.locator("em", { hasText: "sehr" })).toBeVisible();
-  await expect(detail(page).getByRole("tab", { name: "Kommentare (1)" })).toBeVisible();
+  await expect(detail(page).getByRole("tab", { name: "Kommentare · 1" })).toBeVisible();
 
   await list.getByRole("button", { name: "Bearbeiten" }).click();
   const edit = list.getByRole("combobox", { name: "Kommentar schreiben" }).first();

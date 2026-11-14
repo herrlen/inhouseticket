@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono } from "next/font/google";
 import { connection } from "next/server";
 import { MatomoTracker } from "@/components/matomo-tracker";
 import { env } from "@/lib/env";
@@ -8,8 +8,8 @@ import { LocaleProvider } from "@/lib/i18n/locale-provider";
 import { getLocale, getT } from "@/lib/i18n/server";
 import "./globals.css";
 
-// next/font self-hosts the files at build time – no requests to Google at runtime.
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+// Inter comes from @fontsource-variable/inter (globals.css, same files as emuchat). next/font
+// self-hosts the mono font at build time – no requests to Google at runtime.
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["500"],
@@ -33,8 +33,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fafaf9" },
-    { media: "(prefers-color-scheme: dark)", color: "#0e0e11" },
+    { media: "(prefers-color-scheme: light)", color: "#faf7f3" },
+    { media: "(prefers-color-scheme: dark)", color: "#231d19" },
   ],
 };
 
@@ -43,7 +43,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   await connection();
   const locale = await getLocale();
   return (
-    <html lang={locale} className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang={locale} className={jetbrainsMono.variable}>
       <body>
         <LocaleProvider locale={locale}>{children}</LocaleProvider>
         <MatomoTracker />

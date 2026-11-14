@@ -3,6 +3,8 @@ import { SECURITY_HEADERS } from "./src/lib/csp";
 import { NOINDEX } from "./src/lib/indexing";
 
 const nextConfig: NextConfig = {
+  // Dev-only "N" badge: bottom left covered the sidebar's collapse button (same as emuchat).
+  devIndicators: { position: "bottom-right" },
   output: "standalone",
   poweredByHeader: false,
   experimental: {

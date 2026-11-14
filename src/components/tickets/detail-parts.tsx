@@ -17,6 +17,7 @@ import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_TICKET, MAX_COMMENT, MAX_DESC
 import { useProjectInfo } from "./context";
 import { partsKey, type usePartActions } from "./use-parts";
 import { ticketsKey } from "./use-tickets";
+import { sectionHeading } from "./hierarchy-parts";
 import deCommon from "@/lib/i18n/de/common";
 import deDetail from "@/lib/i18n/de/detail";
 import deExplorer from "@/lib/i18n/de/explorer";
@@ -43,7 +44,7 @@ export function DescriptionField({ value, onSave }: { value: string; onSave: (v:
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between">
-        <span id="desc-label" className="text-[13px] font-medium">{t.detail.description}</span>
+        <span id="desc-label" className={sectionHeading}>{t.detail.description}</span>
         {editing ? <span className={cn("text-xs tabular-nums", draft.length > MAX_DESCRIPTION * 0.9 ? "text-prio-high-ink" : "text-muted")}>{draft.length}/{MAX_DESCRIPTION}</span> : null}
       </div>
       {editing ? (
@@ -63,7 +64,7 @@ export function DescriptionField({ value, onSave }: { value: string; onSave: (v:
               }
             }}
             placeholder={t.detail.descriptionPlaceholder}
-            className="field-sizing-content min-h-28 resize-y rounded-[var(--radius-badge)] border border-accent bg-surface p-2 text-sm placeholder:text-muted"
+            className="field-sizing-content min-h-28 resize-y rounded-[var(--radius-field)] border border-accent bg-content p-2 text-sm placeholder:text-muted"
           />
           <p className="text-xs text-muted">{t.detail.markdownHint}</p>
         </>
@@ -75,7 +76,7 @@ export function DescriptionField({ value, onSave }: { value: string; onSave: (v:
             setEditing(true);
           }}
           aria-label={value ? t.detail.editDescription : t.detail.addDescription}
-          className="min-h-12 rounded-[var(--radius-badge)] border border-transparent p-2 text-left hover:border-border"
+          className="-mx-2 min-h-12 rounded-[var(--radius-field)] border border-transparent p-2 text-left text-sm hover:border-border"
         >
           {value ? <Markdown source={value} /> : <span className="text-sm text-muted">{t.detail.addDescription}</span>}
         </button>
@@ -97,7 +98,7 @@ export function Subtasks({ subtasks, actions, canConvert }: { subtasks: Parts["s
   return (
     <section aria-labelledby="subtasks-heading" className="flex flex-col gap-1">
       <div className="flex items-center justify-between">
-        <h3 id="subtasks-heading" className="text-[13px] font-medium">{t.detail.subtasks}</h3>
+        <h3 id="subtasks-heading" className={sectionHeading}>{t.detail.subtasks}</h3>
         <span className="text-xs text-muted tabular-nums" aria-label={t.detail.subtaskProgress(done, subtasks.length)}>
           {done}/{subtasks.length} · {subtasks.length}/{MAX_SUBTASKS}
         </span>
@@ -125,7 +126,7 @@ export function Subtasks({ subtasks, actions, canConvert }: { subtasks: Parts["s
           disabled={full}
           onChange={(e) => setTitle(e.target.value)}
           placeholder={full ? t.detail.subtasksFull : t.detail.newSubtaskPlaceholder}
-          className="h-8 flex-1 rounded-[var(--radius-badge)] border border-border bg-surface px-2 text-[13px] placeholder:text-muted disabled:opacity-60"
+          className="h-8 flex-1 rounded-[var(--radius-field)] border border-border bg-content px-2 text-sm placeholder:text-muted disabled:opacity-60"
         />
         <Button type="submit" size="sm" disabled={full || !title.trim()} aria-label={t.detail.newSubtask}>
           <Plus size={14} />
@@ -151,7 +152,7 @@ function SubtaskItem({ subtask, actions, canConvert }: { subtask: Parts["subtask
   }
   const id = useId();
   return (
-    <li className="group flex items-center gap-2 rounded-[var(--radius-badge)] px-1 hover:bg-bg">
+    <li className="group flex items-center gap-2 rounded-[var(--radius-badge)] px-1 hover:bg-hover">
       <input
         id={id}
         type="checkbox"
@@ -174,7 +175,7 @@ function SubtaskItem({ subtask, actions, canConvert }: { subtask: Parts["subtask
           else setTitle(subtask.title);
         }}
         onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-        className={cn("h-8 min-w-0 flex-1 bg-transparent text-[13px]", done && "text-muted line-through")}
+        className={cn("h-8 min-w-0 flex-1 bg-transparent text-sm", done && "text-muted line-through")}
       />
       {canConvert ? (
         <button
@@ -260,14 +261,14 @@ export function Attachments({ workspaceId, ticketId, attachments, manageAll, act
       }}
     >
       <div className="flex items-center justify-between">
-        <h3 id="attachments-heading" className="text-[13px] font-medium">{t.detail.attachments}</h3>
+        <h3 id="attachments-heading" className={sectionHeading}>{t.detail.attachments}</h3>
         <span className="text-xs text-muted tabular-nums">{attachments.length}/{MAX_ATTACHMENTS_PER_TICKET}</span>
       </div>
       {attachments.length > 0 ? (
         <ul className="grid grid-cols-3 gap-2">
           {attachments.map((a) => (
             <li key={a.id} className="group relative">
-              <button type="button" onClick={() => setPreview(a)} aria-label={t.detail.openImage(a.fileName)} className="block w-full overflow-hidden rounded-[var(--radius-badge)] border border-border bg-bg">
+              <button type="button" onClick={() => setPreview(a)} aria-label={t.detail.openImage(a.fileName)} className="block w-full overflow-hidden rounded-[var(--radius-field)] border border-border-subtle bg-hover">
                 {/* eslint-disable-next-line @next/next/no-img-element -- member-only API route, no optimizer */}
                 <img src={`/api/w/${workspaceId}/attachments/${a.key}`} alt={a.fileName} loading="lazy" width={a.width} height={a.height} className="aspect-square w-full object-cover" />
               </button>
@@ -345,8 +346,8 @@ function CommentItem({ comment, mine, actions }: { comment: CommentRow; mine: bo
     <li className="flex gap-2">
       <Avatar user={{ id: comment.authorId, name: comment.authorName, image: comment.authorImage }} size="sm" className="mt-0.5" />
       <div className="min-w-0 flex-1">
-        <p className="text-xs">
-          <span className="font-medium">{comment.authorName}</span>{" "}
+        <p className="text-sm">
+          <span className="font-semibold">{comment.authorName}</span>{" "}
           <span className="text-muted">
             · <time dateTime={comment.createdAt}>{relativeTime(comment.createdAt, undefined, locale)}</time>
             {comment.editedAt ? ` · ${t.detail.edited}` : ""}
@@ -462,7 +463,7 @@ export function CommentComposer({
   }
 
   return (
-    <div className="relative flex flex-col gap-1">
+    <div className="relative flex flex-col gap-1 rounded-[var(--radius-field)] border border-border bg-content p-2 focus-within:border-accent">
       <label htmlFor={`${listId}-input`} className="sr-only">{t.detail.commentLabel}</label>
       <textarea
         ref={area}
@@ -482,7 +483,7 @@ export function CommentComposer({
         }}
         onKeyDown={onKeyDown}
         onBlur={() => setTimeout(() => setQuery(null), 150)}
-        className="field-sizing-content min-h-16 resize-y rounded-[var(--radius-badge)] border border-border bg-surface p-2 text-sm placeholder:text-muted"
+        className="field-sizing-content min-h-16 w-full resize-y rounded-[var(--radius-badge)] bg-transparent px-1 text-sm placeholder:text-muted"
       />
       {open ? (
         <ul id={listId} role="listbox" aria-label={t.detail.mentionList} className="absolute top-full left-0 z-20 mt-1 w-64 rounded-[var(--radius-card)] border border-border bg-surface p-1 shadow-float">
@@ -496,7 +497,7 @@ export function CommentComposer({
                 e.preventDefault();
                 insert(m);
               }}
-              className={cn("flex cursor-pointer items-center gap-2 rounded-[var(--radius-badge)] px-2 py-1.5 text-[13px]", i === active && "bg-bg")}
+              className={cn("flex cursor-pointer items-center gap-2 rounded-[var(--radius-badge)] px-2 py-1.5 text-sm", i === active && "bg-hover")}
             >
               <Avatar user={m} size="sm" />
               {m.name}

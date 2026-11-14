@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { createLabelAction } from "@/app/(app)/[workspace]/ticket-actions";
 import type { TicketSource } from "@/db/queries/integrations";
 import type { ActivityRow, LabelRow, TicketRow } from "@/db/queries/tickets";
-import { OpenOut } from "@/components/ui/icons";
+import { Calendar, OpenOut } from "@/components/ui/icons";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 import { relativeTime } from "@/lib/relative-time";
@@ -17,7 +17,9 @@ import { PALETTE } from "@/lib/palette";
 import type { TicketPatch } from "@/lib/validation/ticket";
 import { useProjectInfo } from "./context";
 import { dueBucket, todayInBerlin } from "./list-model";
-import { AssigneePicker, DueDateInput, PriorityPicker, StatusPicker } from "./pickers";
+import { AssigneePicker, PriorityPicker, StatusPicker } from "./pickers";
+import { relativeDue } from "./ticket-ui";
+import { TypeIcon } from "./type-icon";
 import { Attachments, Comments, DescriptionField, Subtasks } from "./detail-parts";
 import { ChildTickets, HierarchyFields } from "./hierarchy-parts";
 import { usePartActions, useParts } from "./use-parts";
@@ -27,10 +29,11 @@ import deDetail from "@/lib/i18n/de/detail";
 import deList from "@/lib/i18n/de/list";
 import dePriority from "@/lib/i18n/de/priority";
 import deProject from "@/lib/i18n/de/project";
+import deTicket from "@/lib/i18n/de/ticket";
 import deHierarchy from "@/lib/i18n/de/hierarchy";
 import { isTicketType, type TicketType } from "@/lib/ticket-hierarchy";
 
-const MESSAGES = { activity: deActivity, detail: deDetail, hierarchy: deHierarchy, list: deList, priority: dePriority, project: deProject };
+const MESSAGES = { activity: deActivity, detail: deDetail, hierarchy: deHierarchy, list: deList, priority: dePriority, project: deProject, ticket: deTicket };
 
 type Props = {
   ticket: TicketRow;
@@ -81,7 +84,10 @@ export function TicketDetail({ ticket, tickets, onOpen, onCreateChild, onPatch, 
   });
   const parts = useParts(workspaceId, ticket.id);
   const actions = usePartActions(workspaceId, project.id, ticket.id);
-  const [tab, setTab] = useState<"comments" | "activity">("comments");
+  const [tab, setTab] = useState<"comments" | "activity" | "files">("comments");
+  const locale = useLocale();
+  const overdue = dueBucket(ticket.dueDate, today, done) === "overdue";
+  const dueUrgent = Boolean(ticket.dueDate) && (overdue || (ticket.dueDate === today && !done));
 
   // Keyboard while the panel is open (not in fields or menus): ↑/↓ switch tickets,
   // 1–4 priority (Dringend … Niedrig), 0 none, A assign, D due date (KONZEPT §2.7).
@@ -120,10 +126,23 @@ export function TicketDetail({ ticket, tickets, onOpen, onCreateChild, onPatch, 
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  const TABS = ["comments", "activity", "files"] as const;
+  const tabLabel = (k: (typeof TABS)[number]) =>
+    k === "comments"
+      ? `${t.detail.comments}${parts.data?.comments.length ? ` · ${parts.data.comments.length}` : ""}`
+      : k === "activity"
+        ? t.detail.activity
+        : `${t.detail.files} · ${parts.data?.attachments.length ?? ticket.attachmentCount}`;
+
+  // Layout as in emuchat (Redesign X2): key and type, the title, the properties as a compact
+  // list (label | value chip), description, hierarchy, checklist, then the tabs.
   return (
     <div ref={panel} className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <span className="font-mono text-xs text-muted">{key}</span>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="font-mono text-sm text-muted">{key}</span>
+          <TypeIcon type={ticket.type} withLabel className="text-xs" />
+        </div>
         {parts.data?.source ? <TicketSourceLine source={parts.data.source} /> : null}
         <label htmlFor="ticket-title" className="sr-only">{t.detail.title}</label>
         <textarea
@@ -140,27 +159,43 @@ export function TicketDetail({ ticket, tickets, onOpen, onCreateChild, onPatch, 
               e.currentTarget.blur();
             }
           }}
-          className="field-sizing-content min-h-9 resize-none rounded-[var(--radius-badge)] border border-transparent bg-transparent px-1 py-1 text-lg font-semibold hover:border-border focus:border-accent"
+          className="-mx-1 field-sizing-content min-h-9 resize-none rounded-[var(--radius-field)] border border-transparent bg-transparent px-1 py-1 text-xl leading-snug font-bold hover:border-border focus:border-accent"
         />
         <div className="flex justify-end">
           <Counter value={title.draft.length} max={MAX_TITLE} />
         </div>
       </div>
 
-      <dl className="grid grid-cols-[7rem_1fr] items-center gap-x-3 gap-y-1 text-[13px]">
-        <HierarchyFields ticket={ticket} tickets={tickets} onPatch={onPatch} onOpen={onOpen} />
+      <dl className="grid grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-1 text-sm">
         <dt className="text-muted">{t.project.colStatus}</dt>
-        <dd><StatusPicker value={ticket.statusId} ticketLabel={key} onChange={(statusId) => onPatch({ statusId })} /></dd>
-        <dt className="text-muted">{t.project.colPriority}</dt>
-        <dd><PriorityPicker value={ticket.priority} ticketLabel={key} onChange={(priority) => onPatch({ priority })} /></dd>
+        <dd className="min-w-0"><StatusPicker value={ticket.statusId} ticketLabel={key} onChange={(statusId) => onPatch({ statusId })} /></dd>
+        <HierarchyFields ticket={ticket} tickets={tickets} onPatch={onPatch} onOpen={onOpen} />
         <dt className="text-muted">{t.list.colAssignee}</dt>
-        <dd><AssigneePicker value={ticket.assigneeId} ticketLabel={key} onChange={(assigneeId) => onPatch({ assigneeId })} /></dd>
+        <dd className="min-w-0"><AssigneePicker value={ticket.assigneeId} ticketLabel={key} onChange={(assigneeId) => onPatch({ assigneeId })} /></dd>
+        <dt className="text-muted">{t.project.colPriority}</dt>
+        <dd className="min-w-0"><PriorityPicker value={ticket.priority} ticketLabel={key} onChange={(priority) => onPatch({ priority })} /></dd>
         <dt className="text-muted">{t.list.colDue}</dt>
-        <dd>
-          <DueDateInput value={ticket.dueDate} ticketLabel={key} overdue={dueBucket(ticket.dueDate, today, done) === "overdue"} onChange={(dueDate) => onPatch({ dueDate })} />
+        <dd className="flex min-w-0 items-center gap-1">
+          <Calendar size={14} className={cn("ml-1.5 shrink-0", dueUrgent ? "text-prio-urgent-ink" : "text-muted")} />
+          <input
+            type="date"
+            value={ticket.dueDate ?? ""}
+            aria-label={t.ticket.dueOf(key)}
+            onChange={(e) => {
+              const next = e.target.value || null;
+              if (next !== ticket.dueDate) onPatch({ dueDate: next });
+            }}
+            className={cn("h-7 rounded-[var(--radius-badge)] bg-transparent px-1 text-sm hover:bg-hover", !ticket.dueDate && "text-muted", dueUrgent && "font-medium text-prio-urgent-ink")}
+          />
+          {ticket.dueDate ? (
+            <span className={cn("text-xs", dueUrgent ? "text-prio-urgent-ink" : "text-muted")}>
+              {overdue ? <span className="sr-only">{t.list.due.overdue}: </span> : null}
+              {relativeDue(ticket.dueDate, today, locale, t.list.dueRelative)}
+            </span>
+          ) : null}
         </dd>
-        <dt className="text-muted">{t.detail.labels}</dt>
-        <dd>
+        <dt className="self-start pt-2 text-muted">{t.detail.labels}</dt>
+        <dd className="min-w-0">
           <LabelEditor
             workspaceId={workspaceId}
             ticket={ticket}
@@ -175,19 +210,16 @@ export function TicketDetail({ ticket, tickets, onOpen, onCreateChild, onPatch, 
       <ChildTickets ticket={ticket} tickets={tickets} onOpen={onOpen} onCreate={onCreateChild} />
 
       {parts.data ? (
-        <>
-          <Subtasks subtasks={parts.data.subtasks} actions={actions} canConvert={ticket.type === "story" || ticket.type === "task"} />
-          <Attachments workspaceId={workspaceId} ticketId={ticket.id} attachments={parts.data.attachments} manageAll={parts.data.manageAttachments} actions={actions} />
-        </>
+        <Subtasks subtasks={parts.data.subtasks} actions={actions} canConvert={ticket.type === "story" || ticket.type === "task"} />
       ) : parts.isError ? (
         <p className="text-xs text-prio-urgent-ink">{t.detail.activityError}</p>
       ) : (
-        <div className="h-24 animate-pulse rounded-[var(--radius-badge)] bg-bg" aria-hidden />
+        <div className="h-24 animate-pulse rounded-[var(--radius-badge)] bg-hover" aria-hidden />
       )}
 
       <section aria-label={t.detail.tabs}>
-        <div role="tablist" aria-label={t.detail.tabs} className="mb-3 flex gap-4 border-b border-border text-[13px]">
-          {(["comments", "activity"] as const).map((k) => (
+        <div role="tablist" aria-label={t.detail.tabs} className="mb-3 flex gap-4 border-b border-border text-sm">
+          {TABS.map((k) => (
             <button
               key={k}
               type="button"
@@ -200,23 +232,25 @@ export function TicketDetail({ ticket, tickets, onOpen, onCreateChild, onPatch, 
               onKeyDown={(e) => {
                 if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
                   e.preventDefault();
-                  const next = k === "comments" ? "activity" : "comments";
+                  const next = TABS[(TABS.indexOf(k) + (e.key === "ArrowRight" ? 1 : TABS.length - 1)) % TABS.length]!;
                   setTab(next);
                   document.getElementById(`tab-${next}`)?.focus();
                 }
               }}
-              className={cn("-mb-px border-b-2 pb-2", tab === k ? "border-accent font-medium" : "border-transparent text-muted hover:text-text")}
+              className={cn("-mb-px border-b-2 px-1 pb-2", tab === k ? "border-accent font-semibold text-accent-strong" : "border-transparent text-secondary hover:text-text")}
             >
-              {k === "comments" ? `${t.detail.comments}${parts.data?.comments.length ? ` (${parts.data.comments.length})` : ""}` : t.detail.activity}
+              {tabLabel(k)}
             </button>
           ))}
         </div>
         <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
           {tab === "comments" ? (
             parts.data ? <Comments comments={parts.data.comments} actions={actions} /> : null
-          ) : (
+          ) : tab === "activity" ? (
             <Activity workspaceId={workspaceId} ticketId={ticket.id} />
-          )}
+          ) : parts.data ? (
+            <Attachments workspaceId={workspaceId} ticketId={ticket.id} attachments={parts.data.attachments} manageAll={parts.data.manageAttachments} actions={actions} />
+          ) : null}
         </div>
       </section>
       {/* Keyboard hints are pointless on touch screens. */}
@@ -281,7 +315,7 @@ function LabelEditor({ workspaceId, ticket, onChange, onCreated }: { workspaceId
             type="button"
             onClick={() => onChange(ticket.labelIds.filter((id) => id !== l.id))}
             aria-label={t.detail.removeLabel(l.name)}
-            className="rounded-full px-1 text-muted hover:bg-bg hover:text-text"
+            className="rounded-full px-1 text-muted hover:bg-hover hover:text-text"
           >
             ×
           </button>
@@ -301,7 +335,7 @@ function LabelEditor({ workspaceId, ticket, onChange, onCreated }: { workspaceId
         }}
         aria-label={t.detail.addLabel}
         placeholder={t.detail.addLabelPlaceholder}
-        className="h-7 w-36 rounded-[var(--radius-badge)] bg-transparent px-1.5 text-xs placeholder:text-muted hover:bg-bg"
+        className="h-7 w-36 rounded-[var(--radius-badge)] bg-transparent px-1.5 text-xs placeholder:text-muted hover:bg-hover"
       />
       <datalist id={listId}>
         {labels.filter((l) => !ticket.labelIds.includes(l.id)).map((l) => (

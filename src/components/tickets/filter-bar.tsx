@@ -5,7 +5,7 @@ import { createSavedViewAction, deleteSavedViewAction } from "@/app/(app)/[works
 import type { SavedViewRow } from "@/db/queries/views";
 import { Button } from "@/components/ui/button";
 import { Dropdown } from "@/components/ui/dropdown";
-import { Close } from "@/components/ui/icons";
+import { ChevronDown, Close, Plus } from "@/components/ui/icons";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n/client";
@@ -25,6 +25,8 @@ import deViews from "@/lib/i18n/de/views";
 const MESSAGES = { common: deCommon, filters: deFilters, hierarchy: deHierarchy, list: deList, priority: dePriority, views: deViews };
 
 type Props = {
+  /** The panel id (the "Filter" button in the toolbar controls it). */
+  id: string;
   filters: Filters;
   onChange: (patch: Record<string, string | null>) => void;
   onApplyQuery: (query: string) => void;
@@ -35,13 +37,15 @@ type Props = {
   total: number;
 };
 
+// Borderless chips (Redesign X2); an active filter is tinted and bold.
 const chip = (active: boolean) =>
   cn(
-    "inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-[13px] hover:bg-bg",
-    active ? "border-accent bg-accent/10 text-text" : "border-border text-muted",
+    "inline-flex h-8 items-center gap-1 rounded-[var(--radius-badge)] px-2.5 text-[13px]",
+    active ? "bg-accent-soft font-medium text-accent-strong" : "text-secondary hover:bg-hover hover:text-text",
   );
+const caret = <ChevronDown size={14} className="shrink-0" />;
 
-export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views, onViewsChange, shown, total }: Props) {
+export function FilterBar({ id, filters, onChange, onApplyQuery, currentQuery, views, onViewsChange, shown, total }: Props) {
   const t = useT(MESSAGES);
   const { members, labels, currentUserId, workspaceId, project } = useProjectInfo();
   const toast = useToast();
@@ -68,10 +72,10 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div id={id} className="flex flex-col gap-2 rounded-[var(--radius-card)] border border-border p-2">
       <div role="group" aria-label={t.filters.label} className="flex flex-wrap items-center gap-2">
         <Dropdown
-          trigger={<>{t.filters.person}{personLabel ? `: ${personLabel}` : ""} ▾</>}
+          trigger={<>{t.filters.person}{personLabel ? `: ${personLabel}` : ""}{caret}</>}
           triggerClassName={chip(Boolean(filters.assignee))}
           items={[
             { label: t.filters.all, onSelect: () => onChange({ assignee: null }) },
@@ -81,7 +85,7 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
           ]}
         />
         <Dropdown
-          trigger={<>{t.filters.priority}{filters.priority !== undefined ? `: ${t.priority[priorityKey(filters.priority)]}` : ""} ▾</>}
+          trigger={<>{t.filters.priority}{filters.priority !== undefined ? `: ${t.priority[priorityKey(filters.priority)]}` : ""}{caret}</>}
           triggerClassName={chip(filters.priority !== undefined)}
           items={[
             { label: t.filters.all, onSelect: () => onChange({ priority: null }) },
@@ -89,7 +93,7 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
           ]}
         />
         <Dropdown
-          trigger={<>{t.filters.due}{filters.due ? `: ${t.list.due[filters.due]}` : ""} ▾</>}
+          trigger={<>{t.filters.due}{filters.due ? `: ${t.list.due[filters.due]}` : ""}{caret}</>}
           triggerClassName={chip(Boolean(filters.due))}
           items={[
             { label: t.filters.all, onSelect: () => onChange({ due: null }) },
@@ -97,7 +101,7 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
           ]}
         />
         <Dropdown
-          trigger={<>{t.hierarchy.filter}{filters.type ? `: ${t.hierarchy.types[filters.type]}` : ""} ▾</>}
+          trigger={<>{t.hierarchy.filter}{filters.type ? `: ${t.hierarchy.types[filters.type]}` : ""}{caret}</>}
           triggerClassName={chip(Boolean(filters.type))}
           items={[
             { label: t.filters.all, onSelect: () => onChange({ type: null }) },
@@ -106,7 +110,7 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
         />
         {labels.length > 0 ? (
           <Dropdown
-            trigger={<>{t.filters.labelFilter}{labelName ? `: ${labelName}` : ""} ▾</>}
+            trigger={<>{t.filters.labelFilter}{labelName ? `: ${labelName}` : ""}{caret}</>}
             triggerClassName={chip(Boolean(filters.label))}
             items={[{ label: t.filters.all, onSelect: () => onChange({ label: null }) }, ...labels.map((l) => ({ label: l.name, onSelect: () => onChange({ label: l.id }) }))]}
           />
@@ -119,11 +123,11 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
           key={filters.q ?? ""}
           placeholder={t.filters.textPlaceholder}
           onChange={(e) => onChange({ q: e.target.value.trim() || null })}
-          className="h-7 w-40 rounded-full border border-border bg-surface px-3 text-[13px] placeholder:text-muted"
+          className="h-8 w-44 rounded-[var(--radius-field)] border border-border bg-content px-2.5 text-[13px] placeholder:text-muted"
         />
         {active ? (
           <>
-            <button type="button" onClick={() => onApplyQuery(new URLSearchParams(currentQuery).has("view") ? "view=board" : "")} className="text-[13px] text-muted hover:text-text hover:underline">
+            <button type="button" onClick={() => onApplyQuery(new URLSearchParams(currentQuery).has("view") ? "view=board" : "")} className="rounded-[var(--radius-badge)] px-1 text-[13px] text-accent-strong hover:underline">
               {t.filters.reset}
             </button>
             <span className="text-xs text-muted" aria-live="polite">{t.filters.count(shown, total)}</span>
@@ -152,12 +156,15 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
                 }
               }}
               placeholder={t.views.namePlaceholder}
-              className="h-7 w-40 rounded-[var(--radius-badge)] border border-accent bg-surface px-2 text-[13px]"
+              className="h-8 w-44 rounded-[var(--radius-field)] border border-accent bg-content px-2 text-[13px]"
             />
             <Button type="submit" size="sm" variant="primary">{t.common.save}</Button>
           </form>
         ) : (
-          <Button size="sm" variant="ghost" onClick={() => setNaming(true)}>+ {t.views.save}</Button>
+          <Button size="sm" variant="ghost" onClick={() => setNaming(true)}>
+            <Plus size={14} />
+            {t.views.save}
+          </Button>
         )}
       </div>
       {views.length > 0 ? (
@@ -165,8 +172,8 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
           {views.map((v) => {
             const isActive = v.query === currentQuery;
             return (
-              <li key={v.id} className={cn("inline-flex items-center rounded-full border text-[13px]", isActive ? "border-accent bg-accent/10" : "border-border")}>
-                <button type="button" aria-pressed={isActive} onClick={() => onApplyQuery(v.query)} className="h-7 pr-1 pl-3">
+              <li key={v.id} className={cn("inline-flex items-center rounded-[var(--radius-badge)] text-[13px]", isActive ? "bg-accent-soft font-medium text-accent-strong" : "bg-hover text-secondary")}>
+                <button type="button" aria-pressed={isActive} onClick={() => onApplyQuery(v.query)} className="h-7 rounded-[var(--radius-badge)] pr-1 pl-2.5">
                   {v.name}
                 </button>
                 <button
@@ -179,9 +186,9 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
                       if (!r.ok) toast({ message: r.error, tone: "error" });
                     })
                   }
-                  className="mr-1 rounded-full p-1 text-muted hover:text-text"
+                  className="mr-1 rounded p-1 text-muted hover:text-text"
                 >
-                  <Close size={10} />
+                  <Close size={12} />
                 </button>
               </li>
             );
