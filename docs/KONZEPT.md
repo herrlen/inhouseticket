@@ -162,34 +162,40 @@ Die Fläche bleibt ruhig und neutral. **Farbe trägt Bedeutung:** Projekte, Prio
 
 ### 5.2 Farbsystem
 
-**Neutral (Light / Dark)**
-| Token | Light | Dark |
-|---|---|---|
-| `--bg` | `#FAFAF9` | `#0E0E11` |
-| `--surface` | `#FFFFFF` | `#17171C` |
-| `--border` | `#E7E5E4` | `#26262E` |
-| `--text` | `#1C1917` | `#F4F4F5` |
-| `--muted` | `#78716C` | `#A1A1AA` |
-| `--accent` (Marke) | `#5B5BF7` (Indigo-Violett) | `#7C7CFF` |
-| `--accent-hover` (Hover auf Akzentfläche, statt Deckkraft) | `#4A4AE6` | `#9393FF` |
+**Neutral (Light / Dark)** – Theme „Emu“ (Redesign X2, November 2026), dieselben Werte wie emuchat (`packages/ui/src/theme/tokens.ts` dort; `tokens.test.ts` prüft den Gleichstand): warmes Braun, mehr Kontrast, weniger Rahmen.
+| Token | Light | Dark | Einsatz |
+|---|---|---|---|
+| `--content` | `#FFFFFF` | `#171310` | Inhaltsbereich |
+| `--sidebar` | `#F4F0EA` | `#1F1A16` | Seitenleiste, Kanban-Spalten |
+| `--surface` | `#FFFFFF` | `#1F1A16` | Karten, Panels, Menüs |
+| `--bg` / `--hover` | `#FAF7F3` | `#231D19` | Seite hinter Karten, Hover |
+| `--border` / `--border-subtle` | `#DDD5CB` / `#EEE9E2` | `#3B332D` / `#2A241F` | Zonen / Zeilen |
+| `--text` / `--secondary` / `--muted` | `#1F1A17` / `#3D352F` / `#6B6159` | `#F3EEE9` / `#DDD4CC` / `#A99D93` | Text, Navigation, Meta |
+| `--accent` (Marke) | `#9A4A16` | `#E7955A` | Primärbutton, Fokus |
+| `--accent-strong` / `--accent-hover` | `#7A3A10` | `#F2B282` | aktiver Eintrag/Tab, Hover |
+| `--accent-soft` | `#FBF3EA` | `#2C2018` | ausgewählte Zeile, aktiver Filter |
+
+Akzent nur für die eine Primäraktion pro Ansicht, aktive Navigation und aktiven Tab. Rahmen nur für Zonen und Eingabefelder, nie für jede Zelle.
 
 **Projektpalette (12)** – Grundfarbe für Punkte, Balken und Flächen. Für Text und Icons gibt es je Farbe eine `-ink`-Variante, die WCAG AA (4,5:1) in Light und Dark erreicht (`src/app/globals.css`, geprüft in `tokens.test.ts`). Mehrere Grundfarben (z. B. Sonne 1,6:1, Orange 2,1:1) sind auf Weiß als Text nicht lesbar.
 Coral `#FF6B5B` · Orange `#FF9F1C` · Sonne `#F5C400` · Limette `#8AC926` · Mint `#2EC4B6` · Türkis `#00B4D8` · Blau `#3A86FF` · Indigo `#5B5BF7` · Violett `#9B5DE5` · Pink `#F15BB5` · Beere `#C9184A` · Schiefer `#64748B`
 
-**Prioritäten**
-| Priorität | Farbe | Icon |
-|---|---|---|
-| Dringend | `#EF4444` | ▲▲ gefüllt |
-| Hoch | `#F97316` | ▲▲ |
-| Mittel | `#EAB308` | ▲ |
-| Niedrig | `#3B82F6` | ▼ |
-| Keine | `--muted` | — |
+**Prioritäten** (feste Bedeutungsfarben, Flaggen-Icon + Wort)
+| Priorität | Farbe (Light / Dark) |
+|---|---|
+| Dringend | `#B3261E` / `#F2867E` |
+| Hoch | `#B45309` / `#F0A35C` |
+| Mittel | `#1D5FA8` / `#7FB2EC` |
+| Niedrig | `--muted` |
+| Keine | „–“ |
 
-**Status:** Offen (Grau) · In Arbeit (Blau) · Review (Violett) · Erledigt (Grün `#22C55E`). Pro Projekt anpassbar.
+**Status** als farbiges Label in Versalien (feste Bedeutungsfarben wie in emuchat): Offen `#EAE4DC`/`#3D352F` · In Arbeit `#1D5FA8` · Review `#6B3FA0` · Erledigt `#1F6B3A`, jeweils mit weißer Schrift. Die vier Standardfarben eines Status werden darauf abgebildet; andere Palettenfarben bleiben (Fläche mit `-on`-Schrift), unbekannte Farben folgen der Art (`statusTone()` in `components/tickets/ticket-ui.tsx`).
 
 ### 5.3 Typografie & Form
-- **Inter** 14 px Basis, 13 px in dichten Listen; **JetBrains Mono** für Ticket-Keys.
-- Radius 10 px (Karten), 6 px (Badges), Pills für Status.
+- **Inter** (`@fontsource-variable/inter`, selbst gehostet) 14 px Basis, 13 px in dichten Listen; Größen 11/12/13/14/20/22 px; **JetBrains Mono** für Ticket-Keys.
+- Ein Icon-Set: Lucide (`lucide-react`, dieselbe Version wie emuchat), 16 px, Strich 1,75, nur über `src/components/ui/icons.tsx`. Keine Emojis als UI-Icons (Projekt-Icons der Nutzer bleiben).
+- Radius 6 px (Chips, Labels), 8 px (Buttons, Felder), 10–12 px (Karten, Spalten).
+- Listen: Zeilen 40 px, nur untere Linie `--border-subtle`, Werte als rahmenlose Chips mit Menü.
 - 1 px Borders, Schatten nur für schwebende Elemente (Slide-Over, Palette, Dropdowns).
 - Spacing-Raster 4 px.
 - Micro-Animationen 120–180 ms (ease-out), respektiert `prefers-reduced-motion`.

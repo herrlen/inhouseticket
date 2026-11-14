@@ -70,9 +70,10 @@ docs/
 6. **Sprache:** UI Deutsch (i18n-fähig vorbereitet), Code/Kommentare Englisch.
 
 ## Design-Tokens (Kurzfassung)
-- Basis: neutral, viel Weißraum, Radius 10 px, 1 px Borders statt Schatten.
+- Theme „Emu“ wie emuchat (Redesign X2): warmes Braun, weißer Inhalt (`--content`), warme Seitenleiste (`--sidebar`), Werte gleich halten (`tokens.test.ts`).
+- Icons nur aus `src/components/ui/icons.tsx` (Lucide, gleiche Version wie emuchat); Ticket-Bausteine (Status-Label, Priorität, Fälligkeit) in `components/tickets/ticket-ui.tsx`.
 - Farbe kommt über **Projektfarben**, **Prioritäten** und **Status** – nicht über Flächen.
-- Font: Inter (UI), JetBrains Mono (Ticket-Keys).
+- Font: Inter (UI, `@fontsource-variable/inter`), JetBrains Mono (Ticket-Keys).
 - Details siehe `docs/KONZEPT.md` → Abschnitt Design.
 
 ## Definition of Done
