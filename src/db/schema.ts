@@ -36,6 +36,13 @@ import {
   MAX_TITLE,
 } from "../lib/limits";
 import { PREVIOUS_TOOLS, SOURCES, TEAM_TYPES, VIEWS } from "../lib/onboarding/options";
+import {
+  EXTERNAL_ENTITY_TYPES,
+  FIELD_MAPPING_KINDS,
+  INTEGRATION_PROVIDERS,
+  INTEGRATION_STATUSES,
+  SYNC_TRIGGERS,
+} from "../lib/integrations/providers";
 
 /** `col IN ('a', 'b', …)` for CHECK constraints from a constant list (no user input). */
 const oneOf = (values: readonly string[]) => sql.raw(values.map((v) => `'${v}'`).join(", "));
@@ -795,6 +802,128 @@ export const oauthWorkspace = pgTable(
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.clientId] }), index().on(t.workspaceId)],
+);
+
+// ---------------------------------------------------------------------------
+// Integrations (ADR 008): connections to other tools, read-only sync into tickets.
+// ---------------------------------------------------------------------------
+
+/**
+ * One connection of a workspace to a provider (at most one per provider). `credentials` is the
+ * sealed token (src/lib/integrations/crypto.ts, AAD `integration.credentials:<id>`) – never
+ * selected for the UI. `config` holds the choices of the setup wizard (account, spaces/lists,
+ * project mode, token hint). `lockedUntil` is the lease of the running sync (one worker at a time).
+ */
+export const integration = pgTable(
+  "integration",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspace.id, { onDelete: "cascade" }),
+    provider: varchar({ length: 30 }).notNull(),
+    credentials: text().notNull(),
+    config: jsonb().$type<Record<string, unknown>>().notNull().default({}),
+    status: varchar({ length: 20 }).notNull().default("setup"),
+    /** Short, content-free reason of the last hard failure (shown to admins). */
+    lastError: varchar({ length: 500 }),
+    lastSyncAt: timestamp({ withTimezone: true }),
+    /** Set by "Jetzt abgleichen"; the poller picks it up even before the interval is over. */
+    syncRequestedAt: timestamp({ withTimezone: true }),
+    lockedUntil: timestamp({ withTimezone: true }),
+    createdBy: text().references(() => user.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique().on(t.workspaceId, t.provider),
+    unique().on(t.id, t.workspaceId),
+    check("integration_provider", sql`${t.provider} in (${oneOf(INTEGRATION_PROVIDERS)})`),
+    check("integration_status", sql`${t.status} in (${oneOf(INTEGRATION_STATUSES)})`),
+  ],
+);
+
+/**
+ * External id ↔ local row. Makes the sync idempotent (unique per integration, type and external
+ * id) and carries what the delta needs: the external change date and, for tasks, the external
+ * parent (the hierarchy is linked after all tasks of a run are in). `localId` has no FK on purpose
+ * (project, ticket or comment); a ticket deleted by hand stays deleted.
+ */
+export const externalRef = pgTable(
+  "external_ref",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    workspaceId: uuid().notNull(),
+    integrationId: uuid().notNull(),
+    entityType: varchar({ length: 20 }).notNull(),
+    externalId: varchar({ length: 100 }).notNull(),
+    localId: uuid().notNull(),
+    externalParentId: varchar({ length: 100 }),
+    externalUpdatedAt: timestamp({ withTimezone: true }),
+    /** Link to the item in the other tool ("Quelle: ClickUp"). */
+    url: varchar({ length: 500 }),
+    /** Second-phase work outstanding (comments of a task). */
+    pendingDetail: boolean().notNull().default(false),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    unique().on(t.integrationId, t.entityType, t.externalId),
+    foreignKey({
+      columns: [t.integrationId, t.workspaceId],
+      foreignColumns: [integration.id, integration.workspaceId],
+    }).onDelete("cascade"),
+    index().on(t.workspaceId, t.localId),
+    index("external_ref_pending_idx").on(t.integrationId).where(sql`${t.pendingDetail}`),
+    check("external_ref_entity_type", sql`${t.entityType} in (${oneOf(EXTERNAL_ENTITY_TYPES)})`),
+  ],
+);
+
+/** Confirmed value mapping per integration: status name → local status, person → member, priority → 0–4. */
+export const fieldMapping = pgTable(
+  "field_mapping",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    workspaceId: uuid().notNull(),
+    integrationId: uuid().notNull(),
+    kind: varchar({ length: 20 }).notNull(),
+    externalValue: varchar({ length: 200 }).notNull(),
+    /** Status: default status name or "own"; user: member id or "" (unassigned); priority: "0"–"4". */
+    localValue: varchar({ length: 200 }).notNull(),
+    /** Display data for the mapping step (name, e-mail, color, suggested category). */
+    meta: jsonb().$type<Record<string, unknown>>().notNull().default({}),
+  },
+  (t) => [
+    unique().on(t.integrationId, t.kind, t.externalValue),
+    foreignKey({
+      columns: [t.integrationId, t.workspaceId],
+      foreignColumns: [integration.id, integration.workspaceId],
+    }).onDelete("cascade"),
+    check("field_mapping_kind", sql`${t.kind} in (${oneOf(FIELD_MAPPING_KINDS)})`),
+  ],
+);
+
+/** Protocol of sync runs; an unfinished run is resumed from `cursor` after a crash or restart. */
+export const syncRun = pgTable(
+  "sync_run",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    workspaceId: uuid().notNull(),
+    integrationId: uuid().notNull(),
+    trigger: varchar({ length: 20 }).notNull(),
+    startedAt: createdAt(),
+    finishedAt: timestamp({ withTimezone: true }),
+    counts: jsonb().$type<Record<string, number>>().notNull().default({}),
+    cursor: jsonb().$type<Record<string, unknown>>().notNull().default({}),
+    error: varchar({ length: 500 }),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.integrationId, t.workspaceId],
+      foreignColumns: [integration.id, integration.workspaceId],
+    }).onDelete("cascade"),
+    index().on(t.integrationId, t.startedAt),
+    check("sync_run_trigger", sql`${t.trigger} in (${oneOf(SYNC_TRIGGERS)})`),
+  ],
 );
 
 /**
