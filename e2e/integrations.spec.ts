@@ -88,6 +88,6 @@ test("connect ClickUp: token, selection, mapping, first sync, source link, disco
   await page.getByRole("button", { name: "ClickUp trennen" }).click();
   await expect(page.getByRole("status").filter({ hasText: "ClickUp wurde getrennt" })).toBeVisible();
   await page.goto(`${path}/p/MAR?t=MAR-1`);
-  await expect(page.getByRole("textbox", { name: "Titel" })).toHaveValue("Kampagne planen");
+  await expect(page.getByRole("dialog").getByRole("textbox", { name: "Titel", exact: true })).toHaveValue("Kampagne planen");
   await expect(page.getByText("Quelle: ClickUp")).toHaveCount(0);
 });
