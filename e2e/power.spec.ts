@@ -96,13 +96,15 @@ test("filters and saved views", async ({ page }) => {
   const rows = page.locator("tr[data-ticket-row]");
   await expect(rows).toHaveCount(5); // the tutorial tickets
 
-  await page.getByRole("button", { name: /^Priorität ▾/ }).click();
+  // Filters sit in the panel behind "Filter" (closed while nothing is filtered and no view is saved).
+  await page.getByRole("button", { name: "Filter", exact: true }).click();
+  await page.getByRole("button", { name: "Priorität", exact: true }).click();
   await page.getByRole("menuitem", { name: "Hoch" }).click();
   await expect(page).toHaveURL(/priority=3/);
   await expect(rows).toHaveCount(1);
   await expect(page.getByText("1 von 5 Tickets")).toBeVisible();
 
-  await page.getByRole("button", { name: "+ Ansicht speichern" }).click();
+  await page.getByRole("button", { name: "Ansicht speichern", exact: true }).click();
   await page.getByRole("textbox", { name: "Name der Ansicht" }).fill("Wichtig");
   await page.getByRole("button", { name: "Speichern" }).click();
   await expect(page.getByText("Ansicht „Wichtig“ gespeichert.")).toBeVisible();

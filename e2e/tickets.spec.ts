@@ -156,7 +156,7 @@ test("bulk change, grouping and sorting", async ({ page }) => {
   await page.getByRole("checkbox", { name: "MKT-3 auswählen" }).check();
   const bar = page.getByRole("region", { name: "Sammel-Aktionen" });
   await expect(bar).toContainText("2 ausgewählt");
-  await bar.getByRole("button", { name: "Priorität ▾" }).click();
+  await bar.getByRole("button", { name: "Priorität", exact: true }).click();
   await page.getByRole("menuitem", { name: "Dringend" }).click();
   await expect(page.getByText("2 Tickets geändert.")).toBeVisible();
   await expect(bar).toBeHidden();
@@ -235,7 +235,7 @@ test("list additions: add in a group, subtasks, columns, new status", async ({ p
 
   // Columns: comments shown as a column; switching "Fällig" off is remembered per person.
   await expect(table(page).getByRole("columnheader", { name: "Kommentare" })).toBeVisible();
-  await page.getByText("Spalten ▾").click();
+  await page.locator("summary").filter({ hasText: "Spalten" }).click();
   await page.getByRole("checkbox", { name: "Fällig" }).uncheck();
   await expect(table(page).getByRole("columnheader", { name: "Fällig" })).toHaveCount(0);
   await expect(page.getByText("Speichert …")).toHaveCount(0);
@@ -249,6 +249,7 @@ test("list additions: add in a group, subtasks, columns, new status", async ({ p
   await page.getByRole("textbox", { name: "Name des neuen Status" }).fill("Wartet");
   await page.getByRole("button", { name: "Anlegen" }).click();
   await expect(table(page).locator("th[scope=rowgroup]", { hasText: "Wartet" })).toBeVisible();
+  // Status labels are set in capitals (CSS), so innerText is upper case.
   const groups = await table(page).locator("th[scope=rowgroup]").allInnerTexts();
-  expect(groups.map((g) => g.split("\n")[0]!.trim())).toEqual(["Offen", "In Arbeit", "Review", "Wartet", "Erledigt"]);
+  expect(groups.map((g) => g.split("\n")[0]!.trim())).toEqual(["OFFEN", "IN ARBEIT", "REVIEW", "WARTET", "ERLEDIGT"]);
 });

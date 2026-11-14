@@ -35,4 +35,9 @@ export default {
   empty: "Noch keine Tickets. Drück C oder tipp oben einen Titel ein.",
   bulkDone: (n: number) => (n === 1 ? "1 Ticket geändert." : `${n} Tickets geändert.`),
   due: { overdue: "Überfällig", today: "Heute", week: "Diese Woche", later: "Später", none: "Ohne Datum" },
+  dueRelative: { today: "Heute", tomorrow: "Morgen", yesterday: "Gestern" },
+  newTicket: "Neues Ticket",
+  counts: (open: number, total: number) => `${open} offen · ${total} gesamt`,
+  mine: "Nur meine",
+  filterActive: "(aktiv)",
 } as const;
