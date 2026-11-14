@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getT } from "@/lib/i18n/server";
 import { getSession, safeNext } from "@/lib/session";
+import { INSTANCE } from "@/lib/site";
 import { registrationEmailSchema } from "@/lib/validation/registration";
 import { RegisterForm } from "./register-form";
 
@@ -25,7 +26,7 @@ export default async function RegisterPage({ searchParams }: Props) {
     <>
       <h1 className="mb-1 text-xl font-semibold">{t.register.title}</h1>
       <p className="mb-6 text-muted">{t.register.subtitle}</p>
-      <RegisterForm next={next} email={email.success ? email.data : undefined} />
+      <RegisterForm next={next} email={email.success ? email.data : undefined} selfHosted={INSTANCE.selfHosted} />
     </>
   );
 }

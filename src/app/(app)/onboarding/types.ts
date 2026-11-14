@@ -2,6 +2,8 @@
 import type { PreviousTool, Source, StepKey, TeamType, View } from "@/lib/onboarding/options";
 
 export type WizardProps = {
+  /** Company instance (SELF_HOSTED): no terms or DPA to accept – they belong to the hosted service. */
+  selfHosted: boolean;
   mode: "owner" | "joiner";
   steps: readonly StepKey[];
   /** Step shown first (resumed from user_pref.onboarding_step or ?step=). */

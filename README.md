@@ -33,3 +33,5 @@ pnpm test:e2e                              # Playwright (einmalig: pnpm exec pla
 | `https://inhouseticket.com` (`SITE_URL`) | Landingpage, „Umziehen“, Rechtstexte – App-Pfade leiten per 301 auf `app.` weiter |
 
 Beide Hosts zeigen auf denselben Container. Details: [docs/betrieb.md](docs/betrieb.md), `src/lib/hosts.ts`.
+
+**Eigene Instanz einer Firma** (eigener Server, eine Subdomain, `SELF_HOSTED=true`): Dateien in `selfhost/`, Schritt-für-Schritt-Anleitung in [docs/selbst-hosten.md](docs/selbst-hosten.md).

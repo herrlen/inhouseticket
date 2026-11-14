@@ -40,7 +40,7 @@ export default {
   statsReferrersOther: "Weitere (über 200 am Tag)",
   statsTotal: (n: number) => `${n.toLocaleString("de-DE")} Aufrufe gesamt`,
   ipTitle: "Erkannte IP-Adresse",
-  ipText: "So sieht die App deine Anfrage hinter dem mittwald-Proxy. Die Begrenzungen pro IP (z. B. Anmeldelinks) zählen auf diese Adresse. Sie sollte deiner echten IP entsprechen (z. B. laut wieistmeineip.de), nicht einer Adresse von mittwald.",
+  ipText: "So sieht die App deine Anfrage hinter dem Reverse-Proxy (mittwald bzw. Caddy). Die Begrenzungen pro IP (z. B. Anmeldelinks) zählen auf diese Adresse. Sie sollte deiner echten IP entsprechen (z. B. laut wieistmeineip.de), nicht der Adresse des Proxys.",
   ipNone: "keine (X-Forwarded-For fehlt)",
   search: "Suchen",
   searchLabel: "Workspaces durchsuchen",

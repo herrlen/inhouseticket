@@ -4,6 +4,9 @@ export default {
   invalidEmail: "Das sieht nicht nach einer gültigen E-Mail-Adresse aus.",
   betaClosed:
     "inhouseticket ist gerade in einer geschlossenen Beta. Du möchtest mitmachen? Schreib uns an hello@inhouseticket.com.",
+  /** Company instance (SELF_HOSTED): no beta, only the company's addresses and invited people. */
+  instanceClosed:
+    "Anmelden können nur Personen mit einer Adresse eurer Firma oder mit einer Einladung. Bitte wende dich an die Person, die inhouseticket bei euch betreut.",
   mail: {
     subject: "Dein Anmeldelink für inhouseticket",
     heading: "Anmelden bei inhouseticket",

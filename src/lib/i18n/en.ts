@@ -72,6 +72,10 @@ export const en: Messages = {
     terms: "Terms",
     dpa: "DPA",
     germanOnly: "This page is available in German only. The German version is the legally binding one.",
+    instanceTitle: "About this instance",
+    instanceOperator: (name: string) => `This instance of inhouseticket is run by ${name}.`,
+    instanceOperatorUnnamed: "This instance of inhouseticket is run by your company itself.",
+    instanceContact: "Its legal notice and privacy information are available from there. If you have questions, contact whoever looks after inhouseticket at your company.",
   },
   validation: translateValidation,
   input: {
@@ -83,6 +87,8 @@ export const en: Messages = {
     invalidEmail: "That doesn't look like a valid email address.",
     betaClosed:
       "inhouseticket is currently in a closed beta. Would you like to join? Write to us at hello@inhouseticket.com.",
+    instanceClosed:
+      "Only people with an address of your company or an invitation can sign in. Please contact whoever looks after inhouseticket at your company.",
     mail: {
       subject: "Your sign-in link for inhouseticket",
       heading: "Sign in to inhouseticket",
@@ -1169,7 +1175,7 @@ export const en: Messages = {
     statsReferrersOther: "Others (over 200 a day)",
     statsTotal: (n: number) => `${n.toLocaleString("en-GB")} views in total`,
     ipTitle: "Detected IP address",
-    ipText: "This is how the app sees your request behind the mittwald proxy. Per-IP limits (e.g. sign-in links) count against this address. It should match your real IP (e.g. according to wieistmeineip.de), not a mittwald address.",
+    ipText: "This is how the app sees your request behind the reverse proxy (mittwald or Caddy). Per-IP limits (e.g. sign-in links) count against this address. It should match your real IP (e.g. according to wieistmeineip.de), not the proxy's address.",
     ipNone: "none (X-Forwarded-For missing)",
     search: "Search",
     searchLabel: "Search workspaces",

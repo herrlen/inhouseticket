@@ -1,0 +1,12 @@
+# Reverse-Proxy für inhouseticket. Caddy holt und erneuert das Zertifikat für {$DOMAIN} selbst
+# (Let's Encrypt, Port 80 und 443 müssen offen sein und der DNS-Eintrag auf diesen Server zeigen).
+# Sicherheits-Header (CSP, HSTS …) setzt die App selbst.
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000
+}

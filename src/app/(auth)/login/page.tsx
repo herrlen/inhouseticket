@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getT } from "@/lib/i18n/server";
 import { oauthResumePath } from "@/lib/oauth-login";
 import { getSession, safeNext } from "@/lib/session";
+import { INSTANCE } from "@/lib/site";
 import { LoginForm } from "./login-form";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -30,7 +31,7 @@ export default async function LoginPage({ searchParams }: Props) {
           {t.login.linkError}
         </p>
       ) : null}
-      <LoginForm next={target} />
+      <LoginForm next={target} selfHosted={INSTANCE.selfHosted} />
     </>
   );
 }

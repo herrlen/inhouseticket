@@ -38,6 +38,9 @@ COPY --from=build --chown=nextjs:nodejs /app/public ./public
 COPY --from=migrator --chown=nextjs:nodejs /migrator/node_modules /migrate/node_modules
 COPY --chown=nextjs:nodejs scripts/migrate.mjs /migrate/migrate.mjs
 COPY --chown=nextjs:nodejs drizzle /migrate/drizzle
+# Server files for company instances (docs/selbst-hosten.md): fetched from the image with docker cp,
+# so a server only needs the registry token, not access to the repository.
+COPY selfhost /selfhost
 USER nextjs
 EXPOSE 3000
 CMD ["sh", "-c", "node /migrate/migrate.mjs && exec node server.js"]

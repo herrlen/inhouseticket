@@ -18,7 +18,8 @@ import deRegister from "@/lib/i18n/de/register";
 
 const MESSAGES = { auth: deAuth, legal: deLegal, login: deLogin, register: deRegister };
 
-export function RegisterForm({ next, email }: { next: string; email?: string }) {
+/** `selfHosted`: company instance – no terms to accept (they belong to the hosted service). */
+export function RegisterForm({ next, email, selfHosted = false }: { next: string; email?: string; selfHosted?: boolean }) {
   const t = useT(MESSAGES);
   const hydrated = useHydrated();
   const [state, action, pending] = useActionState<RegisterState, FormData>(registerAction, {});
@@ -90,13 +91,15 @@ export function RegisterForm({ next, email }: { next: string; email?: string }) 
           hint={errors.email ? undefined : t.login.hint}
         />
         <NewPasswordFields errors={errors} label={t.register.passwordLabel} />
-        <p className="text-xs text-muted">
-          {t.register.termsBefore}
-          <Link href="/agb" target="_blank" className="text-accent underline">{t.legal.terms}</Link>
-          {t.register.termsBetween}
-          <Link href="/datenschutz" target="_blank" className="text-accent underline">{t.register.termsPrivacy}</Link>
-          {t.register.termsAfter}
-        </p>
+        {selfHosted ? null : (
+          <p className="text-xs text-muted">
+            {t.register.termsBefore}
+            <Link href="/agb" target="_blank" className="text-accent underline">{t.legal.terms}</Link>
+            {t.register.termsBetween}
+            <Link href="/datenschutz" target="_blank" className="text-accent underline">{t.register.termsPrivacy}</Link>
+            {t.register.termsAfter}
+          </p>
+        )}
         {errors.form ? (
           <p role="alert" className="text-[13px] text-prio-urgent-ink">
             {errors.form}

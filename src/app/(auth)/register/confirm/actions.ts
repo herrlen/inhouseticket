@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
+import { closedMessage } from "@/lib/beta";
 import { env } from "@/lib/env";
 import { getT } from "@/lib/i18n/server";
 import { authErrorCode, translatedErrors } from "@/lib/password-actions";
@@ -38,7 +39,7 @@ export async function confirmRegistrationAction(prev: ConfirmState, formData: Fo
     if (code === "INVALID_TOKEN") return { gone: "invalid" };
     if (code === "ACCOUNT_EXISTS") return { gone: "accountExists" };
     if (code === "FREEMAIL_NOT_ALLOWED") return { errors: { form: t.auth.freemail } };
-    if (code === "BETA_CLOSED") return { errors: { form: t.auth.betaClosed } };
+    if (code === "BETA_CLOSED") return { errors: { form: closedMessage(t) } };
     console.error("register: confirm failed", code ?? (e instanceof Error ? e.name : "unknown"));
     return { errors: { form: t.login.failed } };
   }
