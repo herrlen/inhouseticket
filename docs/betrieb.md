@@ -200,6 +200,19 @@ dig +short TXT inhouseticket.com                                       # Search-
 
 ## Deploys
 
+### 2026-11-14 — Weiterleitung auf emuchat entfernt, `3ab9519` (Export v2 #5, Ticket-Hierarchie #7)
+
+- Vom 10.11. bis 14.11.2026 leiteten alle vHosts per 301 auf emuchat weiter (`inhouseticket.com` →
+  `emuchat.de/funktionen/tickets`, `app.` → `app.emuchat.de`). Entfernt, weil inhouseticket eigenständig
+  bleibt (Konzept „Shared Core“, Self-Hosting). Daten aus der Zeit liegen nur in emuchat.
+- Sicherung `cron-iqf97w` vorher (Complete). vHosts `inhouseticket.com` und `app.` wieder auf Container `app`
+  (`928394b5-…`, `3000/tcp`), `www` → 301 `https://inhouseticket.com/`.
+- Dann `scripts/deploy.sh` (unter Windows aus Git Bash, `jq` per `winget install jqlang.jq`); Migrationen
+  0014/0015 (Hierarchie) beim Start. Container-ID unverändert.
+- Direkt nach dem Start kurz 500 auf `/` und `/login`, nach wenigen Sekunden weg.
+- Prüfung: `/api/health` ok (`sha-3ab9519`), `/`, `/login`, Rechtstexte 200, `inhouseticket.com/login` → 301
+  auf `app.`, `www` → 301, `X-Robots-Tag` auf `/login`. Health-Cronjob `cron-nqnfmb` läuft wieder grün.
+
 ### 2026-10-06 — `21d5087`, Backups, Export, Lazy-DnD, OAuth
 
 - OAuth-Connector (`a4df15f`) und danach `21d5087` ausgerollt; Migration 0008 beim Start.
