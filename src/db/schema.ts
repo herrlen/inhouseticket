@@ -316,6 +316,9 @@ export const label = pgTable(
 // Tickets
 // ---------------------------------------------------------------------------
 
+/** Hierarchy like Jira – rules in src/lib/ticket-hierarchy.ts and the trigger enforce_ticket_hierarchy. */
+export const ticketType = pgEnum("ticket_type", ["epic", "story", "task", "subtask"]);
+
 export const ticket = pgTable(
   "ticket",
   {
@@ -323,6 +326,13 @@ export const ticket = pgTable(
     workspaceId: uuid().notNull(),
     projectId: uuid().notNull(),
     number: integer().notNull(),
+    type: ticketType().notNull().default("task"),
+    /**
+     * Parent ticket in the same project. The FK (parent_id, project_id) → ticket (id, project_id) is
+     * DEFERRABLE and lives in the custom migration 0015 together with the hierarchy and delete
+     * triggers (deleting a ticket deletes its subtasks and detaches stories/tasks of a deleted epic).
+     */
+    parentId: uuid(),
     title: varchar({ length: MAX_TITLE }).notNull(),
     description: varchar({ length: MAX_DESCRIPTION }),
     statusId: uuid().notNull(),
@@ -358,6 +368,8 @@ export const ticket = pgTable(
     check("ticket_title_not_blank", sql`btrim(${t.title}) <> ''`),
     index().on(t.workspaceId, t.projectId, t.statusId),
     index().on(t.assigneeId, t.dueAt),
+    index().on(t.parentId),
+    check("ticket_parent_not_self", sql`${t.parentId} IS NULL OR ${t.parentId} <> ${t.id}`),
     index("ticket_search_idx").using("gin", t.search),
   ],
 );

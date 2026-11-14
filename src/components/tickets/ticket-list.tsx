@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { dueBucket, formatDue, priorityKey, type Group } from "./list-model";
 import { AssigneePicker, DueDateInput, PriorityIcon, PriorityPicker, StatusDot, StatusPicker } from "./pickers";
 import { TicketMeta } from "./ticket-meta";
+import { TypeIcon } from "./type-icon";
 import type { ListColumn } from "./list-columns";
 import dynamic from "next/dynamic";
 import { AddTicketRow } from "./list-extras";
@@ -137,7 +138,10 @@ export function TicketList({ groups, showGroupHeaders, selected, onToggleSelect,
                         onClick={() => onOpen(t.id)}
                         className="flex w-full min-w-0 items-center gap-2 text-left hover:underline"
                         aria-label={tl.open(key, t.title)}
+                        aria-describedby={`type-${t.id}`}
                       >
+                        {/* The button's name is key + title; the type is its description (aria-describedby). */}
+                        <TypeIcon type={t.type} id={`type-${t.id}`} />
                         <span className="truncate">{t.title}</span>
                         {ticketLabels.map((l) => (
                           <span key={l.id} className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-1.5 text-[11px] text-muted">

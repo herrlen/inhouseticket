@@ -6,7 +6,7 @@ import type { AttachmentRow, CommentRow } from "@/db/queries/ticket-parts";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { Close, Plus } from "@/components/ui/icons";
+import { Close, OpenOut, Plus } from "@/components/ui/icons";
 import { Markdown } from "@/components/ui/markdown";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
@@ -20,8 +20,9 @@ import { ticketsKey } from "./use-tickets";
 import deCommon from "@/lib/i18n/de/common";
 import deDetail from "@/lib/i18n/de/detail";
 import deExplorer from "@/lib/i18n/de/explorer";
+import deHierarchy from "@/lib/i18n/de/hierarchy";
 
-const MESSAGES = { common: deCommon, detail: deDetail, explorer: deExplorer };
+const MESSAGES = { common: deCommon, detail: deDetail, explorer: deExplorer, hierarchy: deHierarchy };
 
 type Actions = ReturnType<typeof usePartActions>;
 
@@ -87,7 +88,8 @@ export function DescriptionField({ value, onSave }: { value: string; onSave: (v:
 // Subtasks
 // ---------------------------------------------------------------------------
 
-export function Subtasks({ subtasks, actions }: { subtasks: Parts["subtasks"]; actions: Actions }) {
+/** The checklist (table `subtask`). `canConvert`: items can become tickets of type subtask (stories and tasks). */
+export function Subtasks({ subtasks, actions, canConvert }: { subtasks: Parts["subtasks"]; actions: Actions; canConvert: boolean }) {
   const t = useT(MESSAGES);
   const [title, setTitle] = useState("");
   const full = subtasks.length >= MAX_SUBTASKS;
@@ -102,7 +104,7 @@ export function Subtasks({ subtasks, actions }: { subtasks: Parts["subtasks"]; a
       </div>
       <ul className="flex flex-col">
         {subtasks.map((s) => (
-          <SubtaskItem key={s.id} subtask={s} actions={actions} />
+          <SubtaskItem key={s.id} subtask={s} actions={actions} canConvert={canConvert} />
         ))}
       </ul>
       <form
@@ -135,8 +137,10 @@ export function Subtasks({ subtasks, actions }: { subtasks: Parts["subtasks"]; a
 
 type Parts = import("./use-parts").Parts;
 
-function SubtaskItem({ subtask, actions }: { subtask: Parts["subtasks"][number]; actions: Actions }) {
+function SubtaskItem({ subtask, actions, canConvert }: { subtask: Parts["subtasks"][number]; actions: Actions; canConvert: boolean }) {
   const t = useT(MESSAGES);
+  const toast = useToast();
+  const { project } = useProjectInfo();
   const [title, setTitle] = useState(subtask.title);
   // Local echo so the checkbox flips instantly; resyncs when the server state changes.
   const [done, setDone] = useState(subtask.done);
@@ -172,6 +176,21 @@ function SubtaskItem({ subtask, actions }: { subtask: Parts["subtasks"][number];
         onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
         className={cn("h-8 min-w-0 flex-1 bg-transparent text-[13px]", done && "text-muted line-through")}
       />
+      {canConvert ? (
+        <button
+          type="button"
+          onClick={() =>
+            actions.convertSubtask.mutate(subtask.id, {
+              onSuccess: (row) => toast({ message: t.hierarchy.converted(`${project.key}-${row.number}`), tone: "success" }),
+            })
+          }
+          aria-label={t.hierarchy.convertItem(subtask.title)}
+          title={t.hierarchy.convert}
+          className="rounded p-1 text-muted opacity-0 group-hover:opacity-100 hover:text-text focus-visible:opacity-100"
+        >
+          <OpenOut size={12} />
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={() => actions.removeSubtask.mutate(subtask.id)}

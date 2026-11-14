@@ -111,7 +111,7 @@ const TUTORIAL = {
   drag: (status: string): Text => s(`Zieh mich nach „${status}“ →`, `Drag me to “${status}” →`),
   status: s("Ändere meinen Status per Klick", "Change my status with a click"),
   subtasks: {
-    title: s("Öffne mich und hak die Unteraufgaben ab", "Open me and tick off the subtasks"),
+    title: s("Öffne mich und hak die Checkliste ab", "Open me and tick off the checklist"),
     items: [s("Esc schließt", "Esc closes"), s("↑/↓ springt zum nächsten Ticket", "↑/↓ jumps to the next ticket"), s("Cmd/Ctrl+K öffnet die Palette", "Cmd/Ctrl+K opens the palette")],
   },
   invite: {

@@ -28,8 +28,13 @@ import deFilters from "@/lib/i18n/de/filters";
 import deList from "@/lib/i18n/de/list";
 import dePriority from "@/lib/i18n/de/priority";
 import deView from "@/lib/i18n/de/view";
+import deHierarchy from "@/lib/i18n/de/hierarchy";
+import type { TicketType } from "@/lib/ticket-hierarchy";
 
-const MESSAGES = { detail: deDetail, filters: deFilters, list: deList, priority: dePriority, view: deView };
+const MESSAGES = { detail: deDetail, filters: deFilters, hierarchy: deHierarchy, list: deList, priority: dePriority, view: deView };
+
+/** Types offered for new top-level tickets (a subtask is created from its story or task). */
+const NEW_TYPES = ["task", "story", "epic"] as const satisfies readonly TicketType[];
 
 // Loaded on demand to keep the list view within the JS budget (≤ 200 KB gzip): the board pulls in
 // dnd-kit, the detail panel Markdown, uploads and comments.
@@ -94,6 +99,7 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
   const filters = useMemo(() => readFilters(params), [params]);
   const currentQuery = cleanViewQuery(params);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [newType, setNewType] = useState<(typeof NEW_TYPES)[number]>("task");
   const quickAdd = useRef<HTMLInputElement>(null);
 
   const { workspaceId, project } = info;
@@ -193,8 +199,19 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
           <span role="status" aria-live="polite" className="order-last w-full text-xs text-muted sm:order-none sm:w-auto">
             {saving ? t.list.savingAll : ""}
           </span>
-          <div className="min-w-64 flex-1">
-            <QuickAdd ref={quickAdd} onCreate={({ title, assigneeId, priority, dueDate }) => create.mutate({ title, assigneeId, priority, dueDate })} />
+          <div className="flex min-w-64 flex-1 items-start gap-2">
+            <label className="sr-only" htmlFor="new-ticket-type">{t.hierarchy.newTicketType}</label>
+            <select
+              id="new-ticket-type"
+              value={newType}
+              onChange={(e) => setNewType(NEW_TYPES.find((x) => x === e.target.value) ?? "task")}
+              className="h-10 rounded-[var(--radius-card)] border border-border bg-surface px-2 text-[13px]"
+            >
+              {NEW_TYPES.map((type) => <option key={type} value={type}>{t.hierarchy.types[type]}</option>)}
+            </select>
+            <div className="min-w-0 flex-1">
+              <QuickAdd ref={quickAdd} onCreate={({ title, assigneeId, priority, dueDate }) => create.mutate({ title, assigneeId, priority, dueDate, type: newType })} />
+            </div>
           </div>
           {view === "list" ? (
           <>
@@ -307,6 +324,9 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
           <TicketDetail
             key={openTicket.id}
             ticket={openTicket}
+            tickets={tickets}
+            onOpen={open}
+            onCreateChild={(input) => create.mutate({ ...input, parentId: openTicket.id })}
             onPatch={(patch) => update.mutate({ ticketId: openTicket.id, patch })}
             onNavigate={navigate}
             onLabelCreated={(l) => setLabels((prev) => (prev.some((x) => x.id === l.id) ? prev : [...prev, l].sort((a, b) => a.name.localeCompare(b.name, "de"))))}

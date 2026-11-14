@@ -33,6 +33,7 @@ import deView from "./de/view";
 import deDetail from "./de/detail";
 import deActivity from "./de/activity";
 import deTickets from "./de/tickets";
+import deHierarchy from "./de/hierarchy";
 import deMeta from "./de/meta";
 import deParts from "./de/parts";
 import dePassword from "./de/password";
@@ -86,6 +87,7 @@ export const de = {
   detail: deDetail,
   activity: deActivity,
   tickets: deTickets,
+  hierarchy: deHierarchy,
   meta: deMeta,
   parts: deParts,
   password: dePassword,

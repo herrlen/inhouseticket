@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  convertChecklistItemAction,
   createCommentAction,
   createSubtaskAction,
   deleteAttachmentAction,
@@ -98,5 +99,10 @@ export function usePartActions(workspaceId: string, projectId: string, ticketId:
     (id: string) => deleteCommentAction({ workspaceId, commentId: id }),
     (p, id) => ({ ...p, comments: p.comments.filter((c) => c.id !== id) }),
   );
-  return { addSubtask, toggleSubtask, renameSubtask, removeSubtask, removeAttachment, addComment, editComment, removeComment };
+  const convertSubtask = usePartMutation(
+    ...ids,
+    (id: string) => convertChecklistItemAction({ workspaceId, subtaskId: id }),
+    (p, id) => ({ ...p, subtasks: p.subtasks.filter((s) => s.id !== id) }),
+  );
+  return { addSubtask, toggleSubtask, renameSubtask, removeSubtask, convertSubtask, removeAttachment, addComment, editComment, removeComment };
 }

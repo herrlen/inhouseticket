@@ -28,6 +28,7 @@ import { useProjectInfo } from "./context";
 import { dueBucket, priorityKey } from "./list-model";
 import { formatDue, PriorityIcon, StatusDot } from "./pickers";
 import { TicketMeta } from "./ticket-meta";
+import { TypeIcon } from "./type-icon";
 import deBoard from "@/lib/i18n/de/board";
 import deList from "@/lib/i18n/de/list";
 import dePriority from "@/lib/i18n/de/priority";
@@ -205,6 +206,7 @@ function SortableCard({ ticket, today, onOpen }: { ticket: TicketRow; today: str
         role="button"
         aria-roledescription={t.board.cardRole}
         aria-label={t.list.open(key, ticket.title)}
+        aria-describedby={`card-type-${ticket.id}`}
         data-card={ticket.id}
         onClick={() => !pending && onOpen(ticket.id)}
         onKeyDown={(e) => {
@@ -236,6 +238,7 @@ function CardBody({ ticket, today, lifted }: { ticket: TicketRow; today: string;
   return (
     <div className={cn("flex flex-col gap-2 rounded-[var(--radius-badge)] border border-border bg-surface p-2.5 text-[13px]", lifted && "rotate-1 shadow-float", pending && "opacity-60")}>
       <div className="flex items-center gap-2">
+        <TypeIcon type={ticket.type} id={lifted ? undefined : `card-type-${ticket.id}`} />
         <span className="font-mono text-[11px] text-muted">{key}</span>
         <span className="ml-auto" title={t.priority[priorityKey(ticket.priority)]}>
           <PriorityIcon priority={ticket.priority} />
