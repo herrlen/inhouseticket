@@ -46,7 +46,7 @@ test("connect ClickUp: token, selection, mapping, first sync, source link, disco
   await waitForHydration(token);
   await token.fill("pk_wrong_token_0000");
   await page.getByRole("button", { name: "Token prüfen" }).click();
-  await expect(page.getByRole("alert")).toContainText("ClickUp hat den Token abgelehnt");
+  await expect(page.getByRole("alert").filter({ hasText: "ClickUp hat den Token abgelehnt" })).toBeVisible();
   await token.fill(data.token);
   await page.getByRole("button", { name: "Token prüfen" }).click();
 
@@ -54,7 +54,7 @@ test("connect ClickUp: token, selection, mapping, first sync, source link, disco
   await expect(page.getByRole("heading", { name: "Spaces und Listen auswählen" })).toBeVisible();
   await waitForHydration(page.getByRole("button", { name: "Weiter zur Zuordnung" }));
   await page.getByRole("button", { name: "Weiter zur Zuordnung" }).click();
-  await expect(page.getByRole("alert")).toContainText("mindestens einen Space oder eine Liste");
+  await expect(page.getByRole("alert").filter({ hasText: "mindestens einen Space oder eine Liste" })).toBeVisible();
   await page.getByLabel("Ganzer Space „Marketing“").check();
   await page.getByLabel("Angebote").check();
   await page.getByRole("button", { name: "Weiter zur Zuordnung" }).click();
