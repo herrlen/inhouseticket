@@ -9,6 +9,8 @@ import type { ImportPreview } from "@/lib/import/plan";
 import { SOURCE_NAMES, type SourceId } from "@/lib/import/source";
 import deImport from "@/lib/i18n/de/import";
 import dePriority from "@/lib/i18n/de/priority";
+import { ClickUpImport } from "./clickup-import";
+import type { RunView } from "./clickup-run";
 
 const MESSAGES = { import: deImport, priority: dePriority };
 
@@ -33,11 +35,11 @@ async function send(workspaceId: string, form: FormData, networkError: string): 
   }
 }
 
-export function ImportForm({ workspaceId }: { workspaceId: string }) {
+export function ImportForm({ workspaceId, slug, clickupRun }: { workspaceId: string; slug: string; clickupRun: RunView | null }) {
   const t = useT(MESSAGES);
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [source, setSource] = useState<SourceId>("jira");
+  const [source, setSource] = useState<SourceId>(clickupRun ? "clickup" : "jira");
   const [file, setFile] = useState<File | null>(null);
   const [state, setState] = useState<State>({ step: "pick" });
   const [name, setName] = useState("");
@@ -96,6 +98,29 @@ export function ImportForm({ workspaceId }: { workspaceId: string }) {
     </p>
   ) : null;
 
+  const sourceField = (
+    <>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="import-source" className="text-[13px] font-medium">
+          {t.import.sourceLabel}
+        </label>
+        <select id="import-source" value={source} onChange={(e) => { setSource(e.target.value as SourceId); reset(); }} className={`${input} w-fit px-2`}>
+          {(Object.keys(SOURCE_NAMES) as SourceId[]).map((s) => (
+            <option key={s} value={s}>
+              {t.import.sources[s]}
+            </option>
+          ))}
+        </select>
+      </div>
+      <p className="text-[13px]">{t.import.howTo[source]}</p>
+    </>
+  );
+
+  // ClickUp: whole workspace, one project per space, imported in the background.
+  if (source === "clickup") {
+    return <ClickUpImport workspaceId={workspaceId} slug={slug} initialRun={clickupRun} header={sourceField} />;
+  }
+
   if (state.step === "done") {
     return (
       <section className={card} aria-live="polite">
@@ -113,19 +138,7 @@ export function ImportForm({ workspaceId }: { workspaceId: string }) {
   return (
     <div className="flex flex-col gap-6">
       <form onSubmit={preview} className={`${card} flex flex-col gap-4`}>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="import-source" className="text-[13px] font-medium">
-            {t.import.sourceLabel}
-          </label>
-          <select id="import-source" value={source} onChange={(e) => { setSource(e.target.value as SourceId); reset(); }} className={`${input} w-fit px-2`}>
-            {(Object.keys(SOURCE_NAMES) as SourceId[]).map((s) => (
-              <option key={s} value={s}>
-                {t.import.sources[s]}
-              </option>
-            ))}
-          </select>
-        </div>
-        <p className="text-[13px]">{t.import.howTo[source]}</p>
+        {sourceField}
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex min-w-56 flex-1 flex-col gap-1">
             <label htmlFor="import-file" className="text-[13px] font-medium">

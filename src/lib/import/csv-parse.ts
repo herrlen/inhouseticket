@@ -19,50 +19,73 @@ export function detectDelimiter(text: string): string {
   return best;
 }
 
-/** Parses CSV text into rows of cells. Fully empty lines are dropped. */
-export function parseCsv(input: string, maxRows: number): CsvResult {
+/**
+ * Rows of cells, one at a time – a large export never exists as one big array of rows. Fully
+ * empty lines are dropped. Cells are built from slices, not char by char (a 50 MB file stays fast).
+ */
+export function* csvRows(input: string): Generator<string[]> {
   const text = input.charCodeAt(0) === 0xfeff ? input.slice(1) : input;
   const delimiter = detectDelimiter(text);
-  const rows: string[][] = [];
+  const n = text.length;
   let row: string[] = [];
-  let cell = "";
-  let quoted = false;
   let i = 0;
-
-  const endRow = () => {
-    row.push(cell);
-    cell = "";
-    if (row.length > 1 || row[0] !== "") rows.push(row);
-    row = [];
-  };
-
-  while (i < text.length) {
-    const ch = text[i]!;
-    if (quoted) {
-      if (ch === '"') {
-        if (text[i + 1] === '"') {
-          cell += '"';
-          i += 2;
+  while (i < n) {
+    let cell: string;
+    if (text[i] === '"') {
+      // Quoted cell: up to the closing quote; "" is an escaped quote.
+      let out = "";
+      let start = ++i;
+      for (;;) {
+        const q = text.indexOf('"', i);
+        if (q < 0) {
+          out += text.slice(start);
+          i = n;
+          break;
+        }
+        if (text[q + 1] === '"') {
+          out += text.slice(start, q + 1);
+          i = start = q + 2;
           continue;
         }
-        quoted = false;
-      } else cell += ch;
+        out += text.slice(start, q);
+        i = q + 1;
+        break;
+      }
+      // Lenient: anything between the closing quote and the next delimiter belongs to the cell.
+      let j = i;
+      while (j < n && text[j] !== delimiter && text[j] !== "\n" && text[j] !== "\r") j++;
+      cell = out + text.slice(i, j);
+      i = j;
+    } else {
+      let j = i;
+      while (j < n && text[j] !== delimiter && text[j] !== "\n" && text[j] !== "\r") j++;
+      cell = text.slice(i, j);
+      i = j;
+    }
+    row.push(cell);
+    if (i >= n) break;
+    const ch = text[i];
+    if (ch === delimiter) {
       i++;
+      if (i >= n) row.push("");
       continue;
     }
-    if (ch === '"' && cell === "") quoted = true;
-    else if (ch === delimiter) {
-      row.push(cell);
-      cell = "";
-    } else if (ch === "\n" || ch === "\r") {
-      endRow();
-      if (rows.length > maxRows) return { ok: false, error: "too_many_rows" };
-      if (ch === "\r" && text[i + 1] === "\n") i++;
-    } else cell += ch;
+    // Line break.
+    if (ch === "\r" && text[i + 1] === "\n") i++;
     i++;
+    if (row.length > 1 || row[0] !== "") yield row;
+    row = [];
   }
-  if (cell !== "" || row.length > 0) endRow();
-  if (rows.length > maxRows) return { ok: false, error: "too_many_rows" };
+  if (row.length > 1 || (row.length === 1 && row[0] !== "")) yield row;
+}
+
+/** Parses CSV text into rows of cells. Fully empty lines are dropped. */
+export function parseCsv(input: string, maxRows: number): CsvResult {
+  const rows: string[][] = [];
+  for (const row of csvRows(input)) {
+    rows.push(row);
+    if (rows.length > maxRows) return { ok: false, error: "too_many_rows" };
+  }
   return rows.length === 0 ? { ok: false, error: "empty" } : { ok: true, rows };
 }
 

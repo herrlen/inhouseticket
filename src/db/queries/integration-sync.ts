@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { lastProjectSort } from "@/db/queries/explorer";
 import { createProjectWithDefaults, nextTicketNumber, projectKeyTaken } from "@/db/queries/projects";
@@ -9,7 +9,7 @@ import type { Category } from "@/lib/import/source";
 import type { IntegrationConfig } from "@/db/queries/integrations";
 import { desiredParents, suggestStatus, targetCategory, taskLabels, ticketFields, isStatusTarget, type StatusSuggestion } from "@/lib/integrations/mapping";
 import type { ProviderId, SyncTrigger } from "@/lib/integrations/providers";
-import type { ExternalComment, ExternalStatus, ExternalTask } from "@/lib/integrations/types";
+import type { ExternalComment, ExternalPerson, ExternalStatus, ExternalTask } from "@/lib/integrations/types";
 import { MAX_COMMENT } from "@/lib/limits";
 import { PALETTE } from "@/lib/palette";
 import { suggestProjectKey } from "@/lib/project-key";
@@ -26,11 +26,14 @@ import { dueDateToTimestamp } from "@/lib/validation/ticket";
 
 export type SyncIntegration = { id: string; workspaceId: string; provider: ProviderId; config: IntegrationConfig; createdBy: string | null };
 
-/** Takes the lease if free (or expired). Returns null when another worker holds it. */
-export async function claimIntegration(integrationId: string, leaseMs: number): Promise<SyncIntegration | null> {
+/**
+ * Takes the lease if free (or expired). Returns null when another worker holds it. A CSV import
+ * keeps a pending "Jetzt abgleichen" request (`keepRequest`) for the API sync that follows.
+ */
+export async function claimIntegration(integrationId: string, leaseMs: number, options: { keepRequest?: boolean } = {}): Promise<SyncIntegration | null> {
   const [row] = await db
     .update(integration)
-    .set({ lockedUntil: new Date(Date.now() + leaseMs), syncRequestedAt: null })
+    .set({ lockedUntil: new Date(Date.now() + leaseMs), ...(options.keepRequest ? {} : { syncRequestedAt: null }) })
     .where(and(eq(integration.id, integrationId), or(isNull(integration.lockedUntil), lt(integration.lockedUntil, new Date()))))
     .returning({ id: integration.id, workspaceId: integration.workspaceId, provider: integration.provider, config: integration.config, createdBy: integration.createdBy });
   return row ? { ...row, provider: row.provider as ProviderId, config: row.config as IntegrationConfig } : null;
@@ -83,15 +86,18 @@ export type RunCursor = {
   maxUpdated?: string | null;
 };
 
-export type RunCounts = { read: number; created: number; updated: number; unchanged: number; skipped: number; errors: number; comments: number; unlinked: number };
-export const emptyCounts = (): RunCounts => ({ read: 0, created: 0, updated: 0, unchanged: 0, skipped: 0, errors: 0, comments: 0, unlinked: 0 });
+export type RunCounts = { read: number; created: number; updated: number; unchanged: number; skipped: number; errors: number; comments: number; unlinked: number; duplicates: number };
+export const emptyCounts = (): RunCounts => ({ read: 0, created: 0, updated: 0, unchanged: 0, skipped: 0, errors: 0, comments: 0, unlinked: 0, duplicates: 0 });
 
-/** Resumes the unfinished run of this integration (crash, restart) or starts a new one. */
+/**
+ * Resumes the unfinished API run of this integration (crash, restart) or starts a new one. CSV
+ * imports have their own runs and cursor (src/lib/integrations/csv-import.ts) and are left alone.
+ */
 export async function openRun(integ: SyncIntegration, trigger: SyncTrigger): Promise<{ id: string; counts: RunCounts; cursor: RunCursor; resumed: boolean }> {
   const [open] = await db
     .select({ id: syncRun.id, counts: syncRun.counts, cursor: syncRun.cursor })
     .from(syncRun)
-    .where(and(eq(syncRun.integrationId, integ.id), eq(syncRun.workspaceId, integ.workspaceId), isNull(syncRun.finishedAt)))
+    .where(and(eq(syncRun.integrationId, integ.id), eq(syncRun.workspaceId, integ.workspaceId), isNull(syncRun.finishedAt), ne(syncRun.trigger, "csv")))
     .orderBy(desc(syncRun.startedAt))
     .limit(1);
   if (open) return { id: open.id, counts: { ...emptyCounts(), ...open.counts }, cursor: open.cursor as RunCursor, resumed: true };
@@ -115,7 +121,7 @@ export async function lastDeltaMark(integ: SyncIntegration): Promise<Date | null
   const [row] = await db
     .select({ cursor: syncRun.cursor })
     .from(syncRun)
-    .where(and(eq(syncRun.integrationId, integ.id), eq(syncRun.workspaceId, integ.workspaceId), isNotNull(syncRun.finishedAt), isNull(syncRun.error)))
+    .where(and(eq(syncRun.integrationId, integ.id), eq(syncRun.workspaceId, integ.workspaceId), isNotNull(syncRun.finishedAt), isNull(syncRun.error), ne(syncRun.trigger, "csv")))
     .orderBy(desc(syncRun.finishedAt))
     .limit(1);
   const iso = (row?.cursor as RunCursor | undefined)?.maxUpdated;
@@ -140,6 +146,13 @@ export async function syncActor(integ: SyncIntegration): Promise<string | null> 
 type StatusRow = { id: string; name: string; category: Category; sort: string };
 export type UpsertResult = "created" | "updated" | "unchanged" | "skipped";
 
+export type WriterOptions = {
+  /** People without ids or e-mails (CSV): resolve to a member id. Default: the confirmed user mapping. */
+  person?: (p: ExternalPerson) => string | null;
+  /** Import, not sync: an existing ticket (from an earlier import or the API sync) is never touched. */
+  createOnly?: boolean;
+};
+
 /** Holds the per-run caches (projects, statuses, labels, mappings); one instance per run. */
 export class SyncWriter {
   private readonly ws: string;
@@ -158,6 +171,7 @@ export class SyncWriter {
     private readonly sourceName: string,
     /** Space id → name, for new projects. */
     private readonly spaceNames: Map<string, string>,
+    private readonly options: WriterOptions = {},
   ) {
     this.ws = integ.workspaceId;
   }
@@ -185,9 +199,9 @@ export class SyncWriter {
     }
   }
 
-  private member(externalId: string | undefined): string | null {
-    if (!externalId) return null;
-    const id = this.userMap.get(externalId) ?? null;
+  private member(person: ExternalPerson | null | undefined): string | null {
+    if (!person) return null;
+    const id = this.options.person ? this.options.person(person) : (this.userMap.get(person.id) ?? null);
     return id && this.activeMembers.has(id) ? id : null;
   }
 
@@ -205,6 +219,21 @@ export class SyncWriter {
       return ref.localId;
     }
     const name = (this.spaceNames.get(spaceId) ?? "ClickUp").replace(/\s+/g, " ").trim().slice(0, 100) || "ClickUp";
+    // The same space reached the other way in (CSV knows only the space name, the API its id):
+    // a project of this integration with the space's name is that space.
+    if (!ref) {
+      const [same] = await db
+        .select({ id: project.id })
+        .from(externalRef)
+        .innerJoin(project, and(eq(project.id, externalRef.localId), eq(project.workspaceId, this.ws)))
+        .where(and(eq(externalRef.integrationId, this.integ.id), eq(externalRef.workspaceId, this.ws), eq(externalRef.entityType, "space"), sql`lower(${project.name}) = lower(${name})`))
+        .limit(1);
+      if (same) {
+        await db.insert(externalRef).values({ workspaceId: this.ws, integrationId: this.integ.id, entityType: "space", externalId: spaceId, localId: same.id }).onConflictDoNothing();
+        this.projects.set(spaceId, same.id);
+        return same.id;
+      }
+    }
     const key = await this.freeKey(name);
     const colors = Object.values(PALETTE);
     const projectId = await db.transaction(async (tx) => {
@@ -347,11 +376,12 @@ export class SyncWriter {
       .from(externalRef)
       .where(and(eq(externalRef.integrationId, this.integ.id), eq(externalRef.entityType, "task"), eq(externalRef.externalId, task.id)))
       .limit(1);
-    const assigneeId = this.member(task.assignees[0]?.id);
+    const assigneeId = this.member(task.assignees[0]);
     const labels = taskLabels(task);
     const refPatch = { externalParentId: task.parentId, externalUpdatedAt: task.updatedAt, url: task.url?.slice(0, 500) ?? null, pendingDetail: true };
 
     if (ref) {
+      if (this.options.createOnly) return "unchanged";
       if (ref.externalUpdatedAt && task.updatedAt && ref.externalUpdatedAt.getTime() >= task.updatedAt.getTime()) return "unchanged";
       const [cur] = await db
         .select({ id: ticket.id, projectId: ticket.projectId, statusId: ticket.statusId, completedAt: ticket.completedAt })
@@ -474,8 +504,29 @@ export class SyncWriter {
     return rows;
   }
 
-  /** Adds comments not seen before (idempotent via external_ref) and clears the task's pending flag. */
-  async saveComments(task: { refId: string; ticketId: string }, comments: ExternalComment[]): Promise<number> {
+  /**
+   * Import path: creates the ticket (see upsertTask) and adds the comments that came with the task
+   * (CSV). Comments are added for existing tickets too – idempotent, and matched against the ones
+   * already there (see saveComments) – but only a ticket created here gives up its pending flag.
+   */
+  async importTask(task: ExternalTask, comments: ExternalComment[]): Promise<{ result: UpsertResult; comments: number }> {
+    const result = await this.upsertTask(task);
+    if (result === "skipped" || !comments.length) return { result, comments: 0 };
+    const [ref] = await db
+      .select({ id: externalRef.id, localId: externalRef.localId })
+      .from(externalRef)
+      .where(and(eq(externalRef.integrationId, this.integ.id), eq(externalRef.workspaceId, this.ws), eq(externalRef.entityType, "task"), eq(externalRef.externalId, task.id)))
+      .limit(1);
+    if (!ref) return { result, comments: 0 };
+    return { result, comments: await this.saveComments({ refId: ref.id, ticketId: ref.localId }, comments, { clearPending: result === "created" }) };
+  }
+
+  /**
+   * Adds comments not seen before (idempotent via external_ref) and clears the task's pending flag.
+   * A comment that is already on the ticket from the other way in (CSV export ↔ API: different ids,
+   * same text within two minutes) is linked instead of added twice.
+   */
+  async saveComments(task: { refId: string; ticketId: string }, comments: ExternalComment[], options: { clearPending?: boolean } = {}): Promise<number> {
     const [exists] = await db.select({ id: ticket.id }).from(ticket).where(and(eq(ticket.id, task.ticketId), eq(ticket.workspaceId, this.ws))).limit(1);
     const withText = comments.filter((c) => c.body);
     let added = 0;
@@ -488,11 +539,33 @@ export class SyncWriter {
             .where(and(eq(externalRef.integrationId, this.integ.id), eq(externalRef.entityType, "comment"), inArray(externalRef.externalId, withText.map((c) => c.id))))
         ).map((r) => r.externalId),
       );
-      const fresh = withText.filter((c) => !known.has(c.id)).sort((a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0));
+      const unseen = withText.filter((c) => !known.has(c.id)).sort((a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0));
+      const existing = unseen.length
+        ? await db
+            .select({ id: comment.id, body: comment.body, createdAt: comment.createdAt })
+            .from(comment)
+            .where(and(eq(comment.ticketId, task.ticketId), eq(comment.workspaceId, this.ws)))
+        : [];
+      const twins = existing.map((e) => ({ id: e.id, at: e.createdAt.getTime(), text: commentKey(e.body.replace(IMPORTED_PREFIX, "")), used: false }));
+      const adopt: Array<{ comment: ExternalComment; localId: string }> = [];
+      const fresh = unseen.filter((c) => {
+        const text = commentKey(c.body);
+        const twin = twins.find((t) => !t.used && t.text === text && (!c.createdAt || Math.abs(t.at - c.createdAt.getTime()) <= TWIN_WINDOW_MS));
+        if (!twin) return true;
+        twin.used = true;
+        adopt.push({ comment: c, localId: twin.id });
+        return false;
+      });
+      if (adopt.length) {
+        await db
+          .insert(externalRef)
+          .values(adopt.map((a) => ({ workspaceId: this.ws, integrationId: this.integ.id, entityType: "comment", externalId: a.comment.id, localId: a.localId, externalUpdatedAt: a.comment.createdAt })))
+          .onConflictDoNothing();
+      }
       if (fresh.length) {
         await db.transaction(async (tx) => {
           for (const c of fresh) {
-            const authorId = this.member(c.author?.id);
+            const authorId = this.member(c.author);
             const by = !authorId && c.author ? ` – ${c.author.name}` : "";
             const body = cutText(`_Aus ${this.sourceName} übernommen${by}_\n\n${c.body}`, MAX_COMMENT);
             const [row] = await tx
@@ -505,9 +578,18 @@ export class SyncWriter {
         added = fresh.length;
       }
     }
-    await db.update(externalRef).set({ pendingDetail: false }).where(and(eq(externalRef.id, task.refId), eq(externalRef.workspaceId, this.ws)));
+    if (options.clearPending !== false) await db.update(externalRef).set({ pendingDetail: false }).where(and(eq(externalRef.id, task.refId), eq(externalRef.workspaceId, this.ws)));
     return added;
   }
+}
+
+/** Marker the writer puts in front of every imported comment ("_Aus ClickUp übernommen – Name_"). */
+const IMPORTED_PREFIX = /^_Aus .{1,60}? übernommen[^\n]*_\n\n/;
+const TWIN_WINDOW_MS = 2 * 60_000;
+
+/** Comparable text of a comment: whitespace collapsed, first 300 characters (bodies may be cut). */
+function commentKey(body: string): string {
+  return body.replace(/\s+/g, " ").trim().slice(0, 300).toLowerCase();
 }
 
 function cutText(text: string, max: number): string {

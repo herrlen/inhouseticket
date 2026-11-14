@@ -15,9 +15,11 @@ import {
   type RunCursor,
   type SyncIntegration,
 } from "@/db/queries/integration-sync";
+import { deleteExpiredUploads } from "@/db/queries/clickup-import";
 import { openIntegrationToken } from "@/db/queries/integrations";
 import { env } from "@/lib/env";
 import { CredentialsError } from "./crypto";
+import { resumeCsvImports } from "./csv-import";
 import { POLL_INTERVAL_MS, PROVIDER_NAMES, type ProviderId, type SyncTrigger } from "./providers";
 import { createConnector } from "./registry";
 import { ConnectorError, type Connector } from "./types";
@@ -166,13 +168,18 @@ async function syncComments(integ: SyncIntegration, connector: Connector, writer
 
 let polling = false;
 
-/** Production scheduler (src/instrumentation.ts): due integrations one after another, every minute. */
+/**
+ * Production scheduler (src/instrumentation.ts), every minute: CSV imports left open by a restart
+ * (no token needed), expired uploads, then due integrations one after another.
+ */
 export function startIntegrationPolling() {
   const tick = async () => {
-    if (polling || !env.INTEGRATION_SECRET) return;
+    if (polling) return;
     polling = true;
     try {
-      for (const id of await dueIntegrationIds(POLL_INTERVAL_MS)) await runSync(id, "schedule");
+      await resumeCsvImports();
+      await deleteExpiredUploads();
+      if (env.INTEGRATION_SECRET) for (const id of await dueIntegrationIds(POLL_INTERVAL_MS)) await runSync(id, "schedule");
     } catch (e) {
       console.error("integration sync: poll failed", errorCode(e));
     } finally {

@@ -16,7 +16,8 @@ export type StatusSuggestion = { target: StatusTarget; category: Category };
 
 // Words the concept names explicitly (done/complete/closed/abgeschlossen, in progress/in
 // bearbeitung, to do/open/neu/not started) plus the category words the CSV import already knows.
-const SURE_DONE = /^(done|complete|completed|closed|abgeschlossen|erledigt|fertig)$/;
+// Archived/closed variants seen in a real export: closed "archiv", Closed, archived, achived (sic).
+const SURE_DONE = /^(done|complete|completed|abgeschlossen|erledigt|fertig|achived)$|^(closed|archiv)/;
 const SURE_ACTIVE = /^(in progress|in bearbeitung|in arbeit|doing)$/;
 const SURE_OPEN = /^(to do|todo|open|neu|new|not started|offen|backlog)$/;
 
@@ -50,6 +51,39 @@ export type LocalMember = { id: string; email: string; name: string };
 export function matchPeople(people: ExternalPerson[], members: LocalMember[]): Map<string, string | null> {
   const byEmail = new Map(members.map((m) => [m.email.toLowerCase(), m.id]));
   return new Map(people.map((p) => [p.id, p.email ? (byEmail.get(p.email.toLowerCase()) ?? null) : null]));
+}
+
+/**
+ * People known only by name (ClickUp CSV export): exact name, case-insensitive and trimmed. A name
+ * two members share matches nobody – a wrong assignee is worse than none.
+ */
+export function matchByName(members: Array<Pick<LocalMember, "id" | "name">>): (name: string) => string | null {
+  const norm = (name: string) => name.replace(/\s+/g, " ").trim().toLowerCase();
+  const byName = new Map<string, string | null>();
+  for (const m of members) {
+    const key = norm(m.name);
+    if (!key) continue;
+    byName.set(key, byName.has(key) ? null : m.id);
+  }
+  return (name) => byName.get(norm(name)) ?? null;
+}
+
+/**
+ * Person by name with a confirmed choice first (CSV import: field_mapping kind "user", external
+ * value = the name; "" = nobody). Keys of `saved` are lower-case names. A choice pointing at someone
+ * who is no longer a member falls back to the name match.
+ */
+export function nameResolver(members: Array<Pick<LocalMember, "id" | "name">>, saved: Map<string, string | null>): (name: string) => string | null {
+  const byName = matchByName(members);
+  const ids = new Set(members.map((m) => m.id));
+  return (name) => {
+    const key = name.replace(/\s+/g, " ").trim().toLowerCase();
+    if (saved.has(key)) {
+      const id = saved.get(key) ?? null;
+      if (id === null || ids.has(id)) return id;
+    }
+    return byName(name);
+  };
 }
 
 const MAX_LABEL = 50;

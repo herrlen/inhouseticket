@@ -6,7 +6,7 @@ import { hasRole } from "@/lib/authz";
 import { readBodyLimited } from "@/lib/body";
 import { getT } from "@/lib/i18n/server";
 import { buildPlan, MAX_IMPORT_BYTES } from "@/lib/import/plan";
-import { readImportFile } from "@/lib/import/read";
+import { isFileSource, readImportFile } from "@/lib/import/read";
 import { SOURCE_IDS, SOURCE_NAMES } from "@/lib/import/source";
 import { PALETTE } from "@/lib/palette";
 import { suggestProjectKey } from "@/lib/project-key";
@@ -39,7 +39,7 @@ async function freeKey(workspaceId: string, fromFile: string, name: string): Pro
 
 /**
  * Import of another tool's export file (multipart: file, source, mode, and for mode=import
- * name/key/color of the new project). Admins only. The file is read again on import, so
+ * name/key/color of the new project). Jira, Notion, monday.com; ClickUp has its own route. Admins only. The file is read again on import, so
  * nothing is stored between preview and import.
  */
 export async function POST(request: Request, { params }: Ctx) {
@@ -60,6 +60,8 @@ export async function POST(request: Request, { params }: Ctx) {
   if (!(file instanceof File) || !parsed.success) return jsonError(400, "invalid_input", t.common.invalidInput);
   if (file.size > MAX_IMPORT_BYTES) return jsonError(413, "too_large", t.import.errors.too_large);
   const { source, mode } = parsed.data;
+  // ClickUp: whole workspaces, imported in the background (./clickup/route.ts).
+  if (!isFileSource(source)) return jsonError(400, "use_clickup_import", t.common.invalidInput);
 
   const limited = tooManyRequests(
     mode === "import" ? rateLimit(`import:${ws}`, IMPORTS_PER_HOUR, 3_600_000) : rateLimit(`import-preview:${ws}`, PREVIEWS_PER_HOUR, 3_600_000),

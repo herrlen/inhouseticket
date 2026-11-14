@@ -106,7 +106,7 @@ export default {
     started: "Beginn",
     trigger: "Anlass",
     result: "Ergebnis",
-    triggers: { initial: "Erstabgleich", manual: "Von Hand", schedule: "Automatisch" },
+    triggers: { initial: "Erstabgleich", manual: "Von Hand", schedule: "Automatisch", csv: "CSV-Import" },
     runningNow: "läuft",
     counts: (c: { read: number; created: number; updated: number; errors: number; comments: number }) =>
       `${c.read} gelesen · ${c.created} angelegt · ${c.updated} geändert · ${c.comments} Kommentare · ${c.errors} Fehler`,

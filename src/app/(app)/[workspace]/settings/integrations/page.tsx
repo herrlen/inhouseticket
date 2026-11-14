@@ -38,7 +38,8 @@ export default async function IntegrationsPage({ params, searchParams }: Props) 
 
       <ul className="grid gap-3 sm:grid-cols-2">
         {INTEGRATION_PROVIDERS.map((id) => {
-          const integ = connected.get(id);
+          // Without a token the row only anchors CSV-imported tickets (src/db/queries/clickup-import.ts).
+          const integ = connected.get(id)?.config.tokenHint ? connected.get(id) : undefined;
           const state = !integ ? t.integrations.notConnected : integ.status === "error" ? t.integrations.failed : integ.status === "active" ? t.integrations.connected : t.integrations.inSetup;
           return (
             <li key={id} className="flex flex-col gap-2 rounded-[var(--radius-card)] border border-border bg-surface p-4">

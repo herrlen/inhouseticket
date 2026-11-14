@@ -927,6 +927,34 @@ export const syncRun = pgTable(
 );
 
 /**
+ * An uploaded export file waiting for its background import (ClickUp CSV, up to 50 MB). Kept in
+ * Postgres like attachments (ADR 002, no file volume): the run re-reads it after a restart and
+ * deletes the row when it is through; leftovers are removed after IMPORT_UPLOAD_TTL_MS. One
+ * upload without a run per workspace: a new preview replaces the previous one.
+ */
+export const importUpload = pgTable(
+  "import_upload",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspace.id, { onDelete: "cascade" }),
+    source: varchar({ length: 20 }).notNull(),
+    fileName: varchar({ length: 255 }).notNull(),
+    /** The decoded file (text compresses well in TOAST). Never selected in list queries. */
+    content: text().notNull(),
+    bytes: integer().notNull(),
+    /** Tasks the preview counted – the total for the progress bar. */
+    tasks: integer().notNull().default(0),
+    /** The sync_run that imports it (set on start). */
+    runId: uuid(),
+    createdBy: text().references(() => user.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (t) => [index().on(t.workspaceId, t.createdAt)],
+);
+
+/**
  * Cookieless page statistics (Sprint 9): views per day, normalized path and referring site.
  * No IP, no user, no workspace names – app paths are stored as patterns like /[workspace]/p/[key].
  */

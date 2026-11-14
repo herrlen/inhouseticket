@@ -28,7 +28,8 @@ export type ExternalEntityType = (typeof EXTERNAL_ENTITY_TYPES)[number];
 export const FIELD_MAPPING_KINDS = ["status", "user", "priority"] as const;
 export type FieldMappingKind = (typeof FIELD_MAPPING_KINDS)[number];
 
-export const SYNC_TRIGGERS = ["initial", "manual", "schedule"] as const;
+/** `csv`: a ClickUp CSV import (src/lib/integrations/csv-import.ts), same writer, own cursor. */
+export const SYNC_TRIGGERS = ["initial", "manual", "schedule", "csv"] as const;
 export type SyncTrigger = (typeof SYNC_TRIGGERS)[number];
 
 /** Polling interval for the delta sync (no webhooks yet). */
