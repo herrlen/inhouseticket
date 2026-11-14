@@ -183,9 +183,16 @@ describe("previewClickUpCsv", () => {
       Closed: "Erledigt",
     });
     expect(p.people).toEqual([
-      { name: "Tom Muster", member: null, count: 1 },
-      { name: "Ina Beispiel", member: "  ina beispiel ", count: 1 },
+      { name: "Tom Muster", memberId: null, count: 1 },
+      { name: "Ina Beispiel", memberId: "u1", count: 1 },
     ]);
+  });
+
+  it("suggests people from earlier choices first, then the exact name", () => {
+    const members = [{ id: "u1", name: "Ina Beispiel" }, { id: "u2", name: "Someone" }];
+    const r = previewClickUpCsv(FIXTURE, members, new Map(), new Map([["tom muster", "u2"], ["ina beispiel", null]]));
+    if (!r.ok) throw new Error(r.error);
+    expect(Object.fromEntries(r.preview.people.map((x) => [x.name, x.memberId]))).toEqual({ "Tom Muster": "u2", "Ina Beispiel": null });
   });
 
   it("prefers the confirmed mapping of the ClickUp connection", () => {

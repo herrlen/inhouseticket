@@ -163,6 +163,8 @@ async function MappingStep({ t, ws, integ, first }: { t: T; ws: string; integ: I
   const savedStatus = new Map(saved.filter((m) => m.kind === "status").map((m) => [m.externalValue.toLowerCase(), m.localValue]));
   const savedUser = new Map(saved.filter((m) => m.kind === "user").map((m) => [m.externalValue, m.localValue]));
   const matched = matchPeople(people, members);
+  // Choices from a CSV import are stored by name: used when the e-mail matches nobody.
+  const savedByName = new Map(saved.filter((m) => m.kind === "user").map((m) => [m.externalValue.trim().toLowerCase(), m.localValue]));
   const memberIds = new Set(members.map((m) => m.id));
   const label = (target: string) => (target === "own" ? c.ownStatus : target);
 
@@ -222,7 +224,8 @@ async function MappingStep({ t, ws, integ, first }: { t: T; ws: string; integ: I
           <tbody>
             {people.map((p) => {
               const stored = savedUser.get(p.id);
-              const value = stored !== undefined ? (memberIds.has(stored) ? stored : "") : (matched.get(p.id) ?? "");
+              const byName = savedByName.get(p.name.trim().toLowerCase());
+              const value = stored !== undefined ? (memberIds.has(stored) ? stored : "") : (matched.get(p.id) ?? (byName && memberIds.has(byName) ? byName : ""));
               return (
                 <tr key={p.id} className="border-t border-border">
                   <td className="py-1.5 pr-3">

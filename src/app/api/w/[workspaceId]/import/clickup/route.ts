@@ -1,4 +1,4 @@
-import { clickUpStatusMappings, countKnownTasks, saveImportUpload } from "@/db/queries/clickup-import";
+import { clickUpNameMappings, clickUpStatusMappings, countKnownTasks, saveImportUpload } from "@/db/queries/clickup-import";
 import { listImportMembers } from "@/db/queries/import";
 import { json, jsonError, requireApiMember, requireSameOrigin, tooManyRequests } from "@/lib/api";
 import { hasRole } from "@/lib/authz";
@@ -35,8 +35,8 @@ export async function POST(request: Request, { params }: Ctx) {
   if (!body.byteLength) return jsonError(422, "empty", t.import.errors.empty());
   const content = decodeText(body);
 
-  const [members, mappings] = await Promise.all([listImportMembers(ws), clickUpStatusMappings(ws)]);
-  const plan = previewClickUpCsv(content, members, mappings);
+  const [members, mappings, people] = await Promise.all([listImportMembers(ws), clickUpStatusMappings(ws), clickUpNameMappings(ws)]);
+  const plan = previewClickUpCsv(content, members, mappings, people);
   if (!plan.ok) {
     const message = plan.error === "too_many_rows" ? t.import.clickup.errors.too_many_rows : plan.error === "not_this_tool" ? t.import.errors.not_this_tool("ClickUp") : t.import.errors.empty();
     return jsonError(422, plan.error, message);
@@ -50,5 +50,7 @@ export async function POST(request: Request, { params }: Ctx) {
   }
   const uploadId = await saveImportUpload({ workspaceId: ws, userId: r.ctx.user.id, fileName, content, bytes: body.byteLength, tasks: preview.tasks });
   console.info("clickup csv: preview", { workspaceId: ws, rows: preview.rows, tasks: preview.tasks });
-  return json({ uploadId, preview });
+  // Members for the people table (names only – addresses stay on the server).
+  const choices = members.map((m) => ({ id: m.id, name: m.name })).sort((x, y) => x.name.localeCompare(y.name, "de"));
+  return json({ uploadId, preview, members: choices });
 }

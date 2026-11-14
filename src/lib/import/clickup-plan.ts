@@ -3,7 +3,7 @@
 // database knows (tasks already imported or synced, the confirmed status mapping).
 
 import { MAX_DESCRIPTION, MAX_SUBTASKS, MAX_TITLE } from "../limits";
-import { matchByName, suggestStatus, ticketFields, type StatusSuggestion, type StatusTarget } from "../integrations/mapping";
+import { nameResolver, suggestStatus, ticketFields, type StatusSuggestion, type StatusTarget } from "../integrations/mapping";
 import { CsvRowLimitError, readClickUpCsv, type ClickUpCsvSkip } from "./clickup";
 import type { Category, SourceError } from "./source";
 
@@ -39,7 +39,8 @@ export type ClickUpPreview = {
   folders: number;
   projects: Array<{ name: string; tickets: number }>;
   statuses: ClickUpStatusRow[];
-  people: Array<{ name: string; member: string | null; count: number }>;
+  /** Assignees by name with the suggested member (saved choice, else exact name, else nobody). */
+  people: Array<{ name: string; memberId: string | null; count: number }>;
   skipped: Array<{ reason: ClickUpCsvSkip; count: number }>;
   truncatedTitles: number;
   truncatedDescriptions: number;
@@ -51,16 +52,17 @@ export type PreviewMember = { id: string; name: string };
 /**
  * Counts everything the preview shows. `mappings` (lower-case ClickUp status → choice) are the
  * confirmed ones of the workspace's ClickUp connection; other statuses get the shared suggestion.
+ * `people` (lower-case name → member id or null) are earlier choices for names.
  */
 export function previewClickUpCsv(
   text: string,
   members: PreviewMember[],
   mappings: Map<string, StatusSuggestion> = new Map(),
+  people: Map<string, string | null> = new Map(),
 ): { ok: true; preview: ClickUpPreview; taskIds: string[] } | { ok: false; error: SourceError } {
   const read = readClickUpCsv(text);
   if (!read.ok) return read;
-  const memberOf = matchByName(members);
-  const names = new Map(members.map((m) => [m.id, m.name]));
+  const memberOf = nameResolver(members, people);
   const p: ClickUpPreview = {
     known: 0, rows: 0, duplicates: 0, tasks: 0, subtasks: 0, nestedSubtasks: 0, orphanSubtasks: 0, comments: 0, checklistItems: 0,
     foldedChecklistItems: 0, attachments: 0, milestones: 0, lists: 0, folders: 0, projects: [], statuses: [], people: [],
@@ -68,7 +70,7 @@ export function previewClickUpCsv(
   };
   const projects = new Map<string, { name: string; tickets: number }>();
   const statuses = new Map<string, { name: string; count: number }>();
-  const people = new Map<string, { name: string; count: number }>();
+  const assignees = new Map<string, { name: string; count: number }>();
   const lists = new Set<string>();
   const folders = new Set<string>();
   const parents = new Map<string, string | null>();
@@ -86,9 +88,9 @@ export function previewClickUpCsv(
       statuses.set(key, s);
       const who = task.assignees[0]?.name;
       if (who) {
-        const entry = people.get(who.toLowerCase()) ?? { name: who, count: 0 };
+        const entry = assignees.get(who.toLowerCase()) ?? { name: who, count: 0 };
         entry.count++;
-        people.set(who.toLowerCase(), entry);
+        assignees.set(who.toLowerCase(), entry);
       }
       if (task.listName) lists.add(`${task.spaceId}\u0000${task.listName}`);
       if (task.folderName) folders.add(`${task.spaceId}\u0000${task.folderName}`);
@@ -127,12 +129,9 @@ export function previewClickUpCsv(
   p.statuses = [...statuses.entries()]
     .map(([key, s]) => ({ ...s, ...(mappings.get(key) ?? suggestStatus({ name: s.name, type: "" })) }))
     .sort((a, b) => b.count - a.count);
-  p.people = [...people.values()]
-    .map((x) => {
-      const id = memberOf(x.name);
-      return { name: x.name, member: id ? (names.get(id) ?? null) : null, count: x.count };
-    })
-    .sort((a, b) => Number(a.member !== null) - Number(b.member !== null) || b.count - a.count);
+  p.people = [...assignees.values()]
+    .map((x) => ({ name: x.name, memberId: memberOf(x.name), count: x.count }))
+    .sort((a, b) => Number(a.memberId !== null) - Number(b.memberId !== null) || b.count - a.count);
   p.estimatedSeconds = Math.ceil((p.tasks * MS_PER_TASK + p.comments * MS_PER_COMMENT) / 1000);
   return { ok: true, preview: p, taskIds: [...parents.keys()] };
 }

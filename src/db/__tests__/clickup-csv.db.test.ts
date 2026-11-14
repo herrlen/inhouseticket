@@ -32,12 +32,12 @@ async function setup(label: string, name: string) {
 }
 
 /** Upload + start with the preview's suggestions, as the import page does. */
-async function start(actor: { userId: string; wsId: string }, overrides: Record<string, "own" | "Offen" | "In Arbeit" | "Review" | "Erledigt"> = {}) {
+async function start(actor: { userId: string; wsId: string }, overrides: Record<string, "own" | "Offen" | "In Arbeit" | "Review" | "Erledigt"> = {}, people: Array<{ name: string; memberId: string | null }> = []) {
   const plan = previewClickUpCsv(FIXTURE, []);
   if (!plan.ok) throw new Error(plan.error);
   const uploadId = await q.saveImportUpload({ workspaceId: actor.wsId, userId: actor.userId, fileName: "export.csv", content: FIXTURE, bytes: FIXTURE.length, tasks: plan.preview.tasks });
   const statuses = plan.preview.statuses.map((s) => ({ name: s.name, target: overrides[s.name] ?? s.target, category: s.category }));
-  const started = await q.startClickUpCsvRun({ workspaceId: actor.wsId, userId: actor.userId }, uploadId, statuses);
+  const started = await q.startClickUpCsvRun({ workspaceId: actor.wsId, userId: actor.userId }, uploadId, statuses, people);
   if (!started.ok) throw new Error(started.error);
   return { ...started, uploadId };
 }
@@ -74,7 +74,8 @@ afterAll(async () => {
 
 describe("ClickUp CSV import", () => {
   it("imports spaces as projects, subtasks under their top-most parent, labels, statuses and comments", async () => {
-    first = await start(a, { "Wartet auf Kunde": "own" });
+    // People table: "Tom Muster" (no member of that name) is given to Ina.
+    first = await start(a, { "Wartet auf Kunde": "own" }, [{ name: "Tom Muster", memberId: a.userId }, { name: "Ina Beispiel", memberId: a.userId }]);
     const result = await runCsvImport(first.integrationId);
     expect(result).toMatchObject({ error: null, finished: true });
     expect(result!.counts).toMatchObject({ read: 7, created: 7, unchanged: 0, errors: 0, comments: 2, duplicates: 1, skipped: 1, unlinked: 0 });
@@ -85,6 +86,9 @@ describe("ClickUp CSV import", () => {
     const top = by.get("Kampagne Herbst planen")!;
     expect(top).toMatchObject({ type: "task", parentId: null, assigneeId: a.userId, priority: 3, status: "In Arbeit", project: "Marketing" });
     for (const title of ["Texte schreiben", "Korrektur lesen", "Freigabe einholen"]) expect(by.get(title)).toMatchObject({ type: "subtask", parentId: top.id, status: "Erledigt" });
+    expect(by.get("Texte schreiben")!.assigneeId).toBe(a.userId);
+    // The choice is stored by name for the next import and the API wizard.
+    expect((await q.clickUpNameMappings(a.wsId)).get("tom muster")).toBe(a.userId);
     expect(by.get("Unteraufgabe ohne Eltern")).toMatchObject({ type: "task", parentId: null, status: "Erledigt" });
     expect(by.get('Release "2.0"')).toMatchObject({ status: "Wartet auf Kunde", priority: 4, project: "Produkt" });
     expect(by.get("Login reparieren")).toMatchObject({ status: "Offen", priority: 0 });

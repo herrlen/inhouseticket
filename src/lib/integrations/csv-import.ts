@@ -1,9 +1,9 @@
 import "server-only";
-import { deleteImportUpload, loadImportContent, openCsvRun, pendingCsvIntegrationIds, type CsvCursor } from "@/db/queries/clickup-import";
+import { clickUpNameMappings, deleteImportUpload, loadImportContent, openCsvRun, pendingCsvIntegrationIds, type CsvCursor } from "@/db/queries/clickup-import";
 import { listImportMembers } from "@/db/queries/import";
 import { claimIntegration, errorCode, finishRun, releaseIntegration, renewLease, saveRun, syncActor, SyncWriter, type RunCounts, type SyncIntegration } from "@/db/queries/integration-sync";
 import { readClickUpCsv } from "@/lib/import/clickup";
-import { matchByName } from "./mapping";
+import { nameResolver } from "./mapping";
 import { PROVIDER_NAMES } from "./providers";
 
 // Background run of a ClickUp CSV import (ADR 008, "CSV-Import"). Same writer as the API sync:
@@ -71,7 +71,8 @@ async function importFile(integ: SyncIntegration, runId: string, counts: RunCoun
   const members = await listImportMembers(integ.workspaceId);
   const actorId = members.some((m) => m.id === cursor.actorId) ? cursor.actorId : await syncActor(integ);
   if (!actorId) throw new FatalImportError("no_active_member");
-  const byName = matchByName(members);
+  // People chosen in the preview (field_mapping "user" by name), else the exact name.
+  const byName = nameResolver(members, await clickUpNameMappings(integ.workspaceId));
   const spaceNames = new Map<string, string>();
   const writer = new SyncWriter(integ, actorId, PROVIDER_NAMES.clickup, spaceNames, { person: (p) => byName(p.name), createOnly: true });
   await writer.load();

@@ -15,7 +15,7 @@ const POLL_MS = 1500;
 
 type State =
   | { step: "pick" }
-  | { step: "preview"; uploadId: string; preview: ClickUpPreview }
+  | { step: "preview"; uploadId: string; preview: ClickUpPreview; members: Array<{ id: string; name: string }> }
   | { step: "run"; runId: string; run: RunView | null };
 
 const card = "rounded-[var(--radius-card)] border border-border bg-surface p-4";
@@ -43,6 +43,7 @@ export function ClickUpImport({ workspaceId, slug, initialRun, header }: { works
   const [file, setFile] = useState<File | null>(null);
   const [state, setState] = useState<State>(initialRun ? { step: "run", runId: initialRun.id, run: initialRun } : { step: "pick" });
   const [targets, setTargets] = useState<Record<string, StatusTarget>>({});
+  const [people, setPeople] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -88,8 +89,9 @@ export function ClickUpImport({ workspaceId, slug, initialRun, header }: { works
     );
     setPending(false);
     if (!r.ok) return setError(r.error);
-    const data = r.data as { uploadId: string; preview: ClickUpPreview };
+    const data = r.data as { uploadId: string; preview: ClickUpPreview; members: Array<{ id: string; name: string }> };
     setTargets(Object.fromEntries(data.preview.statuses.map((s) => [s.name, s.target])));
+    setPeople(Object.fromEntries(data.preview.people.map((x) => [x.name, x.memberId ?? ""])));
     setState({ step: "preview", ...data });
   }
 
@@ -98,9 +100,10 @@ export function ClickUpImport({ workspaceId, slug, initialRun, header }: { works
     setPending(true);
     setError(null);
     const statuses = state.preview.statuses.map((s) => ({ name: s.name, target: targets[s.name] ?? s.target }));
+    const chosen = state.preview.people.map((x) => ({ name: x.name, memberId: (people[x.name] ?? x.memberId ?? "") || null }));
     const r = await call(
       `/api/w/${workspaceId}/import/clickup/${state.uploadId}`,
-      { method: "POST", body: JSON.stringify({ statuses }), headers: { "content-type": "application/json" } },
+      { method: "POST", body: JSON.stringify({ statuses, people: chosen }), headers: { "content-type": "application/json" } },
       t.import.errors.network,
     );
     setPending(false);
@@ -163,7 +166,14 @@ export function ClickUpImport({ workspaceId, slug, initialRun, header }: { works
 
       {state.step === "preview" ? (
         <section aria-labelledby="import-preview-heading" className={`${card} flex flex-col gap-5`}>
-          <ClickUpPreviewView preview={state.preview} targets={targets} onTarget={(name, target) => setTargets((cur) => ({ ...cur, [name]: target }))} />
+          <ClickUpPreviewView
+            preview={state.preview}
+            members={state.members}
+            targets={targets}
+            onTarget={(name, target) => setTargets((cur) => ({ ...cur, [name]: target }))}
+            people={people}
+            onPerson={(name, memberId) => setPeople((cur) => ({ ...cur, [name]: memberId }))}
+          />
           <div className="flex flex-col gap-2">
             <div>
               <Button variant="primary" onClick={start} disabled={pending || state.preview.tasks === state.preview.known}>

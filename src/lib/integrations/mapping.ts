@@ -68,6 +68,24 @@ export function matchByName(members: Array<Pick<LocalMember, "id" | "name">>): (
   return (name) => byName.get(norm(name)) ?? null;
 }
 
+/**
+ * Person by name with a confirmed choice first (CSV import: field_mapping kind "user", external
+ * value = the name; "" = nobody). Keys of `saved` are lower-case names. A choice pointing at someone
+ * who is no longer a member falls back to the name match.
+ */
+export function nameResolver(members: Array<Pick<LocalMember, "id" | "name">>, saved: Map<string, string | null>): (name: string) => string | null {
+  const byName = matchByName(members);
+  const ids = new Set(members.map((m) => m.id));
+  return (name) => {
+    const key = name.replace(/\s+/g, " ").trim().toLowerCase();
+    if (saved.has(key)) {
+      const id = saved.get(key) ?? null;
+      if (id === null || ids.has(id)) return id;
+    }
+    return byName(name);
+  };
+}
+
 const MAX_LABEL = 50;
 export const MILESTONE_LABEL = "Meilenstein";
 

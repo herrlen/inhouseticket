@@ -86,6 +86,11 @@ test("import a ClickUp workspace export: one project per space, in the backgroun
   await expect(page.getByLabel("Ziel für den Status „achived“")).toHaveValue("Erledigt");
   await expect(page.getByLabel("Ziel für den Status „warten auf kunde“")).toHaveValue("own");
   await page.getByLabel("Ziel für den Status „warten auf kunde“").selectOption("Review");
+  // People table: no member is called "Tom Fremd" → "Nicht zuweisen"; give the task to Ina instead.
+  const tom = page.getByLabel("Mitglied für „Tom Fremd“");
+  await expect(tom).toHaveValue("");
+  await tom.selectOption({ index: 1 });
+  await expect(preview).not.toContainText("kein passendes Mitglied");
 
   await page.getByRole("button", { name: "4 Aufgaben importieren" }).click();
   await expect(page.getByRole("heading", { name: "Import abgeschlossen" })).toBeVisible({ timeout: 60_000 });
@@ -95,6 +100,8 @@ test("import a ClickUp workspace export: one project per space, in the backgroun
   await page.getByRole("button", { name: "Weitere Datei importieren" }).click();
   const again = await upload();
   await expect(again).toContainText("4 Aufgaben gibt es schon");
+  // The people choice was saved and is suggested again.
+  await expect(page.getByLabel("Mitglied für „Tom Fremd“")).not.toHaveValue("");
   await expect(page.getByRole("button", { name: "0 Aufgaben importieren" })).toBeDisabled();
 });
 

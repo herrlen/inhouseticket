@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MAX_DESCRIPTION, MAX_SUBTASKS, MAX_TITLE } from "../limits";
-import { berlinDay, desiredParents, matchByName, matchPeople, suggestStatus, targetCategory, taskLabels, ticketFields } from "./mapping";
+import { berlinDay, desiredParents, matchByName, nameResolver, matchPeople, suggestStatus, targetCategory, taskLabels, ticketFields } from "./mapping";
 import type { ExternalTask } from "./types";
 
 function task(over: Partial<ExternalTask> = {}): ExternalTask {
@@ -74,6 +74,16 @@ describe("matchByName", () => {
     expect(match(" ina example ")).toBe("u1");
     expect(match("Ina")).toBeNull();
     expect(match("Tom Muster")).toBeNull();
+  });
+});
+
+describe("nameResolver", () => {
+  it("uses a saved choice (also 'nobody') before the name; a former member falls back to the name", () => {
+    const resolve = nameResolver([{ id: "u1", name: "Ina" }, { id: "u2", name: "Tom" }], new Map([["ina", "u2"], ["tom", null], ["max", "gone"]]));
+    expect(resolve(" INA ")).toBe("u2");
+    expect(resolve("Tom")).toBeNull();
+    expect(resolve("Max")).toBeNull();
+    expect(nameResolver([{ id: "u3", name: "Max" }], new Map([["max", "gone"]]))("Max")).toBe("u3");
   });
 });
 

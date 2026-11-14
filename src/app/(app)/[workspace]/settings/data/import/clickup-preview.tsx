@@ -8,17 +8,25 @@ import type { StatusTarget } from "@/lib/integrations/mapping";
 const MESSAGES = { import: deImport };
 // Same order as STATUS_TARGETS in mapping.ts (not imported: keeps the module out of the bundle).
 const TARGETS: readonly StatusTarget[] = ["Offen", "In Arbeit", "Review", "Erledigt", "own"];
-const PEOPLE_SHOWN = 30;
 
 const th = "py-1.5 pr-3 text-left text-[12px] font-medium text-muted";
 const td = "py-1.5 pr-3 align-top";
 const select = "h-8 max-w-full rounded-[var(--radius-badge)] border border-border bg-surface px-2 text-[13px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 
-/** What a ClickUp CSV import will create; the status targets are editable. */
-export function ClickUpPreviewView({ preview: p, targets, onTarget }: { preview: ClickUpPreview; targets: Record<string, StatusTarget>; onTarget: (name: string, target: StatusTarget) => void }) {
+export type PreviewChoices = {
+  members: Array<{ id: string; name: string }>;
+  targets: Record<string, StatusTarget>;
+  onTarget: (name: string, target: StatusTarget) => void;
+  /** ClickUp person name → member id, "" = nobody. */
+  people: Record<string, string>;
+  onPerson: (name: string, memberId: string) => void;
+};
+
+/** What a ClickUp CSV import will create; status targets and people are editable. */
+export function ClickUpPreviewView({ preview: p, members, targets, onTarget, people, onPerson }: { preview: ClickUpPreview } & PreviewChoices) {
   const t = useT(MESSAGES);
   const c = t.import.clickup;
-  const unmatched = p.people.filter((x) => !x.member);
+  const unmatched = p.people.filter((x) => !(people[x.name] ?? x.memberId ?? ""));
   const content: Array<[string, number]> = [
     [c.content.tasks, p.tasks],
     [c.content.subtasks, p.subtasks],
@@ -117,19 +125,34 @@ export function ClickUpPreviewView({ preview: p, targets, onTarget }: { preview:
         <div className="overflow-x-auto">
           <h3 className="mb-1 text-[13px] font-semibold">{c.peopleTitle}</h3>
           {unmatched.length ? <p className="mb-1 text-[13px] text-prio-urgent-ink">{c.peopleUnmatched(unmatched.length)}</p> : null}
+          <p className="mb-2 text-[13px] text-muted">{c.peopleHint}</p>
           <table className="w-full text-[13px]">
+            <thead>
+              <tr className="border-b border-border">
+                <th scope="col" className={th}>{c.personFrom}</th>
+                <th scope="col" className={th}>{c.personTo}</th>
+                <th scope="col" className={`${th} text-right`}>{c.count}</th>
+              </tr>
+            </thead>
             <tbody>
-              {p.people.slice(0, PEOPLE_SHOWN).map((person) => (
+              {p.people.map((person) => (
                 <tr key={person.name} className="border-b border-border last:border-0">
                   <td className={td}>{person.name}</td>
-                  <td className={`${td} ${person.member ? "" : "text-prio-urgent-ink"}`}>{person.member ? c.matched(person.member) : c.unmatched}</td>
+                  <td className={td}>
+                    <select aria-label={c.personLabel(person.name)} value={people[person.name] ?? person.memberId ?? ""} onChange={(e) => onPerson(person.name, e.target.value)} className={select}>
+                      <option value="">{c.unassigned}</option>
+                      {members.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
                   <td className={`${td} text-right tabular-nums`}>{person.count}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {p.people.length > PEOPLE_SHOWN ? <p className="mt-1 text-[13px] text-muted">+ {p.people.length - PEOPLE_SHOWN}</p> : null}
-          <p className="mt-1 text-[13px] text-muted">{c.peopleHint}</p>
         </div>
       ) : null}
 

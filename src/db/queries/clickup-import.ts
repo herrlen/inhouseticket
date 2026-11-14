@@ -76,6 +76,20 @@ export async function clickUpStatusMappings(workspaceId: string): Promise<Map<st
   return out;
 }
 
+/**
+ * Choices for people known by name (CSV): lower-case name → member id, null = nobody. Stored as
+ * field_mapping kind "user" with the name as external value (the API stores ClickUp user ids there).
+ */
+export async function clickUpNameMappings(workspaceId: string): Promise<Map<string, string | null>> {
+  const integrationId = await clickUpIntegrationId(workspaceId);
+  if (!integrationId) return new Map();
+  const rows = await db
+    .select({ externalValue: fieldMapping.externalValue, localValue: fieldMapping.localValue })
+    .from(fieldMapping)
+    .where(and(eq(fieldMapping.workspaceId, workspaceId), eq(fieldMapping.integrationId, integrationId), eq(fieldMapping.kind, "user")));
+  return new Map(rows.map((r) => [r.externalValue.replace(/\s+/g, " ").trim().toLowerCase(), r.localValue || null]));
+}
+
 /** How many of these Task IDs already have a ticket (earlier import or API sync). */
 export async function countKnownTasks(workspaceId: string, taskIds: string[]): Promise<number> {
   const integrationId = await clickUpIntegrationId(workspaceId);
@@ -144,6 +158,8 @@ export async function startClickUpCsvRun(
   actor: { workspaceId: string; userId: string },
   uploadId: string,
   statuses: Array<{ name: string; target: StatusTarget; category: Category }>,
+  /** Person name → member id (null = nobody); member ids checked by the caller. */
+  people: Array<{ name: string; memberId: string | null }> = [],
 ): Promise<{ ok: true; runId: string; integrationId: string } | { ok: false; error: StartError }> {
   const ws = actor.workspaceId;
   const [upload] = await db
@@ -168,6 +184,16 @@ export async function startClickUpCsvRun(
       await tx
         .insert(fieldMapping)
         .values(statuses.map((s) => ({ workspaceId: ws, integrationId, kind: "status", externalValue: s.name.trim().slice(0, 200), localValue: s.target, meta: { category: s.category, source: "csv" } })))
+        .onConflictDoUpdate({
+          target: [fieldMapping.integrationId, fieldMapping.kind, fieldMapping.externalValue],
+          set: { localValue: sql`excluded.local_value`, meta: sql`excluded.meta` },
+          setWhere: eq(fieldMapping.workspaceId, ws),
+        });
+    }
+    if (people.length) {
+      await tx
+        .insert(fieldMapping)
+        .values(people.map((p) => ({ workspaceId: ws, integrationId, kind: "user", externalValue: p.name.trim().slice(0, 200), localValue: p.memberId ?? "", meta: { name: p.name, source: "csv" } })))
         .onConflictDoUpdate({
           target: [fieldMapping.integrationId, fieldMapping.kind, fieldMapping.externalValue],
           set: { localValue: sql`excluded.local_value`, meta: sql`excluded.meta` },
