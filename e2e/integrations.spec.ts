@@ -36,7 +36,8 @@ test("connect ClickUp: token, selection, mapping, first sync, source link, disco
   await page.getByRole("link", { name: "ClickUp: Verbinden" }).click();
 
   // Step 1: token – a wrong one is refused, the right one shows the ClickUp workspace.
-  const token = page.getByLabel("API-Token");
+  // exact: the section "Persönlichen API-Token eingeben" also carries the word as its label.
+  const token = page.getByLabel("API-Token", { exact: true });
   await waitForHydration(token);
   await token.fill("pk_wrong_token_0000");
   await page.getByRole("button", { name: "Token prüfen" }).click();
