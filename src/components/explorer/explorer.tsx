@@ -202,7 +202,7 @@ export function Explorer({ data }: { data: ExplorerData }) {
     <div className="flex flex-col gap-4">
       {favoriteProjects.length > 0 ? (
         <section aria-labelledby="fav-heading">
-          <h2 id="fav-heading" className="mb-1 flex items-center gap-1.5 px-2 text-xs font-medium text-muted">
+          <h2 id="fav-heading" className="mb-1 flex items-center gap-1.5 px-2 text-[11px] font-semibold tracking-wide text-muted uppercase">
             <Star size={12} filled /> {t.explorer.favorites}
           </h2>
           <ul>
@@ -215,7 +215,7 @@ export function Explorer({ data }: { data: ExplorerData }) {
 
       <section aria-labelledby="projects-heading">
         <div className="mb-1 flex items-center justify-between px-2">
-          <h2 id="projects-heading" className="text-xs font-medium text-muted">
+          <h2 id="projects-heading" className="text-[11px] font-semibold tracking-wide text-muted uppercase">
             {t.explorer.projects}
           </h2>
         </div>
@@ -266,14 +266,14 @@ export function Explorer({ data }: { data: ExplorerData }) {
           <button
             type="button"
             onClick={() => setDialog({ kind: "project", folderId: null })}
-            className="flex h-8 items-center gap-2 rounded-[var(--radius-badge)] px-2 text-[13px] text-muted hover:bg-bg hover:text-text"
+            className="flex h-8 items-center gap-2 rounded-[var(--radius-badge)] px-2 text-sm text-secondary hover:bg-hover hover:text-text"
           >
             <Plus size={14} /> {t.explorer.newProject}
           </button>
           <button
             type="button"
             onClick={() => setDialog({ kind: "folder" })}
-            className="flex h-8 items-center gap-2 rounded-[var(--radius-badge)] px-2 text-[13px] text-muted hover:bg-bg hover:text-text"
+            className="flex h-8 items-center gap-2 rounded-[var(--radius-badge)] px-2 text-sm text-secondary hover:bg-hover hover:text-text"
           >
             <Plus size={14} /> {t.explorer.newFolder}
           </button>

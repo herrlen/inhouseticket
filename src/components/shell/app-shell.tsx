@@ -10,7 +10,7 @@ import { Explorer, type ExplorerData } from "@/components/explorer/explorer";
 import { Avatar } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
 import { Dropdown } from "@/components/ui/dropdown";
-import { Archive, Bolt, Chart, CheckSquare, Home, InboxIcon, Menu, Sidebar as SidebarIcon, Sparkle, Users } from "@/components/ui/icons";
+import { Archive, Chart, CheckSquare, Home, InboxIcon, Menu, Puzzle, Search, Sidebar as SidebarIcon, Sparkle, Users } from "@/components/ui/icons";
 import { ToastProvider } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
@@ -141,7 +141,7 @@ export function AppShell({ shell, user, explorer, initialCollapsed, initialConfe
             aria-label={t.shell.sidebar}
             data-collapsed={collapsed}
             className={cn(
-              "hidden shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-micro ease-out-quick md:flex",
+              "hidden shrink-0 flex-col border-r border-border bg-sidebar transition-[width] duration-micro ease-out-quick md:flex",
               collapsed ? "w-14" : "w-60",
             )}
           >
@@ -158,7 +158,7 @@ export function AppShell({ shell, user, explorer, initialCollapsed, initialConfe
               confetti={confetti}
               onToggleConfetti={() => setConfetti(!confetti)}
             />
-            <main id="main" tabIndex={-1} className="min-h-0 flex-1 overflow-y-auto">
+            <main id="main" tabIndex={-1} className="min-h-0 flex-1 overflow-y-auto bg-content">
               {children}
             </main>
           </div>
@@ -200,7 +200,7 @@ function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: 
     ...(shell.canAdmin ? [{ href: members, label: t.shell.pages.members, icon: <Users />, active: pathname.startsWith(members) }] : []),
     { href: claude, label: t.shell.pages.claudeNav, icon: <Sparkle />, active: pathname === claude },
     ...(shell.canAdmin ? [{ href: data, label: t.shell.pages.dataNav, icon: <Archive />, active: pathname.startsWith(data) }] : []),
-    ...(shell.canAdmin ? [{ href: integrations, label: t.shell.pages.integrations, icon: <Bolt />, active: pathname.startsWith(integrations) }] : []),
+    ...(shell.canAdmin ? [{ href: integrations, label: t.shell.pages.integrations, icon: <Puzzle />, active: pathname.startsWith(integrations) }] : []),
   ];
 
   return (
@@ -218,7 +218,7 @@ function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: 
                 href={item.href}
                 aria-label={item.aria ?? item.label}
                 aria-current={item.active ? "page" : undefined}
-                className={cn("relative flex size-10 items-center justify-center rounded-[var(--radius-badge)] text-muted hover:bg-bg hover:text-text", item.active && "bg-bg text-text")}
+                className={cn("relative flex size-10 items-center justify-center rounded-[var(--radius-badge)]", item.active ? "bg-content text-accent-strong shadow-[inset_3px_0_0_var(--accent)]" : "text-muted hover:bg-hover hover:text-text")}
               >
                 {item.icon}
                 {item.badge ? <span aria-hidden className="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent" /> : null}
@@ -230,9 +230,13 @@ function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: 
               href={item.href}
               aria-label={item.aria}
               aria-current={item.active ? "page" : undefined}
-              className={cn("flex h-8 items-center gap-2 rounded-[var(--radius-badge)] px-2 text-[13px] hover:bg-bg", item.active && "bg-bg font-medium")}
+              className={cn(
+                "group flex h-8 items-center gap-2 rounded-[var(--radius-badge)] px-2 text-sm",
+                // Active item as in emuchat: content background, accent bar, strong accent text.
+                item.active ? "bg-content font-semibold text-accent-strong shadow-[inset_3px_0_0_var(--accent)]" : "text-secondary hover:bg-hover hover:text-text",
+              )}
             >
-              <span className="text-muted">{item.icon}</span>
+              <span className={item.active ? "text-accent-strong" : "text-muted"}>{item.icon}</span>
               {item.label}
               {item.badge ? <span aria-hidden className="ml-auto rounded-full bg-accent px-1.5 text-[11px] font-medium text-accent-contrast tabular-nums">{item.badge}</span> : null}
             </Link>
@@ -252,7 +256,7 @@ function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: 
             aria-expanded={!collapsed}
             aria-keyshortcuts="Meta+B Control+B"
             aria-label={collapsed ? t.shell.expand : t.shell.collapse}
-            className={cn("flex items-center gap-2 rounded-[var(--radius-badge)] text-[13px] text-muted hover:bg-bg hover:text-text", collapsed ? "size-10 justify-center" : "h-8 w-full px-2")}
+            className={cn("flex items-center gap-2 rounded-[var(--radius-badge)] text-[13px] text-muted hover:bg-hover hover:text-text", collapsed ? "size-10 justify-center" : "h-8 w-full px-2")}
           >
             <SidebarIcon />
             {!collapsed ? (
@@ -286,7 +290,7 @@ function CollapsedProjects({ explorer }: { explorer: ExplorerData }) {
                 href={projectHref(shell, p.key)}
                 aria-label={p.name}
                 aria-current={pathname.startsWith(href) ? "page" : undefined}
-                className={cn("flex size-10 items-center justify-center rounded-[var(--radius-badge)] hover:bg-bg", pathname.startsWith(href) && "bg-bg")}
+                className={cn("flex size-10 items-center justify-center rounded-[var(--radius-badge)]", pathname.startsWith(href) ? "bg-content shadow-[inset_3px_0_0_var(--accent)]" : "hover:bg-hover")}
               >
                 {p.icon ? <span aria-hidden>{p.icon}</span> : <span aria-hidden className="size-2.5 rounded-full" style={{ backgroundColor: p.color }} />}
               </Link>
@@ -323,12 +327,12 @@ function Topbar({
   const shortcutK = useShortcutLabel().replace("B", "K");
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-surface px-3 md:px-4">
+    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-content px-3 md:px-4">
       <button
         type="button"
         onClick={onOpenDrawer}
         aria-label={t.shell.openMenu}
-        className="flex size-8 items-center justify-center rounded-[var(--radius-badge)] text-muted hover:bg-bg md:hidden"
+        className="flex size-8 items-center justify-center rounded-[var(--radius-badge)] text-muted hover:bg-hover md:hidden"
       >
         <Menu />
       </button>
@@ -354,10 +358,11 @@ function Topbar({
         type="button"
         onClick={onOpenPalette}
         aria-keyshortcuts="Meta+K Control+K"
-        className="flex h-8 items-center gap-2 rounded-[var(--radius-badge)] border border-border px-2.5 text-[13px] text-muted hover:bg-bg hover:text-text"
+        className="flex h-8 items-center gap-2 rounded-[var(--radius-field)] border border-border px-2.5 text-[13px] text-muted hover:bg-hover hover:text-text sm:min-w-56"
       >
+        <Search size={14} />
         <span>{t.shell.search}</span>
-        <kbd className="hidden font-mono text-[11px] sm:inline">{shortcutK}</kbd>
+        <kbd className="ml-auto hidden rounded border border-border-subtle px-1 font-mono text-[11px] sm:inline">{shortcutK}</kbd>
       </button>
       <LanguageToggle locale={locale} label={t.common.language} />
       <Dropdown
