@@ -240,6 +240,15 @@ dig +short TXT inhouseticket.com                                       # Search-
 
 ## Deploys
 
+### 2026-11-14 — emuchat-Design und Selbst-Hosting, `9c7cd35` (#13 Selbst-Hosting, #14 Redesign)
+
+- Sicherung `cron-iqf97w` vorher (Complete). Keine Migration. Neues Design wie emuchat (Emu-Tokens, Inter,
+  lucide-Icons) für Liste, Board, Ticket und Seitenleiste.
+- Selbst-Hosting-Modus (`SELF_HOSTED`, Anleitung `docs/selbst-hosten.md`) ist hier nicht gesetzt – die
+  gehostete Instanz zeigt weiter Startseite, Preise und eigene Rechtstexte.
+- Prüfung: `/api/health` ok (`sha-9c7cd35`), `/login`, Startseite, Impressum, Datenschutz 200. Direkt nach dem
+  Start einige Sekunden 503 (Containerstart).
+
 ### 2026-11-14 — ClickUp-Integration, `ee0d0be` (#9 API, #10 CSV, #11 Webhooks)
 
 - Sicherung `cron-iqf97w` vorher (Complete). Migrationen 0016 (Integrationen), 0017 (`import_upload`),
