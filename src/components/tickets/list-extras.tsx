@@ -72,6 +72,9 @@ export function ListOptions(props: {
   onHidden: (columns: ListColumn[]) => void;
 }) {
   const t = useT(MESSAGES);
+  // The toolbar wraps on narrower screens: when "Spalten" lands in the left half, a right-aligned
+  // menu would reach under the sidebar – open it towards the right there.
+  const [alignLeft, setAlignLeft] = useState(false);
   return (
     <>
       <label className={cn(props.chip(props.showDone), "cursor-pointer")}>
@@ -82,12 +85,18 @@ export function ListOptions(props: {
         <input type="checkbox" checked={props.showSubtasks} onChange={(e) => props.onShowSubtasks(e.target.checked)} className="size-4 accent-[var(--accent)]" />
         {t.list.showSubtasks}
       </label>
-      <details className="relative hidden md:block">
+      <details
+        className="relative hidden md:block"
+        onToggle={(e) => {
+          const box = e.currentTarget.getBoundingClientRect();
+          if (e.currentTarget.open) setAlignLeft(box.left + box.width / 2 < window.innerWidth / 2);
+        }}
+      >
         <summary className={cn(props.chip(props.hidden.length > 0), "cursor-pointer list-none [&::-webkit-details-marker]:hidden")}>
           {t.list.columns}
           <ChevronDown size={14} />
         </summary>
-        <fieldset className="absolute right-0 z-20 mt-1 flex min-w-44 flex-col gap-1.5 rounded-[var(--radius-card)] border border-border bg-surface p-3 shadow-float">
+        <fieldset className={cn("absolute z-20 mt-1", alignLeft ? "left-0" : "right-0", "flex min-w-44 flex min-w-44 flex-col gap-1.5 rounded-[var(--radius-card)] border border-border bg-surface p-3 shadow-float")}>
           <legend className="sr-only">{t.list.columns}</legend>
           {LIST_COLUMNS.map((c) => (
             <label key={c} className="flex items-center gap-2 text-[13px]">
