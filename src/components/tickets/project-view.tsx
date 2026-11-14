@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import type { LabelRow, MemberOption, TicketRow } from "@/db/queries/tickets";
 import type { SavedViewRow } from "@/db/queries/views";
 import { trackEvent } from "@/lib/analytics";
+import { announceOpenCount } from "@/lib/explorer-events";
 import { cleanViewQuery } from "@/lib/view-query";
 import { FilterBar } from "./filter-bar";
 import { applyFilters, readFilters } from "./filters";
@@ -60,10 +61,13 @@ type Props = {
   savedViews: SavedViewRow[];
 };
 
-// Query string as live state. Next 16.4 syncs useSearchParams with history.pushState/replaceState
-// through a history-restore that can drop or delay an update (an opened ticket stayed on the old
-// one, ↑ after ↓ started from a stale ticket), so the view reads the address bar itself:
-// setParams notifies, back/forward arrive as popstate. Before hydration Next's value is used.
+// Query string as live state. Since Next 16.4, useSearchParams follows history.pushState/
+// replaceState only through an asynchronous history restore: an opened ticket stayed on the old
+// one, ↑ after ↓ started from a stale ticket, and a router.refresh() racing the change wrote the
+// older URL back (the dialog flipped tickets and lost what was typed – hence no router.refresh in
+// the project view, see explorer-events). So the view reads the address bar itself: setParams
+// notifies, back/forward arrive as popstate. During hydration the snapshot is Next's value in
+// the same normalised form, so server and client agree and nothing re-renders early.
 const paramListeners = new Set<() => void>();
 function subscribeParams(listener: () => void) {
   paramListeners.add(listener);
@@ -73,10 +77,16 @@ function subscribeParams(listener: () => void) {
     window.removeEventListener("popstate", listener);
   };
 }
+const addressBarQuery = () => new URLSearchParams(window.location.search).toString();
 function useLiveSearchParams(): URLSearchParams {
-  const fromNext = useSearchParams();
-  const search = useSyncExternalStore(subscribeParams, () => window.location.search, () => null);
-  return useMemo(() => (search === null ? new URLSearchParams(fromNext.toString()) : new URLSearchParams(search)), [search, fromNext]);
+  const fromNext = useSearchParams().toString();
+  const query = useSyncExternalStore(subscribeParams, addressBarQuery, () => fromNext);
+  // Router navigations (command palette, links) render before Next writes the address bar:
+  // read it again once that commit is done.
+  useEffect(() => {
+    for (const listener of paramListeners) listener();
+  }, [fromNext]);
+  return useMemo(() => new URLSearchParams(query), [query]);
 }
 
 /** Updates the query string without a server round trip. */
@@ -142,6 +152,9 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [saving]);
   const doneStatusIds = useMemo(() => new Set(statuses.filter((s) => s.category === "done").map((s) => s.id)), [statuses]);
+  // Sidebar count, same rule as the server (status not done) – replaces router.refresh().
+  const openCount = tickets.filter((x) => !doneStatusIds.has(x.statusId)).length;
+  useEffect(() => announceOpenCount({ projectId: project.id, openCount }), [project.id, openCount]);
   const filtered = useMemo(
     () => applyFilters(tickets, filters, { currentUserId: info.currentUserId, today, doneStatusIds, projectKey: project.key }),
     [tickets, filters, info.currentUserId, today, doneStatusIds, project.key],
