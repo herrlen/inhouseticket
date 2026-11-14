@@ -163,6 +163,8 @@ test("bulk change, grouping and sorting", async ({ page }) => {
 
   await page.getByRole("combobox", { name: "Gruppieren" }).selectOption("priority");
   await expect(page).toHaveURL(/group=priority/);
+  // The table regroups a render after the URL changes (useSearchParams follows history a tick later).
+  await expect(table(page).locator("th[scope=rowgroup]").first()).toContainText("Dringend");
   const groupHeaders = await table(page).locator("th[scope=rowgroup]").allInnerTexts();
   // Tutorial tickets: MKT-1 "Hoch", MKT-4/MKT-5 "Mittel".
   expect(groupHeaders.map((h) => h.split("\n")[0])).toEqual(["Dringend", "Hoch", "Mittel"]);

@@ -3,7 +3,7 @@
 import { useIsMutating } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { LabelRow, MemberOption, TicketRow } from "@/db/queries/tickets";
 import type { SavedViewRow } from "@/db/queries/views";
 import { trackEvent } from "@/lib/analytics";
@@ -60,7 +60,26 @@ type Props = {
   savedViews: SavedViewRow[];
 };
 
-/** Updates the query string without a server round trip (Next syncs useSearchParams). */
+// Query string as live state. Next 16.4 syncs useSearchParams with history.pushState/replaceState
+// through a history-restore that can drop or delay an update (an opened ticket stayed on the old
+// one, ↑ after ↓ started from a stale ticket), so the view reads the address bar itself:
+// setParams notifies, back/forward arrive as popstate. Before hydration Next's value is used.
+const paramListeners = new Set<() => void>();
+function subscribeParams(listener: () => void) {
+  paramListeners.add(listener);
+  window.addEventListener("popstate", listener);
+  return () => {
+    paramListeners.delete(listener);
+    window.removeEventListener("popstate", listener);
+  };
+}
+function useLiveSearchParams(): URLSearchParams {
+  const fromNext = useSearchParams();
+  const search = useSyncExternalStore(subscribeParams, () => window.location.search, () => null);
+  return useMemo(() => (search === null ? new URLSearchParams(fromNext.toString()) : new URLSearchParams(search)), [search, fromNext]);
+}
+
+/** Updates the query string without a server round trip. */
 function setParams(patch: Record<string, string | null>, mode: "push" | "replace" = "replace") {
   const url = new URL(window.location.href);
   for (const [k, v] of Object.entries(patch)) {
@@ -68,6 +87,7 @@ function setParams(patch: Record<string, string | null>, mode: "push" | "replace
     else url.searchParams.set(k, v);
   }
   window.history[mode === "push" ? "pushState" : "replaceState"](null, "", url);
+  for (const listener of paramListeners) listener();
 }
 
 /** List/board switch by the person (button or L/B) – reported to Matomo only when it changes. */
@@ -83,7 +103,7 @@ const isEditable = (el: EventTarget | null) =>
 
 export function ProjectView({ info, statuses, members, labels: initialLabels, initialTickets, savedViews }: Props) {
   const t = useT(MESSAGES);
-  const params = useSearchParams();
+  const params = useLiveSearchParams();
   const groupBy = (GROUPS.find((g) => g === params.get("group")) ?? "status") as GroupBy;
   const sortBy = (SORTS.find((s) => s === params.get("sort")) ?? "manual") as SortBy;
   const openKey = params.get("t");
@@ -161,13 +181,20 @@ export function ProjectView({ info, statuses, members, labels: initialLabels, in
     const t = tickets.find((x) => x.id === ticketId);
     if (t) setParams({ t: `${project.key}-${t.number}` }, openKey ? "replace" : "push");
   };
+  // Return focus to where the ticket was opened from (list row or board card) – once the dialog
+  // is really gone; focusing right after setParams would land inside the still-open modal.
+  const returnFocusTo = useRef<string | null>(null);
+  useEffect(() => {
+    const id = returnFocusTo.current;
+    if (openKey || !id) return;
+    returnFocusTo.current = null;
+    requestAnimationFrame(() =>
+      document.querySelector<HTMLElement>(`[data-ticket-row="${id}"] button, [data-card="${id}"]`)?.focus(),
+    );
+  }, [openKey]);
   const close = () => {
-    // Return focus to where the ticket was opened from: the list row or the board card.
-    const row = openTicket
-      ? document.querySelector<HTMLElement>(`[data-ticket-row="${openTicket.id}"] button, [data-card="${openTicket.id}"]`)
-      : null;
+    returnFocusTo.current = openTicket?.id ?? null;
     setParams({ t: null });
-    requestAnimationFrame(() => row?.focus());
   };
   const navigate = (direction: 1 | -1) => {
     if (!openTicket) return;
