@@ -86,3 +86,13 @@ export const MAX_INVITES_PER_STEP = 50;
 export const MAX_CLICKUP_CSV_BYTES = 50 * 1024 * 1024;
 export const MAX_CLICKUP_CSV_ROWS = 50_000;
 export const IMPORT_UPLOAD_TTL_MS = 24 * 60 * 60_000;
+
+/**
+ * ClickUp webhooks (ADR 008, addendum): a task event is a few KB (history items carry the changed
+ * values, a comment event its text). Signed events per integration and minute before the
+ * endpoint stops queueing and asks for a delta sync instead; open queue rows per integration
+ * (one per task and kind) before the same happens.
+ */
+export const MAX_WEBHOOK_BODY_BYTES = 256 * 1024;
+export const WEBHOOK_EVENTS_PER_MINUTE = 600;
+export const MAX_QUEUED_WEBHOOK_EVENTS = 5_000;

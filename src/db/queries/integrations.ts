@@ -4,7 +4,7 @@ import { db } from "@/db/client";
 import { activity, externalRef, fieldMapping, integration, syncRun } from "@/db/schema";
 import { env } from "@/lib/env";
 import { credentialsAad, openCredentials, sealCredentials } from "@/lib/integrations/crypto";
-import type { FieldMappingKind, IntegrationStatus, ProviderId, SyncTrigger } from "@/lib/integrations/providers";
+import type { FieldMappingKind, IntegrationStatus, ProviderId, SyncTrigger, WebhookStatus } from "@/lib/integrations/providers";
 
 // Integration rows for the settings UI. Every function filters by workspaceId (CLAUDE.md rule 1);
 // the sealed token leaves this module only through openIntegrationToken() – never to a client.
@@ -36,6 +36,9 @@ export type IntegrationView = {
   lastSyncAt: Date | null;
   syncRequestedAt: Date | null;
   running: boolean;
+  /** Real-time events: null = none (polling every 5 minutes). */
+  webhookStatus: WebhookStatus | null;
+  webhookEventAt: Date | null;
   createdAt: Date;
 };
 
@@ -57,10 +60,24 @@ const viewColumns = {
   lastSyncAt: integration.lastSyncAt,
   syncRequestedAt: integration.syncRequestedAt,
   lockedUntil: integration.lockedUntil,
+  webhookStatus: integration.webhookStatus,
+  webhookEventAt: integration.webhookEventAt,
   createdAt: integration.createdAt,
 };
 
-function toView(r: { id: string; provider: string; status: string; config: Record<string, unknown>; lastError: string | null; lastSyncAt: Date | null; syncRequestedAt: Date | null; lockedUntil: Date | null; createdAt: Date }): IntegrationView {
+function toView(r: {
+  id: string;
+  provider: string;
+  status: string;
+  config: Record<string, unknown>;
+  lastError: string | null;
+  lastSyncAt: Date | null;
+  syncRequestedAt: Date | null;
+  lockedUntil: Date | null;
+  webhookStatus: string | null;
+  webhookEventAt: Date | null;
+  createdAt: Date;
+}): IntegrationView {
   return {
     id: r.id,
     provider: r.provider as ProviderId,
@@ -70,6 +87,8 @@ function toView(r: { id: string; provider: string; status: string; config: Recor
     lastSyncAt: r.lastSyncAt,
     syncRequestedAt: r.syncRequestedAt,
     running: Boolean(r.lockedUntil && r.lockedUntil.getTime() > Date.now()),
+    webhookStatus: r.webhookStatus as WebhookStatus | null,
+    webhookEventAt: r.webhookEventAt,
     createdAt: r.createdAt,
   };
 }
@@ -77,6 +96,15 @@ function toView(r: { id: string; provider: string; status: string; config: Recor
 export async function listIntegrations(workspaceId: string): Promise<IntegrationView[]> {
   const rows = await db.select(viewColumns).from(integration).where(eq(integration.workspaceId, workspaceId));
   return rows.map(toView);
+}
+
+export async function getIntegration(workspaceId: string, integrationId: string): Promise<IntegrationView | null> {
+  const [row] = await db
+    .select(viewColumns)
+    .from(integration)
+    .where(and(eq(integration.id, integrationId), eq(integration.workspaceId, workspaceId)))
+    .limit(1);
+  return row ? toView(row) : null;
 }
 
 export async function findIntegration(workspaceId: string, provider: ProviderId): Promise<IntegrationView | null> {

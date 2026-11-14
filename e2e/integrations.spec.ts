@@ -17,9 +17,14 @@ let server: Server;
 
 test.beforeAll(async () => {
   server = createServer((req, res) => {
-    const out = fake.handle(req.method ?? "GET", `http://127.0.0.1:${PORT}${req.url}`, { authorization: req.headers.authorization });
-    res.writeHead(out.status, out.headers);
-    res.end(JSON.stringify(out.body));
+    const chunks: Buffer[] = [];
+    req.on("data", (c: Buffer) => chunks.push(c));
+    req.on("end", () => {
+      const body = chunks.length ? Buffer.concat(chunks).toString("utf8") : undefined;
+      const out = fake.handle(req.method ?? "GET", `http://127.0.0.1:${PORT}${req.url}`, { authorization: req.headers.authorization }, body);
+      res.writeHead(out.status, out.headers);
+      res.end(JSON.stringify(out.body));
+    });
   });
   await new Promise<void>((resolve) => server.listen(PORT, "127.0.0.1", resolve));
 });
@@ -67,6 +72,8 @@ test("connect ClickUp: token, selection, mapping, first sync, source link, disco
   await expect(page.getByRole("heading", { name: "Verbindung" })).toBeVisible();
   await expect(page.getByText("Beispiel GmbH")).toBeVisible();
   await expect(page.getByText(/pk_…1234/)).toBeVisible();
+  // No public https address in E2E: no webhook, polling instead (ADR 008, addendum webhooks).
+  await expect(page.getByText("aus – Polling alle 5 Min.")).toBeVisible();
   await expect(page.getByRole("table")).toContainText("5 gelesen · 5 angelegt", { timeout: 30_000 });
   await expect(page.getByRole("table")).toContainText("Erstabgleich");
 

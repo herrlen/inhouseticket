@@ -59,9 +59,13 @@ export async function releaseIntegration(
     .where(and(eq(integration.id, integ.id), eq(integration.workspaceId, integ.workspaceId)));
 }
 
-/** Active integrations whose interval is over or that were asked to sync, and not running. */
-export async function dueIntegrationIds(intervalMs: number): Promise<string[]> {
-  const before = new Date(Date.now() - intervalMs);
+/**
+ * Active integrations whose interval is over or that were asked to sync, and not running. With a
+ * healthy webhook the poll is only the safety net and runs every `webhookIntervalMs`.
+ */
+export async function dueIntegrationIds(intervalMs: number, webhookIntervalMs = intervalMs): Promise<string[]> {
+  const before = new Date(Date.now() - intervalMs).toISOString();
+  const beforeHook = new Date(Date.now() - webhookIntervalMs).toISOString();
   const rows = await db
     .select({ id: integration.id })
     .from(integration)
@@ -69,7 +73,11 @@ export async function dueIntegrationIds(intervalMs: number): Promise<string[]> {
       and(
         eq(integration.status, "active"),
         or(isNull(integration.lockedUntil), lt(integration.lockedUntil, new Date())),
-        or(isNull(integration.lastSyncAt), lt(integration.lastSyncAt, before), isNotNull(integration.syncRequestedAt)),
+        or(
+          isNull(integration.lastSyncAt),
+          sql`${integration.lastSyncAt} < (case when ${integration.webhookStatus} = 'active' then ${beforeHook}::timestamptz else ${before}::timestamptz end)`,
+          isNotNull(integration.syncRequestedAt),
+        ),
       ),
     )
     .orderBy(asc(sql`coalesce(${integration.lastSyncAt}, 'epoch'::timestamptz)`));
@@ -494,6 +502,32 @@ export class SyncWriter {
     return unplaced;
   }
 
+  /**
+   * A task deleted in the source (webhook): read-only sync and "deleted stays deleted" both say the
+   * ticket is kept – it gets the label DELETED_LABEL so people see it and can delete it themselves.
+   * Idempotent; false when the task never became a ticket here (or the ticket is gone).
+   */
+  async markDeleted(externalId: string): Promise<boolean> {
+    const [row] = await db
+      .select({ ticketId: ticket.id, projectId: ticket.projectId })
+      .from(externalRef)
+      .innerJoin(ticket, and(eq(ticket.id, externalRef.localId), eq(ticket.workspaceId, externalRef.workspaceId)))
+      .where(and(eq(externalRef.integrationId, this.integ.id), eq(externalRef.workspaceId, this.ws), eq(externalRef.entityType, "task"), eq(externalRef.externalId, externalId)))
+      .limit(1);
+    if (!row) return false;
+    const [labelId] = await this.labelIds(row.projectId, [deletedLabel(this.sourceName)]);
+    if (labelId) await db.insert(ticketLabel).values({ ticketId: row.ticketId, labelId, projectId: row.projectId }).onConflictDoNothing();
+    return true;
+  }
+
+  /** A comment event: fetch the task's comments in the next comment phase. */
+  async requestComments(externalId: string) {
+    await db
+      .update(externalRef)
+      .set({ pendingDetail: true })
+      .where(and(eq(externalRef.integrationId, this.integ.id), eq(externalRef.workspaceId, this.ws), eq(externalRef.entityType, "task"), eq(externalRef.externalId, externalId)));
+  }
+
   /** Tasks whose comments are still to be fetched (second phase). */
   async pendingCommentTasks(limit: number): Promise<Array<{ refId: string; externalId: string; ticketId: string }>> {
     const rows = await db
@@ -582,6 +616,9 @@ export class SyncWriter {
     return added;
   }
 }
+
+/** Label of tickets whose task was deleted in the source ("In ClickUp gelöscht"); stays German like the other source labels. */
+export const deletedLabel = (sourceName: string) => `In ${sourceName} gelöscht`;
 
 /** Marker the writer puts in front of every imported comment ("_Aus ClickUp übernommen – Name_"). */
 const IMPORTED_PREFIX = /^_Aus .{1,60}? übernommen[^\n]*_\n\n/;

@@ -49,7 +49,7 @@ Connector-Framework vor, das später auch in emuchat läuft (Jira, Slack, Miro f
   Session-Lock müsste auf einer reservierten Verbindung über den ganzen Lauf gehalten werden. Die Lease läuft
   nach 5 Minuten ohne Verlängerung ab, ein abgestürzter Lauf blockiert also nicht dauerhaft.
 - **Polling** alle 5 Minuten im App-Container (`instrumentation.ts`, nur Produktion); „Jetzt abgleichen“ startet
-  sofort per `after()`. Webhooks: nur als TODO in der Schnittstelle (`handleWebhook`).
+  sofort per `after()`. Webhooks: siehe Nachtrag unten (Polling dann alle 30 Minuten).
 
 ## Nachtrag 2026-11-14: ClickUp-CSV-Import über denselben Weg (PR `feat/clickup-csv`, Migration 0017)
 Ein echter Workspace-Export (12,8 MB, 17.806 Zeilen, 17.120 Aufgaben, 33 Spaces, 62 Status, 10.326 Unteraufgaben)
@@ -78,8 +78,48 @@ lief durch den alten CSV-Import nicht (5 MB / 5.000 Tickets, ein Projekt, Untera
 - **Verworfen:** geparste Zeilen einzeln speichern (mehr Schreiblast, gleiche Wirkung wie die Datei neu zu lesen –
   das dauert 0,4 s); Anhänge herunterladen (Links bleiben in der Beschreibung).
 
+## Nachtrag 2026-11-14: Webhooks (Echtzeit, PR `feat/clickup-webhooks`, Migration 0018)
+- **ClickUp-Doku geprüft (14.11.2026):** `POST /team/{team_id}/webhook` mit `endpoint`, `events` und optional
+  *einem* Ort (`space_id`/`folder_id`/`list_id`/`task_id`); Antwort `{ id, webhook: { id, secret, health } }`.
+  `GET /team/{team_id}/webhook` liefert nur die Webhooks des eigenen Tokens mit `health.status`/`fail_count`,
+  `DELETE /webhook/{id}` → `{}`. Signatur: Header `X-Signature`, HMAC-SHA256 des Bodys mit dem Secret, hex.
+  Ereignisse: `{ event, task_id, webhook_id, history_items? }` (bei `taskDeleted` ohne `history_items`). Abweichungen
+  bzw. Ergänzungen gegenüber der Annahme: ClickUp wertet eine Antwort > 7 s oder ohne 2xx als Fehlschlag (5 Versuche,
+  dann ist das Ereignis weg), sperrt bei `fail_count` 100 **und sofort bei 401 oder 410**; Reaktivieren per
+  `PUT /webhook/{id}`. Keine festen Absender-IPs. Kein `last_page`/keine Einheit dokumentiert (wie gehabt).
+- **Ein Webhook je Integration** für `taskCreated`, `taskUpdated`, `taskDeleted`, `taskMoved`, `taskStatusUpdated`,
+  `taskAssigneeUpdated`, `taskPriorityUpdated`, `taskDueDateUpdated`, `taskTagUpdated`, `taskCommentPosted`,
+  `taskCommentUpdated`. Ein Ortsfilter nur, wenn genau ein ganzer Space gewählt ist; sonst für den ganzen
+  ClickUp-Workspace – was nicht zur Auswahl gehört, verwirft der Abgleich beim Lesen der Aufgabe. Registriert nur
+  mit öffentlicher Adresse (Produktion, `APP_URL` https); neu nach Auswahl-Änderung und Token-Ersatz (Webhooks hängen
+  am Token), entfernt bei „Trennen“. Id und Secret versiegelt in `integration.webhook` (gleiche Krypto, AAD
+  `integration.webhook:<id>`), dazu `webhook_status` (`active`/`failing`/`failed`), `webhook_event_at`,
+  `webhook_checked_at`. Scheitert die Registrierung: `failed`, Polling alle 5 Minuten, stündlich neuer Versuch.
+- **Endpunkt** `POST /api/integrations/clickup/webhook/[integrationId]` (Route Handler; der Proxy läuft für `/api`
+  nicht, `noindex` kommt aus `next.config.ts`, kein Same-Origin-Check – Aufrufer ist ClickUp): Body höchstens
+  256 KB, Signatur in konstanter Zeit **vor** dem Parsen. Unbekannte, getrennte, gesperrte (Token abgelehnt) oder
+  webhooklose Integration → dasselbe 404; falsche/fehlende Signatur → 401 (sperrt bei ClickUp nur einen
+  verwaisten alten Webhook – gewollt). Fehlversuche zählen je Adresse und Integration (120/min), gültige Ereignisse
+  je Integration (600/min, darüber ein Delta-Abgleich statt Einzelabrufen). Antwort sofort 204.
+- **Verarbeitung:** Das Ereignis landet in `integration_event` (eine Zeile je Aufgabe und Art, ein zweites Ereignis
+  erneuert nur die Zeit; höchstens 5 000 offene Zeilen, sonst Delta-Abgleich). Nach der Antwort (`after()`) holt
+  `processWebhookEvents()` unter dem Lease der Integration jede Aufgabe per `GET /task/{id}` und schreibt sie über den
+  `SyncWriter` – gleiche Abbildung, Idempotenz über `date_updated`, Hierarchie (`linkHierarchy`), Kommentare
+  (Kommentar-Ereignisse setzen `pending_detail`, höchstens 60 s je Stapel). Hält ein Abgleich den Lease, warten die
+  Ereignisse; der Poller arbeitet sie jede Minute ab. Webhook-Stapel schreiben kein `sync_run` (das Protokoll
+  bliebe sonst voller Einzelereignisse) und verschieben weder `last_sync_at` noch die Delta-Marke.
+- **`taskDeleted`:** nur lesend und „lokal gelöscht bleibt gelöscht“ → das Ticket wird **nicht** gelöscht, sondern
+  bekommt das Label „In ClickUp gelöscht“ (Labels werden nur ergänzt). Wer aufräumen will, filtert danach.
+- **Polling bleibt Sicherheitsnetz:** alle 30 Minuten, solange `webhook_status = active`, sonst alle 5. Nach jedem
+  geplanten Lauf prüft `maintainWebhook()` die Gesundheit bei ClickUp: `failing` → Status `failing` (wieder alle 5
+  Minuten), gesperrt/fehlt/andere Adresse → neu registrieren (statt `PUT` reaktivieren: neues Secret, alte Lücke
+  holt das Delta).
+- **Verworfen:** Ereignisinhalt (`history_items`) direkt übernehmen – unvollständig je Ereignistyp, keine
+  Reihenfolge-Garantie; die Aufgabe frisch zu lesen kostet einen Aufruf und nutzt den erprobten Weg. Einen Webhook je
+  Space/Liste – bei vielen gewählten Listen Dutzende Registrierungen; Filtern beim Lesen ist billiger.
+
 ## Bewusst (noch) nicht
-- Schreiben nach ClickUp, Löschungen (das Delta zeigt gelöschte Aufgaben nicht; erst mit Webhooks), Anhänge,
+- Schreiben nach ClickUp, Löschen von Tickets (gelöschte Aufgaben bekommen nur ein Label, siehe Webhooks), Anhänge,
   Zeitschätzung/-erfassung, Startdatum, weitere Zuständige als Beobachter (gibt es in inhouseticket nicht).
 - Verschieben zwischen Projekten: wandert eine Aufgabe in ClickUp in einen anderen Space, bleibt das Ticket in
   seinem Projekt (ein Umzug würde es umnummerieren). Lokal gelöschte Tickets werden nicht neu angelegt.

@@ -46,6 +46,9 @@ export type FakeOptions = {
 
 export type FakeResponse = { status: number; headers: Record<string, string>; body: unknown };
 
+/** A webhook registered with the fake (POST /team/{id}/webhook). `status`/`failCount` can be set by tests. */
+export type FakeWebhook = { id: string; endpoint: string; events: string[]; spaceId: number | null; secret: string; status: string; failCount: number };
+
 export function sampleData(): FakeData {
   const statuses = [
     { status: "to do", type: "open", color: "#87909e" },
@@ -91,6 +94,7 @@ const json = (status: number, body: unknown, headers: Record<string, string> = {
 export function createFakeClickUp(data: FakeData, options: FakeOptions = {}) {
   let requests = 0;
   const log: string[] = [];
+  const webhooks: FakeWebhook[] = [];
   const pageSize = options.pageSize ?? 100;
 
   function listInfo(listId: string) {
@@ -132,7 +136,7 @@ export function createFakeClickUp(data: FakeData, options: FakeOptions = {}) {
     };
   }
 
-  function handle(method: string, rawUrl: string, headers: Record<string, string | undefined>): FakeResponse {
+  function handle(method: string, rawUrl: string, headers: Record<string, string | undefined>, body?: string): FakeResponse {
     requests++;
     const url = new URL(rawUrl);
     log.push(`${method} ${url.pathname}${url.search}`);
@@ -168,6 +172,37 @@ export function createFakeClickUp(data: FakeData, options: FakeOptions = {}) {
         .sort((a, b) => (a.created ?? a.updated) - (b.created ?? b.updated));
       return json(200, { tasks: matching.slice(page * pageSize, (page + 1) * pageSize).map(taskJson) });
     }
+    if ((m = /^\/team\/([^/]+)\/webhook$/.exec(path)) && m[1] === data.team.id) {
+      if (method === "GET") {
+        return json(200, {
+          webhooks: webhooks.map((w) => ({ id: w.id, endpoint: w.endpoint, events: w.events, space_id: w.spaceId, health: { status: w.status, fail_count: w.failCount }, secret: w.secret })),
+        });
+      }
+      if (method === "POST") {
+        let input: { endpoint?: unknown; events?: unknown; space_id?: unknown };
+        try {
+          input = JSON.parse(body ?? "") as typeof input;
+        } catch {
+          return json(400, { err: "Invalid JSON" });
+        }
+        if (typeof input.endpoint !== "string" || !Array.isArray(input.events) || !input.events.length) return json(400, { err: "Endpoint and events required" });
+        const id = `wh-${webhooks.length + 1}-${Math.random().toString(36).slice(2, 8)}`;
+        const secret = `FAKESECRET${Math.random().toString(36).slice(2).toUpperCase()}`;
+        const hook: FakeWebhook = { id, endpoint: input.endpoint, events: input.events.map(String), spaceId: typeof input.space_id === "number" ? input.space_id : null, secret, status: "active", failCount: 0 };
+        webhooks.push(hook);
+        return json(200, { id, webhook: { id, userid: 101, team_id: Number(data.team.id) || 0, endpoint: hook.endpoint, events: hook.events, space_id: hook.spaceId, health: { status: "active", fail_count: 0 }, secret } });
+      }
+    }
+    if ((m = /^\/webhook\/([^/]+)$/.exec(path)) && method === "DELETE") {
+      const i = webhooks.findIndex((w) => w.id === m![1]);
+      if (i < 0) return json(404, { err: "Webhook not found" });
+      webhooks.splice(i, 1);
+      return json(200, {});
+    }
+    if ((m = /^\/task\/([^/]+)$/.exec(path))) {
+      const t = data.tasks.find((x) => x.id === m![1]);
+      return t ? json(200, taskJson(t)) : json(404, { err: "Task not found", ECODE: "ITEM_013" });
+    }
     if ((m = /^\/task\/([^/]+)\/comment$/.exec(path))) {
       const all = [...(data.comments[m[1]!] ?? [])].sort((a, b) => b.date - a.date);
       const startId = url.searchParams.get("start_id");
@@ -186,9 +221,9 @@ export function createFakeClickUp(data: FakeData, options: FakeOptions = {}) {
   const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     const h = new Headers(init?.headers);
-    const res = handle(init?.method ?? "GET", url, { authorization: h.get("authorization") ?? undefined });
+    const res = handle(init?.method ?? "GET", url, { authorization: h.get("authorization") ?? undefined }, typeof init?.body === "string" ? init.body : undefined);
     return new Response(JSON.stringify(res.body), { status: res.status, headers: res.headers });
   }) as typeof fetch;
 
-  return { handle, fetch: fetchImpl, log, requests: () => requests };
+  return { handle, fetch: fetchImpl, log, webhooks, requests: () => requests };
 }
