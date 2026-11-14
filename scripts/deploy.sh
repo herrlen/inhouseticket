@@ -17,6 +17,8 @@
 # (BETA_ALLOWED_DOMAINS=studioluy.de,firma.de scripts/deploy.sh; BETA_ALLOWED_DOMAINS=" " opens registration). Same for SUPERADMIN_EMAILS (/admin)
 # and TESTER_EMAILS (single testers allowed despite freemail block and beta; TESTER_EMAILS=" " empties it),
 # MATOMO_SITE_ID and MATOMO_TOKEN (Matomo on public pages; both needed, MATOMO_TOKEN=" " switches it off).
+# INTEGRATION_SECRET (key for stored integration tokens, ADR 008) is generated once when the stack has none
+# and always kept afterwards – a new value would make every stored ClickUp token unreadable.
 #
 # Needs: gh, mw, jq, curl, openssl.
 set -euo pipefail
@@ -99,6 +101,11 @@ INDEX="${SITE_INDEXABLE:-$(env_of app SITE_INDEXABLE)}"
 MSITE="${MATOMO_SITE_ID:-$(env_of app MATOMO_SITE_ID)}"
 MTOKEN="${MATOMO_TOKEN:-$(env_of app MATOMO_TOKEN)}"
 MTOKEN="${MTOKEN// /}"
+INTEG="$(env_of app INTEGRATION_SECRET)"
+if [[ -z "$INTEG" ]]; then
+  echo "INTEGRATION_SECRET fehlt im Stack – wird einmalig erzeugt (nicht ausgegeben)."
+  INTEG="$(openssl rand -base64 32)"
+fi
 [[ -n "$SMTP" ]] || echo "Hinweis: SMTP_PASSWORD fehlt – Anmeldelinks können nicht verschickt werden. Setzen mit: scripts/set-smtp-password.sh"
 [[ -n "$BETA" ]] && echo "Beta-Domains: $BETA" || echo "Hinweis: BETA_ALLOWED_DOMAINS leer – Registrierung ist OFFEN."
 [[ "$INDEX" == "true" ]] && echo "Suchmaschinen: Indexierung AN" || echo "Suchmaschinen: noindex (Beta)"
@@ -119,6 +126,7 @@ MTOKEN="${MTOKEN// /}"
   printf 'SITE_INDEXABLE=%s\n' "$INDEX"
   printf 'MATOMO_SITE_ID=%s\n' "$MSITE"
   printf 'MATOMO_TOKEN=%s\n' "$MTOKEN"
+  printf 'INTEGRATION_SECRET=%s\n' "$INTEG"
 } >"$ENVFILE"
 
 schritt "Ausrollen ($TAG)"

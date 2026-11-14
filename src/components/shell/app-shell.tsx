@@ -10,7 +10,7 @@ import { Explorer, type ExplorerData } from "@/components/explorer/explorer";
 import { Avatar } from "@/components/ui/avatar";
 import { Dialog } from "@/components/ui/dialog";
 import { Dropdown } from "@/components/ui/dropdown";
-import { Archive, Chart, CheckSquare, Home, InboxIcon, Menu, Sidebar as SidebarIcon, Sparkle, Users } from "@/components/ui/icons";
+import { Archive, Bolt, Chart, CheckSquare, Home, InboxIcon, Menu, Sidebar as SidebarIcon, Sparkle, Users } from "@/components/ui/icons";
 import { ToastProvider } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
@@ -191,6 +191,7 @@ function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: 
   const dashboard = `${home}/dashboard`;
   const claude = `${home}/settings/claude`;
   const data = `${home}/settings/data`;
+  const integrations = `${home}/settings/integrations`;
   const nav: Array<{ href: string; label: string; icon: ReactNode; active: boolean; badge?: number; aria?: string }> = [
     { href: me, label: t.me.title, icon: <CheckSquare />, active: pathname === me },
     { href: inbox, label: t.inbox.title, icon: <InboxIcon />, active: pathname === inbox, badge: unread, aria: t.inbox.navLabel(unread) },
@@ -199,6 +200,7 @@ function SidebarContent({ collapsed, explorer, unread, onToggle }: { collapsed: 
     ...(shell.canAdmin ? [{ href: members, label: t.shell.pages.members, icon: <Users />, active: pathname.startsWith(members) }] : []),
     { href: claude, label: t.shell.pages.claudeNav, icon: <Sparkle />, active: pathname === claude },
     ...(shell.canAdmin ? [{ href: data, label: t.shell.pages.dataNav, icon: <Archive />, active: pathname.startsWith(data) }] : []),
+    ...(shell.canAdmin ? [{ href: integrations, label: t.shell.pages.integrations, icon: <Bolt />, active: pathname.startsWith(integrations) }] : []),
   ];
 
   return (

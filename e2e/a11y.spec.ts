@@ -10,7 +10,7 @@ import { waitForHydration } from "./helpers/hydration";
 // 19 pages × axe: needs more than the default 60 s when the suite runs in parallel.
 test.setTimeout(180_000);
 
-const PAGES = ["", "/me", "/inbox", "/dashboard", "/p/MKT", "/p/MKT?view=board", "/p/MKT?t=MKT-1", "/p/MKT/settings", "/settings/members", "/settings/claude", "/settings/data", "/settings/data/import", "/settings/account"];
+const PAGES = ["", "/me", "/inbox", "/dashboard", "/p/MKT", "/p/MKT?view=board", "/p/MKT?t=MKT-1", "/p/MKT/settings", "/settings/members", "/settings/claude", "/settings/data", "/settings/data/import", "/settings/integrations", "/settings/integrations/clickup", "/settings/account"];
 
 for (const scheme of ["light", "dark"] as const) {
   test(`axe: no WCAG A/AA violations (${scheme})`, async ({ browser }) => {

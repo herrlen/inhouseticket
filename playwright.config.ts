@@ -19,8 +19,15 @@ export default defineConfig({
   webServer: {
     command: "pnpm dev",
     // Matomo on, so e2e/analytics.spec.ts sees the tracker's /stat requests. Forwarding goes to a
-    // closed port (fails fast, a lost hit never breaks a page).
-    env: { MATOMO_URL: "http://127.0.0.1:9", MATOMO_SITE_ID: "4", MATOMO_TOKEN: "e2e-not-a-token" },
+    // closed port (fails fast, a lost hit never breaks a page). Integrations: an e2e-only key and the
+    // ClickUp stand-in that e2e/integrations.spec.ts starts on port 3199.
+    env: {
+      MATOMO_URL: "http://127.0.0.1:9",
+      MATOMO_SITE_ID: "4",
+      MATOMO_TOKEN: "e2e-not-a-token",
+      INTEGRATION_SECRET: "e2e-only-integration-secret-not-for-production",
+      CLICKUP_API_URL: "http://127.0.0.1:3199/api/v2",
+    },
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

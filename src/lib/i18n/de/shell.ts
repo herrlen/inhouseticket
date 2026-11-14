@@ -22,5 +22,6 @@ export default {
     data: "Daten & Workspace",
     dataNav: "Daten",
     import: "Projekte importieren",
+    integrations: "Integrationen",
   },
 } as const;

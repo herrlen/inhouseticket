@@ -2,13 +2,16 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createLabelAction } from "@/app/(app)/[workspace]/ticket-actions";
+import type { TicketSource } from "@/db/queries/integrations";
 import type { ActivityRow, LabelRow, TicketRow } from "@/db/queries/tickets";
+import { OpenOut } from "@/components/ui/icons";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/cn";
 import { relativeTime } from "@/lib/relative-time";
 import { useLocale, useT } from "@/lib/i18n/client";
 import type { Messages } from "@/lib/i18n/de";
 import { intlLocale, type Locale } from "@/lib/i18n/locale";
+import { PROVIDER_NAMES } from "@/lib/integrations/providers";
 import { MAX_TITLE } from "@/lib/limits";
 import { PALETTE } from "@/lib/palette";
 import type { TicketPatch } from "@/lib/validation/ticket";
@@ -121,6 +124,7 @@ export function TicketDetail({ ticket, tickets, onOpen, onCreateChild, onPatch, 
     <div ref={panel} className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <span className="font-mono text-xs text-muted">{key}</span>
+        {parts.data?.source ? <TicketSourceLine source={parts.data.source} /> : null}
         <label htmlFor="ticket-title" className="sr-only">{t.detail.title}</label>
         <textarea
           id="ticket-title"
@@ -222,6 +226,23 @@ export function TicketDetail({ ticket, tickets, onOpen, onCreateChild, onPatch, 
 }
 
 const LABEL_COLORS = Object.values(PALETTE);
+
+/** "Quelle: ClickUp" with a link to the task in the other tool (opens in a new tab). */
+function TicketSourceLine({ source }: { source: TicketSource }) {
+  const t = useT(MESSAGES);
+  const name = PROVIDER_NAMES[source.provider];
+  return (
+    <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted">
+      <span>{t.detail.source(name)}</span>
+      {source.url ? (
+        <a href={source.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-accent underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+          {t.detail.sourceOpen(name)}
+          <OpenOut aria-hidden className="size-3" />
+        </a>
+      ) : null}
+    </p>
+  );
+}
 
 function LabelEditor({ workspaceId, ticket, onChange, onCreated }: { workspaceId: string; ticket: TicketRow; onChange: (ids: string[]) => void; onCreated: (l: LabelRow) => void }) {
   const t = useT(MESSAGES);

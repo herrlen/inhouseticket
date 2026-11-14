@@ -12,7 +12,7 @@ const TOP_LEVEL = new Set([
   "login", "register", "forgot-password", "reset-password", "set-password", "start", "onboarding", "invite", "oauth", "admin", "dev",
 ]);
 /** Fixed route segments below the first one. Anything else (keys, tokens, ids) becomes ":id". */
-const KNOWN = new Set(["me", "inbox", "dashboard", "p", "settings", "members", "claude", "data", "import", "account", "link", "confirm", "consent", "ui"]);
+const KNOWN = new Set(["me", "inbox", "dashboard", "p", "settings", "members", "claude", "data", "import", "integrations", "clickup", "account", "link", "confirm", "consent", "ui"]);
 /** After these segments always an identifier, whatever it looks like. */
 const BEFORE_ID = new Set(["p", "invite"]);
 const MAX_SEGMENTS = 6;
@@ -78,6 +78,8 @@ const TITLES: Record<string, string> = {
   [`/${ID}/settings/claude`]: "Einstellungen/Claude",
   [`/${ID}/settings/data`]: "Einstellungen/Daten",
   [`/${ID}/settings/data/import`]: "Einstellungen/Import",
+  [`/${ID}/settings/integrations`]: "Einstellungen/Integrationen",
+  [`/${ID}/settings/integrations/clickup`]: "Einstellungen/Integrationen/ClickUp",
   [`/${ID}/settings/account`]: "Einstellungen/Konto",
 };
 

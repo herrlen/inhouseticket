@@ -113,6 +113,13 @@
       "when": 1794595565481,
       "tag": "0015_ticket_hierarchy_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794659971011,
+      "tag": "0016_integrations",
+      "breakpoints": true
     }
   ]
 }

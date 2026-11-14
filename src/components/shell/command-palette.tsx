@@ -98,6 +98,7 @@ function PaletteBody({ explorer, onClose, onToggleSidebar, onShowHelp }: { explo
       { id: "a-claude", group: "actions", label: t.shell.pages.claude, run: () => go(`/${slug}/settings/claude`) },
       ...(canAdmin ? [{ id: "a-data", group: "actions" as const, label: t.shell.pages.data, run: () => go(`/${slug}/settings/data`) }] : []),
       ...(canAdmin ? [{ id: "a-import", group: "actions" as const, label: t.shell.pages.import, run: () => go(`/${slug}/settings/data/import`) }] : []),
+      ...(canAdmin ? [{ id: "a-integrations", group: "actions" as const, label: t.shell.pages.integrations, run: () => go(`/${slug}/settings/integrations`) }] : []),
       { id: "a-sidebar", group: "actions", label: t.command.toggleSidebar, hint: "⌘B", run: () => { onClose(); onToggleSidebar(); } },
       { id: "a-help", group: "actions", label: t.command.shortcuts, hint: "?", run: () => { onClose(); onShowHelp(); } },
     ];

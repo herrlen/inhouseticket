@@ -39,4 +39,6 @@ export default {
   edit: "Bearbeiten",
   edited: "bearbeitet",
   close: "Ticket schließen",
+  source: (provider: string) => `Quelle: ${provider}`,
+  sourceOpen: (provider: string) => `In ${provider} öffnen`,
 } as const;

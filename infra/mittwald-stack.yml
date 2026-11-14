@@ -52,6 +52,8 @@ services:
       MATOMO_URL: https://analytics.klatxt.de
       MATOMO_SITE_ID: ${MATOMO_SITE_ID}
       MATOMO_TOKEN: ${MATOMO_TOKEN}
+      # Key for integration tokens (ClickUp …); generated once by scripts/deploy.sh, then kept.
+      INTEGRATION_SECRET: ${INTEGRATION_SECRET}
     ports:
       - "3000:3000/tcp"
     restartPolicy: unless-stopped

@@ -51,6 +51,21 @@ const envSchema = z.object({
     .string()
     .optional()
     .transform((v) => v?.trim() || undefined),
+  /**
+   * Key material for integration credentials (ClickUp tokens, src/lib/integrations/crypto.ts).
+   * Without it the integrations page explains that the feature is not set up. Changing it makes
+   * stored tokens unreadable – the integration then asks for a new token.
+   */
+  INTEGRATION_SECRET: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() || undefined)
+    .pipe(z.string().min(32).optional()),
+  /** Test-only override of the ClickUp API base (mock server in E2E). Ignored in production. */
+  CLICKUP_API_URL: z
+    .union([z.literal(""), z.url()])
+    .optional()
+    .transform((v) => v?.replace(/\/+$/, "") || undefined),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -84,4 +99,6 @@ export const env: Env = parsed.success
       MATOMO_URL: undefined,
       MATOMO_SITE_ID: undefined,
       MATOMO_TOKEN: undefined,
+      INTEGRATION_SECRET: undefined,
+      CLICKUP_API_URL: undefined,
     } satisfies Env);

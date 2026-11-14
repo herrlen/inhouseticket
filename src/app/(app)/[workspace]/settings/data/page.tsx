@@ -49,6 +49,16 @@ export default async function DataPage({ params }: Props) {
         </Link>
       </section>
 
+      <section aria-labelledby="integrations-heading" className="rounded-[var(--radius-card)] border border-border bg-surface p-4">
+        <h2 id="integrations-heading" className="mb-1 font-semibold">
+          {t.shell.pages.integrations}
+        </h2>
+        <p className="mb-3 text-[13px] text-muted">{t.integrations.dataText}</p>
+        <Link href={`/${ctx.workspace.slug}/settings/integrations`} className={linkButton}>
+          {t.integrations.dataLink}
+        </Link>
+      </section>
+
       <section aria-labelledby="delete-heading" className="rounded-[var(--radius-card)] border border-prio-urgent-ink p-4">
         <h2 id="delete-heading" className="mb-1 font-semibold text-prio-urgent-ink">
           {t.data.deleteTitle}
