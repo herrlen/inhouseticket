@@ -39,26 +39,63 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-const textTokens = ["text", "muted", "accent", ...Object.keys(light).filter((k) => k.endsWith("-ink"))];
+const textTokens = ["text", "secondary", "muted", "accent", "accent-strong", "danger", "warning", "info", "success", ...Object.keys(light).filter((k) => k.endsWith("-ink"))];
+/** Backgrounds text sits on: page, cards/panels, the main area, the hover fill. */
+const grounds = ["bg", "surface", "content", "hover"];
+
+/**
+ * Text/background pairs of the Emu theme (emuchat's CONTRAST_PAIRS, packages/ui/src/theme/tokens.ts):
+ * navigation on the sidebar, the selected row, solid status labels.
+ */
+const PAIRS: [fg: string, bg: string][] = [
+  ["text", "sidebar"],
+  ["secondary", "sidebar"],
+  ["muted", "sidebar"],
+  ["accent-strong", "sidebar"],
+  ["text", "accent-soft"],
+  ["muted", "accent-soft"],
+  ["accent-strong", "accent-soft"],
+  ["status-open-fg", "status-open-bg"],
+  ["status-fg", "status-progress"],
+  ["status-fg", "status-review"],
+  ["status-fg", "status-done"],
+];
 
 describe.each([
   ["light", light],
   ["dark", dark],
 ] as const)("%s theme", (_, vars) => {
-  it.each(textTokens)("--%s reaches 4.5:1 on --bg and --surface", (token) => {
+  it.each(textTokens)("--%s reaches 4.5:1 on --bg, --surface, --content and --hover", (token) => {
     const fg = resolve(vars, token);
-    expect(contrast(fg, resolve(vars, "bg"))).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(fg, resolve(vars, "surface"))).toBeGreaterThanOrEqual(4.5);
+    for (const ground of grounds) expect(contrast(fg, resolve(vars, ground)), ground).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(PAIRS)("--%s reaches 4.5:1 on --%s", (fg, bg) => {
+    expect(contrast(resolve(vars, fg), resolve(vars, bg))).toBeGreaterThanOrEqual(4.5);
   });
 
   it.each(["accent", "accent-hover"])("--accent-contrast is readable on --%s", (fill) => {
     expect(contrast(resolve(vars, "accent-contrast"), resolve(vars, fill))).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("--focus is visible (3:1) on --bg and --surface", () => {
-    expect(contrast(resolve(vars, "focus"), resolve(vars, "bg"))).toBeGreaterThanOrEqual(3);
-    expect(contrast(resolve(vars, "focus"), resolve(vars, "surface"))).toBeGreaterThanOrEqual(3);
+  it.each([...grounds, "sidebar", "accent-soft"])("--focus is visible (3:1) on --%s", (ground) => {
+    expect(contrast(resolve(vars, "focus"), resolve(vars, ground))).toBeGreaterThanOrEqual(3);
   });
+
+  it("borders separate zones (--border ≥ 1.3:1 on --content)", () => {
+    expect(contrast(resolve(vars, "border"), resolve(vars, "content"))).toBeGreaterThanOrEqual(1.3);
+  });
+});
+
+// The Emu theme is shared with emuchat (packages/ui/src/theme/tokens.ts): same values, so both
+// products look the same. Change both together.
+it.each([
+  ["light", light, { bg: "#ffffff", surface: "#f4f0ea", text: "#1f1a17", secondary: "#3d352f", muted: "#6b6159", accent: "#9a4a16", "accent-strong": "#7a3a10", "accent-soft": "#fbf3ea", border: "#ddd5cb", "border-subtle": "#eee9e2", hover: "#faf7f3" }],
+  ["dark", dark, { bg: "#171310", surface: "#1f1a16", text: "#f3eee9", secondary: "#ddd4cc", muted: "#a99d93", accent: "#e7955a", "accent-strong": "#f2b282", "accent-soft": "#2c2018", border: "#3b332d", "border-subtle": "#2a241f", hover: "#231d19" }],
+] as const)("%s values match emuchat's Emu tokens", (_, vars, emu) => {
+  // emuchat's `bg` is our main area (--content), its `surface` our sidebar.
+  const ours = (name: string) => resolve(vars, name === "bg" ? "content" : name === "surface" ? "sidebar" : name);
+  for (const [name, hex] of Object.entries(emu)) expect(ours(name), name).toBe(hex);
 });
 
 it.each(Object.keys(light).filter((k) => k.endsWith("-on")))("--%s is readable on its palette fill", (token) => {
