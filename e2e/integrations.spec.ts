@@ -56,7 +56,7 @@ test("connect ClickUp: token, selection, mapping, first sync, source link, disco
   await page.getByRole("button", { name: "Weiter zur Zuordnung" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "mindestens einen Space oder eine Liste" })).toBeVisible();
   await page.getByLabel("Ganzer Space „Marketing“").check();
-  await page.getByLabel("Angebote").check();
+  await page.getByLabel("Angebote", { exact: true }).check();
   await page.getByRole("button", { name: "Weiter zur Zuordnung" }).click();
 
   // Step 3: mapping – suggestions and e-mail match are preselected.
@@ -69,7 +69,7 @@ test("connect ClickUp: token, selection, mapping, first sync, source link, disco
   await page.getByRole("button", { name: "Speichern und Abgleich starten" }).click();
 
   // Step 4: the first sync runs in the background; the page follows it.
-  await expect(page.getByRole("heading", { name: "Verbindung" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Verbindung", exact: true })).toBeVisible();
   await expect(page.getByText("Beispiel GmbH")).toBeVisible();
   await expect(page.getByText(/pk_…1234/)).toBeVisible();
   // No public https address in E2E: no webhook, polling instead (ADR 008, addendum webhooks).
@@ -93,7 +93,7 @@ test("connect ClickUp: token, selection, mapping, first sync, source link, disco
   await page.goto(`${path}/settings/integrations/clickup`);
   await page.getByLabel("Ja, Verbindung trennen – die Tickets bleiben").check();
   await page.getByRole("button", { name: "ClickUp trennen" }).click();
-  await expect(page.getByRole("status")).toContainText("ClickUp wurde getrennt");
+  await expect(page.getByRole("status").filter({ hasText: "ClickUp wurde getrennt" })).toBeVisible();
   await page.goto(`${path}/p/MAR?t=MAR-1`);
   await expect(page.getByRole("textbox", { name: "Titel" })).toHaveValue("Kampagne planen");
   await expect(page.getByText("Quelle: ClickUp")).toHaveCount(0);
