@@ -41,3 +41,13 @@ describe("applyFilters", () => {
     expect(ids({ assignee: "me", due: "overdue" })).toEqual([1]);
   });
 });
+
+describe("type filter", () => {
+  it("reads only known types and treats a missing type as task", () => {
+    expect(readFilters(new URLSearchParams("type=epic"))).toEqual({ type: "epic" });
+    expect(readFilters(new URLSearchParams("type=bug"))).toEqual({});
+    const typed = [t(1, { type: "epic" }), t(2, { type: "subtask" }), t(3)];
+    expect(applyFilters(typed, { type: "epic" }, ctx).map((x) => x.number)).toEqual([1]);
+    expect(applyFilters(typed, { type: "task" }, ctx).map((x) => x.number)).toEqual([3]);
+  });
+});

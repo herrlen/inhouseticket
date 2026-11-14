@@ -1,7 +1,9 @@
 import "server-only";
 import { and, asc, count, desc, eq, ilike, isNull, lte, or, sql, type SQL } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db/client";
 import { comment, label, membership, project, status, subtask, ticket, ticketLabel, user } from "@/db/schema";
+import type { TicketType } from "@/lib/ticket-hierarchy";
 import { timestampToDueDate } from "@/lib/validation/ticket";
 
 // Workspace-scoped lookups for the MCP tools. Inputs are human terms (keys, names, status names);
@@ -21,6 +23,8 @@ export function parsePriority(value: string | number): number {
   return p;
 }
 
+const parentTicket = alias(ticket, "parent_ticket");
+
 const KEY = /^([A-Za-z][A-Za-z0-9]{1,9})-(\d{1,9})$/;
 
 export async function findTicketByKey(workspaceId: string, key: string) {
@@ -34,6 +38,25 @@ export async function findTicketByKey(workspaceId: string, key: string) {
     .limit(1);
   if (!row) throw new ToolInputError(`Ticket ${key.toUpperCase()} gibt es nicht. Mit inhouseticket_search_tickets lassen sich Tickets finden.`);
   return row;
+}
+
+/**
+ * Parent ticket for create/update: a number in the project ("12") or a full key ("MKT-12", must be
+ * the same project). null removes the parent.
+ */
+export async function resolveParent(workspaceId: string, projectId: string, projectKey: string, value: number | string | null): Promise<string | null> {
+  if (value === null) return null;
+  const raw = String(value).trim();
+  const m = raw.match(/^(?:([A-Za-z][A-Za-z0-9]{1,9})-)?(\d{1,9})$/);
+  if (!m) throw new ToolInputError(`"${raw}" ist keine Ticketnummer. Format: 12 oder ${projectKey}-12.`);
+  if (m[1] && m[1].toUpperCase() !== projectKey) throw new ToolInputError(`Das übergeordnete Ticket muss im selben Projekt (${projectKey}) liegen.`);
+  const [row] = await db
+    .select({ id: ticket.id })
+    .from(ticket)
+    .where(and(eq(ticket.workspaceId, workspaceId), eq(ticket.projectId, projectId), eq(ticket.number, Number(m[2]))))
+    .limit(1);
+  if (!row) throw new ToolInputError(`Ticket ${projectKey}-${m[2]} gibt es nicht.`);
+  return row.id;
 }
 
 export async function findProject(workspaceId: string, key: string) {
@@ -83,6 +106,7 @@ export type SearchFilters = {
   assigneeId?: string | null;
   dueBefore?: string;
   includeDone?: boolean;
+  type?: TicketType;
   limit: number;
   offset: number;
 };
@@ -93,6 +117,7 @@ export async function searchForTool(workspaceId: string, f: SearchFilters) {
   if (f.statusName) where.push(sql`lower(${status.name}) = ${f.statusName.toLowerCase()}`);
   if (!f.includeDone && !f.statusName) where.push(sql`${status.category} <> 'done'`);
   if (f.priority !== undefined) where.push(eq(ticket.priority, f.priority));
+  if (f.type) where.push(eq(ticket.type, f.type));
   if (f.assigneeId === null) where.push(isNull(ticket.assigneeId));
   else if (f.assigneeId) where.push(eq(ticket.assigneeId, f.assigneeId));
   if (f.dueBefore) where.push(lte(ticket.dueAt, new Date(`${f.dueBefore}T00:00:00Z`)));
@@ -104,6 +129,8 @@ export async function searchForTool(workspaceId: string, f: SearchFilters) {
     .select({
       id: ticket.id,
       number: ticket.number,
+      type: ticket.type,
+      parentNumber: parentTicket.number,
       title: ticket.title,
       priority: ticket.priority,
       dueAt: ticket.dueAt,
@@ -115,6 +142,7 @@ export async function searchForTool(workspaceId: string, f: SearchFilters) {
     .innerJoin(project, eq(project.id, ticket.projectId))
     .innerJoin(status, eq(status.id, ticket.statusId))
     .leftJoin(user, eq(user.id, ticket.assigneeId))
+    .leftJoin(parentTicket, and(eq(parentTicket.id, ticket.parentId), eq(parentTicket.workspaceId, workspaceId)))
     .where(and(...where));
   const [rows, [{ n } = { n: 0 }]] = await Promise.all([
     base.orderBy(sql`${ticket.dueAt} asc nulls last`, desc(ticket.priority), desc(ticket.updatedAt)).limit(f.limit).offset(f.offset),
@@ -129,6 +157,8 @@ export async function searchForTool(workspaceId: string, f: SearchFilters) {
     total: n,
     tickets: rows.map((r) => ({
       key: `${r.projectKey}-${r.number}`,
+      type: r.type,
+      parent_number: r.parentNumber,
       title: r.title,
       status: r.statusName,
       priority: PRIORITY_NAMES[r.priority] ?? "keine",
@@ -143,6 +173,9 @@ export async function ticketDetail(workspaceId: string, ticketId: string) {
     .select({
       id: ticket.id,
       number: ticket.number,
+      type: ticket.type,
+      parentId: ticket.parentId,
+      projectId: ticket.projectId,
       title: ticket.title,
       description: ticket.description,
       priority: ticket.priority,
@@ -161,7 +194,7 @@ export async function ticketDetail(workspaceId: string, ticketId: string) {
     .where(and(eq(ticket.workspaceId, workspaceId), eq(ticket.id, ticketId)))
     .limit(1);
   if (!t) throw new ToolInputError("Ticket nicht gefunden.");
-  const [labels, subtasks, comments] = await Promise.all([
+  const [labels, subtasks, comments, parent, children] = await Promise.all([
     db.select({ name: label.name }).from(ticketLabel).innerJoin(label, eq(label.id, ticketLabel.labelId)).where(eq(ticketLabel.ticketId, ticketId)),
     db.select({ title: subtask.title, done: subtask.done }).from(subtask).where(and(eq(subtask.ticketId, ticketId), eq(subtask.workspaceId, workspaceId))).orderBy(asc(subtask.sort)),
     db
@@ -171,9 +204,24 @@ export async function ticketDetail(workspaceId: string, ticketId: string) {
       .where(and(eq(comment.ticketId, ticketId), eq(comment.workspaceId, workspaceId)))
       .orderBy(desc(comment.createdAt))
       .limit(20),
+    t.parentId
+      ? db.select({ number: ticket.number, title: ticket.title, type: ticket.type }).from(ticket).where(and(eq(ticket.id, t.parentId), eq(ticket.workspaceId, workspaceId))).limit(1)
+      : Promise.resolve([]),
+    db
+      .select({ number: ticket.number, title: ticket.title, type: ticket.type, statusName: status.name, done: sql<boolean>`${status.category} = 'done'`, assigneeName: user.name })
+      .from(ticket)
+      .innerJoin(status, eq(status.id, ticket.statusId))
+      .leftJoin(user, eq(user.id, ticket.assigneeId))
+      .where(and(eq(ticket.parentId, ticketId), eq(ticket.workspaceId, workspaceId)))
+      .orderBy(asc(ticket.number)),
   ]);
+  const up = parent[0];
   return {
     key: `${t.projectKey}-${t.number}`,
+    type: t.type,
+    parent_number: up?.number ?? null,
+    parent: up ? { key: `${t.projectKey}-${up.number}`, title: up.title, type: up.type } : null,
+    children: children.map((c) => ({ key: `${t.projectKey}-${c.number}`, number: c.number, type: c.type, title: c.title, status: c.statusName, done: c.done, assignee: c.assigneeName })),
     title: t.title,
     project: `${t.projectName} (${t.projectKey})`,
     status: t.statusName,

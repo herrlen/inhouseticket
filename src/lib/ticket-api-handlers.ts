@@ -25,9 +25,9 @@ export async function handleCreate(ctx: Ctx, projectId: string, body: unknown) {
   const t = await getT();
   const parsed = createTicketSchema.safeParse({ ...(body as object), workspaceId: ctx.workspace.id, projectId });
   if (!parsed.success) return jsonError(400, "invalid_input", t.validation(parsed.error.issues[0]?.message ?? t.common.invalidInput));
-  const { projectId: pid, title, statusId, priority, assigneeId, dueDate } = parsed.data;
+  const { projectId: pid, title, statusId, priority, assigneeId, dueDate, type, parentId } = parsed.data;
   try {
-    const row = await createTicket(actor(ctx), { projectId: pid, title, statusId, priority, assigneeId, dueDate });
+    const row = await createTicket(actor(ctx), { projectId: pid, title, statusId, priority, assigneeId, dueDate, type, parentId });
     revalidatePath(`/${ctx.workspace.slug}`, "layout");
     return json<TicketRow>(row);
   } catch (e) {

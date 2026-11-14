@@ -16,14 +16,14 @@ async function openTicket(page: Page, label: string, name = "Lea Becker", key = 
 
 test("subtasks: max 5, progress in list and board, activity", async ({ page }) => {
   const path = await openTicket(page, "subtasks");
-  const input = detail(page).getByRole("textbox", { name: "Unteraufgabe hinzufügen" });
+  const input = detail(page).getByRole("textbox", { name: "Punkt zur Checkliste hinzufügen" });
   for (let i = 1; i <= 5; i++) {
     await input.fill(`Schritt ${i}`);
     await input.press("Enter");
     await expect(detail(page).getByRole("checkbox", { name: `Schritt ${i} erledigt` })).toBeVisible();
   }
   await expect(input).toBeDisabled();
-  await expect(input).toHaveAttribute("placeholder", "Maximum von 5 Unteraufgaben erreicht");
+  await expect(input).toHaveAttribute("placeholder", "Maximum von 5 Punkten erreicht");
 
   await detail(page).getByRole("checkbox", { name: "Schritt 1 erledigt" }).check();
   await detail(page).getByRole("checkbox", { name: "Schritt 2 erledigt" }).check();

@@ -1,6 +1,8 @@
 import "server-only";
 import { sql } from "drizzle-orm";
 import { db } from "@/db/client";
+import deHierarchy from "@/lib/i18n/de/hierarchy";
+import { DEFAULT_TICKET_TYPE, isTicketType } from "@/lib/ticket-hierarchy";
 
 // Full data export of one workspace (KONZEPT §5: "Datenexport CSV/JSON pro Workspace").
 // Every query is scoped to the workspace id. Attachment bytes are not included (metadata only).
@@ -26,9 +28,11 @@ export async function exportWorkspace(workspaceId: string) {
     rows(sql`select project_id, name, category, color, wip_limit from status where workspace_id = ${workspaceId} order by sort collate "C"`),
     rows(sql`select project_id, name, color from label where workspace_id = ${workspaceId} order by name`),
     rows(sql`select t.id, t.project_id, p.key || '-' || t.number as key, t.number, t.sort, t.title, t.description, s.name as status,
-        t.priority, a.email as assignee, t.due_at, c.email as created_by, t.created_at, t.updated_at, t.completed_at
+        t.priority, a.email as assignee, t.due_at, c.email as created_by, t.created_at, t.updated_at, t.completed_at,
+        t.type, pt.number as parent_number
       from ticket t join project p on p.id = t.project_id join status s on s.id = t.status_id
       left join "user" a on a.id = t.assignee_id left join "user" c on c.id = t.created_by
+      left join ticket pt on pt.id = t.parent_id and pt.project_id = t.project_id
       where t.workspace_id = ${workspaceId} order by p.key, t.number`),
     rows(sql`select tl.ticket_id, l.name from ticket_label tl join label l on l.id = tl.label_id
       join ticket t on t.id = tl.ticket_id where t.workspace_id = ${workspaceId} order by l.name`),
@@ -75,6 +79,10 @@ export async function exportWorkspace(workspaceId: string) {
     number: t.number as number,
     /** Manual order (fractional index, compare as plain strings). */
     sort: t.sort as string,
+    // Hierarchy (still version 2: readers treat a missing type as "task" and a missing
+    // parentNumber as "no parent"). parentNumber is the parent's number in the same project.
+    type: isTicketType(t.type) ? t.type : DEFAULT_TICKET_TYPE,
+    parentNumber: (t.parent_number as number | null) ?? null,
     title: t.title as string,
     description: (t.description as string | null) ?? null,
     status: t.status as string,
@@ -94,7 +102,8 @@ export async function exportWorkspace(workspaceId: string) {
 
   return {
     format: "inhouseticket-export",
-    // 2: adds ticket number/sort, activity, attachment bytes, ticket_seq, saved views and favorites.
+    // 2: adds ticket number/sort, activity, attachment bytes, ticket_seq, saved views and favorites;
+    // later, without a version bump: ticket type and parentNumber (optional for readers).
     version: 2,
     exported_at: new Date().toISOString(),
     workspace: { name: ws?.name, slug: ws?.slug, domain: ws?.domain, created_at: iso(ws?.created_at) },
@@ -122,7 +131,7 @@ export async function exportWorkspace(workspaceId: string) {
 
 export type WorkspaceExport = Awaited<ReturnType<typeof exportWorkspace>>;
 
-export const TICKET_CSV_HEADER = ["Key", "Projekt", "Titel", "Status", "Priorität", "Zuständig", "Fällig", "Labels", "Unteraufgaben", "Kommentare", "Erstellt", "Geändert", "Erledigt", "Beschreibung"] as const;
+export const TICKET_CSV_HEADER = ["Key", "Projekt", "Titel", "Status", "Priorität", "Zuständig", "Fällig", "Labels", "Unteraufgaben", "Kommentare", "Erstellt", "Geändert", "Erledigt", "Beschreibung", "Typ", "Übergeordnet"] as const;
 
 /** One row per ticket for spreadsheets. */
 export function ticketCsvRows(data: WorkspaceExport) {
@@ -142,6 +151,8 @@ export function ticketCsvRows(data: WorkspaceExport) {
       t.updated_at?.slice(0, 10) ?? "",
       t.completed_at?.slice(0, 10) ?? "",
       t.description,
+      deHierarchy.types[t.type],
+      t.parentNumber === null ? "" : `${String(p.key)}-${t.parentNumber}`,
     ]),
   );
 }

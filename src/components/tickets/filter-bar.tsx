@@ -13,13 +13,16 @@ import { useProjectInfo } from "./context";
 import { hasFilters, type Filters } from "./filters";
 import { priorityKey } from "./list-model";
 import { PriorityIcon } from "./pickers";
+import { TypeIcon } from "./type-icon";
+import { TICKET_TYPES } from "@/lib/ticket-hierarchy";
+import deHierarchy from "@/lib/i18n/de/hierarchy";
 import deCommon from "@/lib/i18n/de/common";
 import deFilters from "@/lib/i18n/de/filters";
 import deList from "@/lib/i18n/de/list";
 import dePriority from "@/lib/i18n/de/priority";
 import deViews from "@/lib/i18n/de/views";
 
-const MESSAGES = { common: deCommon, filters: deFilters, list: deList, priority: dePriority, views: deViews };
+const MESSAGES = { common: deCommon, filters: deFilters, hierarchy: deHierarchy, list: deList, priority: dePriority, views: deViews };
 
 type Props = {
   filters: Filters;
@@ -91,6 +94,14 @@ export function FilterBar({ filters, onChange, onApplyQuery, currentQuery, views
           items={[
             { label: t.filters.all, onSelect: () => onChange({ due: null }) },
             ...(["overdue", "today", "week", "later", "none"] as const).map((d) => ({ label: t.list.due[d], onSelect: () => onChange({ due: d }) })),
+          ]}
+        />
+        <Dropdown
+          trigger={<>{t.hierarchy.filter}{filters.type ? `: ${t.hierarchy.types[filters.type]}` : ""} ▾</>}
+          triggerClassName={chip(Boolean(filters.type))}
+          items={[
+            { label: t.filters.all, onSelect: () => onChange({ type: null }) },
+            ...TICKET_TYPES.map((type) => ({ label: t.hierarchy.types[type], icon: <TypeIcon type={type} />, onSelect: () => onChange({ type }) })),
           ]}
         />
         {labels.length > 0 ? (

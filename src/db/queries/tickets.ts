@@ -1,10 +1,11 @@
 import "server-only";
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { activity, label, membership, notification, project, status, ticket, ticketLabel, user } from "@/db/schema";
+import { activity, label, membership, notification, project, status, subtask, ticket, ticketLabel, user } from "@/db/schema";
 import type { Tx } from "@/db/queries/workspaces";
 import { nextTicketNumber } from "@/db/queries/projects";
 import { keyBetween } from "@/lib/fractional";
+import { DEFAULT_TICKET_TYPE, hierarchyProblem, type HierarchyProblem, type TicketType } from "@/lib/ticket-hierarchy";
 import { dueDateToTimestamp, timestampToDueDate, type TicketPatch } from "@/lib/validation/ticket";
 
 /** Serializable ticket as the client sees it. */
@@ -12,6 +13,8 @@ export type TicketRow = {
   id: string;
   projectId: string;
   number: number;
+  type: TicketType;
+  parentId: string | null;
   title: string;
   description: string | null;
   statusId: string;
@@ -31,9 +34,36 @@ export type TicketRow = {
 
 export type Actor = { userId: string; workspaceId: string; via?: "web" | "mcp" | "api" };
 
+export type TicketErrorCode =
+  | "not_found"
+  | "invalid_status"
+  | "invalid_assignee"
+  | "invalid_label"
+  | "project_archived"
+  | "invalid_parent"
+  | "checklist_needs_story_or_task"
+  | HierarchyProblem;
+
 export class TicketError extends Error {
-  constructor(public readonly code: "not_found" | "invalid_status" | "invalid_assignee" | "invalid_label" | "project_archived") {
+  constructor(public readonly code: TicketErrorCode) {
     super(code);
+  }
+}
+
+const HIERARCHY_CODES = ["invalid_parent", "epic_no_parent", "subtask_needs_parent", "parent_must_be_epic", "parent_must_be_story_or_task", "epic_has_children", "has_subtasks"] as const;
+
+/** Maps the database trigger's "ticket_hierarchy:<code>" (concurrent edits) to a TicketError. */
+export function asHierarchyError(e: unknown): TicketError | null {
+  const message = e instanceof Error ? `${e.message} ${String((e as { cause?: unknown }).cause ?? "")}` : "";
+  const code = message.match(/ticket_hierarchy:(\w+)/)?.[1];
+  return code && (HIERARCHY_CODES as readonly string[]).includes(code) ? new TicketError(code as TicketErrorCode) : null;
+}
+
+async function withHierarchyErrors<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (e) {
+    throw asHierarchyError(e) ?? e;
   }
 }
 
@@ -45,6 +75,8 @@ function selectTickets(executor: Tx | typeof db) {
       id: ticket.id,
       projectId: ticket.projectId,
       number: ticket.number,
+      type: ticket.type,
+      parentId: ticket.parentId,
       title: ticket.title,
       description: ticket.description,
       statusId: ticket.statusId,
@@ -73,6 +105,8 @@ function toRow(r: Awaited<ReturnType<ReturnType<typeof selectTickets>["execute"]
     id: r.id,
     projectId: r.projectId,
     number: r.number,
+    type: r.type,
+    parentId: r.parentId,
     title: r.title,
     description: r.description,
     statusId: r.statusId,
@@ -158,11 +192,64 @@ async function log(tx: Tx, actor: Actor, ticketId: string, type: string, payload
 // Create
 // ---------------------------------------------------------------------------
 
-export async function createTicket(
-  actor: Actor,
-  input: { projectId: string; title: string; statusId?: string; priority?: number; assigneeId?: string | null; dueDate?: string | null },
-): Promise<TicketRow> {
-  return db.transaction(async (tx) => {
+/** "MKT-12" of a ticket in the workspace (for activity entries), or null. */
+async function ticketKeyOf(tx: Tx, workspaceId: string, ticketId: string | null): Promise<string | null> {
+  if (!ticketId) return null;
+  const [r] = await tx
+    .select({ key: project.key, number: ticket.number })
+    .from(ticket)
+    .innerJoin(project, eq(project.id, ticket.projectId))
+    .where(and(eq(ticket.id, ticketId), eq(ticket.workspaceId, workspaceId)))
+    .limit(1);
+  return r ? `${r.key}-${r.number}` : null;
+}
+
+/**
+ * Validates the final place of a ticket in the hierarchy (own parent and all children) and
+ * throws a TicketError with a readable code. `ticketId` null: a new ticket without children.
+ */
+async function assertHierarchy(tx: Tx, workspaceId: string, projectId: string, ticketId: string | null, type: TicketType, parentId: string | null) {
+  let parentType: TicketType | null = null;
+  if (parentId) {
+    if (parentId === ticketId) throw new TicketError("invalid_parent");
+    const [p] = await tx
+      .select({ type: ticket.type })
+      .from(ticket)
+      .where(and(eq(ticket.id, parentId), eq(ticket.projectId, projectId), eq(ticket.workspaceId, workspaceId)))
+      .for("share")
+      .limit(1);
+    if (!p) throw new TicketError("invalid_parent");
+    parentType = p.type;
+  }
+  const children = ticketId
+    ? await tx.select({ type: ticket.type }).from(ticket).where(and(eq(ticket.parentId, ticketId), eq(ticket.workspaceId, workspaceId)))
+    : [];
+  const problem = hierarchyProblem(type, parentType, children.map((c) => c.type));
+  if (problem) throw new TicketError(problem);
+}
+
+export type NewTicket = {
+  projectId: string;
+  title: string;
+  statusId?: string;
+  priority?: number;
+  assigneeId?: string | null;
+  dueDate?: string | null;
+  type?: TicketType;
+  parentId?: string | null;
+};
+
+export async function createTicket(actor: Actor, input: NewTicket): Promise<TicketRow> {
+  return withHierarchyErrors(() =>
+    db.transaction(async (tx) => {
+      const id = await insertTicket(tx, actor, input);
+      return (await loadTicket(tx, actor.workspaceId, id))!;
+    }),
+  );
+}
+
+async function insertTicket(tx: Tx, actor: Actor, input: NewTicket): Promise<string> {
+  {
     const [p] = await tx
       .select({ id: project.id, archivedAt: project.archivedAt })
       .from(project)
@@ -185,6 +272,9 @@ export async function createTicket(
       statusRow = first;
     }
     await assertAssignee(tx, actor.workspaceId, input.assigneeId);
+    const type = input.type ?? DEFAULT_TICKET_TYPE;
+    const parentId = input.parentId ?? null;
+    await assertHierarchy(tx, actor.workspaceId, p.id, null, type, parentId);
 
     // New tickets go to the top of the manual order.
     const [top] = await tx
@@ -200,6 +290,8 @@ export async function createTicket(
         workspaceId: actor.workspaceId,
         projectId: p.id,
         number,
+        type,
+        parentId,
         title: input.title,
         statusId: statusRow.id,
         priority: input.priority ?? 0,
@@ -210,10 +302,67 @@ export async function createTicket(
         completedAt: statusRow.category === "done" ? new Date() : null,
       })
       .returning({ id: ticket.id });
-    await log(tx, actor, created!.id, "created", { number });
+    await log(tx, actor, created!.id, "created", { number, type, ...(parentId ? { parent: await ticketKeyOf(tx, actor.workspaceId, parentId) } : {}) });
     await notify(tx, actor, created!.id, [input.assigneeId], "assigned");
-    return (await loadTicket(tx, actor.workspaceId, created!.id))!;
-  });
+    return created!.id;
+  }
+}
+
+/**
+ * "In Unteraufgabe umwandeln": turns a checklist item into a ticket of type subtask under the
+ * item's ticket (only stories and tasks) and removes the item. Title, person, due date and the
+ * done state (first "done" status) carry over.
+ */
+export async function convertChecklistItem(actor: Actor, checklistItemId: string): Promise<TicketRow> {
+  return withHierarchyErrors(() =>
+    db.transaction(async (tx) => {
+      const [item] = await tx
+        .select()
+        .from(subtask)
+        .where(and(eq(subtask.id, checklistItemId), eq(subtask.workspaceId, actor.workspaceId)))
+        .for("update")
+        .limit(1);
+      if (!item) throw new TicketError("not_found");
+      const [parent] = await tx
+        .select({ id: ticket.id, projectId: ticket.projectId, type: ticket.type })
+        .from(ticket)
+        .where(and(eq(ticket.id, item.ticketId), eq(ticket.workspaceId, actor.workspaceId)))
+        .for("update")
+        .limit(1);
+      if (!parent) throw new TicketError("not_found");
+      if (parent.type !== "story" && parent.type !== "task") throw new TicketError("checklist_needs_story_or_task");
+
+      const [doneStatus] = item.done
+        ? await tx
+            .select({ id: status.id })
+            .from(status)
+            .where(and(eq(status.projectId, parent.projectId), eq(status.workspaceId, actor.workspaceId), eq(status.category, "done")))
+            .orderBy(asc(status.sort))
+            .limit(1)
+        : [];
+      // A person who left the workspace is dropped instead of failing the conversion.
+      const [assignee] = item.assigneeId
+        ? await tx
+            .select({ id: membership.userId })
+            .from(membership)
+            .where(and(eq(membership.workspaceId, actor.workspaceId), eq(membership.userId, item.assigneeId), eq(membership.status, "active")))
+            .limit(1)
+        : [];
+      const id = await insertTicket(tx, actor, {
+        projectId: parent.projectId,
+        title: item.title,
+        type: "subtask",
+        parentId: parent.id,
+        statusId: doneStatus?.id,
+        assigneeId: assignee?.id ?? null,
+        dueDate: timestampToDueDate(item.dueAt),
+      });
+      await tx.delete(subtask).where(eq(subtask.id, item.id));
+      await log(tx, actor, parent.id, "checklist_converted", { title: item.title, key: await ticketKeyOf(tx, actor.workspaceId, id) });
+      await tx.update(ticket).set({ updatedAt: new Date() }).where(eq(ticket.id, parent.id));
+      return (await loadTicket(tx, actor.workspaceId, id))!;
+    }),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -221,6 +370,10 @@ export async function createTicket(
 // ---------------------------------------------------------------------------
 
 export async function updateTicket(actor: Actor, ticketId: string, patch: TicketPatch): Promise<TicketRow> {
+  return withHierarchyErrors(() => updateTicketTx(actor, ticketId, patch));
+}
+
+async function updateTicketTx(actor: Actor, ticketId: string, patch: TicketPatch): Promise<TicketRow> {
   return db.transaction(async (tx) => {
     const [current] = await tx
       .select()
@@ -264,6 +417,25 @@ export async function updateTicket(actor: Actor, ticketId: string, patch: Ticket
     if (patch.dueDate !== undefined && patch.dueDate !== timestampToDueDate(current.dueAt)) {
       set.dueAt = dueDateToTimestamp(patch.dueDate);
       await log(tx, actor, ticketId, "due", { from: timestampToDueDate(current.dueAt), to: patch.dueDate });
+    }
+
+    // Type and parent are checked together: the final state must follow the hierarchy rules
+    // for the ticket and for every child under it.
+    const nextType = patch.type ?? current.type;
+    const nextParent = patch.parentId !== undefined ? patch.parentId : current.parentId;
+    if (nextType !== current.type || nextParent !== current.parentId) {
+      await assertHierarchy(tx, actor.workspaceId, current.projectId, ticketId, nextType, nextParent);
+      if (nextType !== current.type) {
+        set.type = nextType;
+        await log(tx, actor, ticketId, "type", { from: current.type, to: nextType });
+      }
+      if (nextParent !== current.parentId) {
+        set.parentId = nextParent;
+        await log(tx, actor, ticketId, "parent", {
+          from: await ticketKeyOf(tx, actor.workspaceId, current.parentId),
+          to: await ticketKeyOf(tx, actor.workspaceId, nextParent),
+        });
+      }
     }
 
     // Reordering is not logged – it is not a change of the ticket's content.
