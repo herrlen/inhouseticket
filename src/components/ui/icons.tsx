@@ -28,6 +28,7 @@ import {
   MessageSquare,
   MoreHorizontal,
   PanelLeft,
+  Palette as LPalette,
   Paperclip as LPaperclip,
   Plus as LPlus,
   Puzzle as LPuzzle,
@@ -35,6 +36,7 @@ import {
   Settings as LSettings,
   Sparkles,
   Square,
+  TriangleAlert,
   SquareStack,
   Star as LStar,
   User as LUser,
@@ -65,6 +67,8 @@ export const Users = icon(LUsers, "Users");
 export const Sparkle = icon(Sparkles, "Sparkle");
 export const Archive = icon(LArchive, "Archive");
 export const Puzzle = icon(LPuzzle, "Puzzle");
+export const PaletteIcon = icon(LPalette, "PaletteIcon");
+export const Warning = icon(TriangleAlert, "Warning");
 export const Settings = icon(LSettings, "Settings");
 export const Sidebar = icon(PanelLeft, "Sidebar");
 export const Menu = icon(LMenu, "Menu");

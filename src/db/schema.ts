@@ -189,6 +189,8 @@ export const workspace = pgTable("workspace", {
   teamType: text(),
   /** Set when the owner finished the wizard (template project created); null → banner. */
   onboardingCompletedAt: timestamp({ withTimezone: true }),
+  /** Default colors for everyone (Redesign X3, same format as emuchat; checked by parseTheme in src/lib/theme). */
+  theme: jsonb(),
   createdAt: createdAt(),
 }, (t) => [
   check("workspace_slug_format", sql`${t.slug} ~ '^[a-z0-9]([a-z0-9-]*[a-z0-9])?$'`),
@@ -571,6 +573,8 @@ export const userPref = pgTable(
     onboardingStep: smallint(),
     /** List columns the person switched off (docs/ONBOARDING.md §4), e.g. ["due", "comments"]. */
     hiddenColumns: jsonb().$type<string[]>().notNull().default([]),
+    /** Own colors over the workspace default (Redesign X3); `theme` above is light/dark/system. */
+    colors: jsonb(),
   },
   (t) => [
     primaryKey({ columns: [t.userId, t.workspaceId] }),

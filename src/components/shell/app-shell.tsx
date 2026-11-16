@@ -374,6 +374,7 @@ function Topbar({
           ...(shell.canAdmin ? [{ label: t.shell.pages.members, onSelect: () => router.push(`/${shell.slug}/settings/members`) }] : []),
           ...(shell.isSuperadmin ? [{ label: t.shell.pages.admin, onSelect: () => router.push("/admin") }] : []),
           { label: t.shell.pages.account, onSelect: () => router.push(`/${shell.slug}/settings/account`) },
+          { label: t.shell.pages.appearance, onSelect: () => router.push(`/${shell.slug}/settings/appearance`) },
           { label: t.shell.pages.claude, onSelect: () => router.push(`/${shell.slug}/settings/claude`) },
           { label: t.shell.switchWorkspace, onSelect: () => router.push("/start") },
           { label: confetti ? t.shell.confettiOff : t.shell.confettiOn, onSelect: onToggleConfetti },

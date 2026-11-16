@@ -81,6 +81,7 @@ const TITLES: Record<string, string> = {
   [`/${ID}/settings/integrations`]: "Einstellungen/Integrationen",
   [`/${ID}/settings/integrations/clickup`]: "Einstellungen/Integrationen/ClickUp",
   [`/${ID}/settings/account`]: "Einstellungen/Konto",
+  [`/${ID}/settings/appearance`]: "Einstellungen/Darstellung",
 };
 
 /** Generic page title – never a ticket title, project or workspace name. */

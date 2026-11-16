@@ -23,5 +23,6 @@ export default {
     dataNav: "Daten",
     import: "Projekte importieren",
     integrations: "Integrationen",
+    appearance: "Darstellung",
   },
 } as const;
