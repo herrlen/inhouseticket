@@ -7,6 +7,8 @@ import { isSuperadminEmail } from "@/lib/superadmin";
 import { LEGAL_LINKS } from "@/lib/site";
 import { getExplorer } from "@/db/queries/explorer";
 import { unreadCount } from "@/db/queries/notifications";
+import { getThemes } from "@/db/queries/theme";
+import { effectiveTheme, themeCss } from "@/lib/theme/css";
 import { hasRole, requireMember } from "@/lib/authz";
 import { NOINDEX_ROBOTS } from "@/lib/indexing";
 
@@ -20,9 +22,18 @@ export default async function WorkspaceLayout({ children, params }: Props) {
   const ctx = await requireMember({ slug });
   // Not onboarded yet (new owner, invited or auto-joined person): the wizard comes first (ADR 006).
   if (!ctx.onboardedAt) redirect("/onboarding");
-  const [{ folders, projects, prefs }, unread] = await Promise.all([getExplorer(ctx.workspace.id, ctx.user.id), unreadCount(ctx.workspace.id, ctx.user.id)]);
+  const [{ folders, projects, prefs }, unread, themes] = await Promise.all([
+    getExplorer(ctx.workspace.id, ctx.user.id),
+    unreadCount(ctx.workspace.id, ctx.user.id),
+    getThemes(ctx.workspace.id, ctx.user.id),
+  ]);
+  // Own colors over the workspace default (Redesign X3); empty for Emu. Only parsed values reach the
+  // CSS (presets or #rrggbb), so nothing else can get into the style sheet.
+  const themeStyle = themeCss(effectiveTheme(themes.personal, themes.workspace));
 
   return (
+    <>
+    {themeStyle ? <style data-app-theme dangerouslySetInnerHTML={{ __html: themeStyle }} /> : null}
     <AppShell
       shell={{
         workspaceId: ctx.workspace.id,
@@ -50,5 +61,6 @@ export default async function WorkspaceLayout({ children, params }: Props) {
       {ctx.membership.role === "owner" && !ctx.workspace.onboardingCompletedAt ? <SetupBanner /> : null}
       {children}
     </AppShell>
+    </>
   );
 }

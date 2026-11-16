@@ -46,6 +46,7 @@ describe("messages", () => {
       dataNav: m.data.navLabel,
       import: m.import.title,
       integrations: m.integrations.title,
+      appearance: m.appearance.title,
     });
   });
 

@@ -74,6 +74,7 @@ docs/
 - Theme „Emu“ wie emuchat (Redesign X2): warmes Braun, weißer Inhalt (`--content`), warme Seitenleiste (`--sidebar`), Werte gleich halten (`tokens.test.ts`).
 - Icons nur aus `src/components/ui/icons.tsx` (Lucide, gleiche Version wie emuchat); Ticket-Bausteine (Status-Label, Priorität, Fälligkeit) in `components/tickets/ticket-ui.tsx`.
 - Farbe kommt über **Projektfarben**, **Prioritäten** und **Status** – nicht über Flächen.
+- Theming (Redesign X3, wie emuchat): `workspace.theme` (Standard, Admins) und `user_pref.colors` (eigene Farben, gehen vor; `user_pref.theme` ist nur hell/dunkel/System), Seite `settings/appearance`. Engine `src/lib/theme/engine.ts` + `tokens.ts` sind Kopien aus emuchat (`packages/ui/src/theme`) – beide gleich halten, bis es den Shared Core gibt. `src/lib/theme/css.ts` bildet sie auf unsere Variablen ab und hellt Flächen auf, bis die festen Textfarben (`FIXED_TEXT`, gleich `globals.css`, Test) lesbar bleiben. Gespeicherte Werte nur über `parseTheme()` in CSS.
 - Font: Inter (UI, `@fontsource-variable/inter`), JetBrains Mono (Ticket-Keys).
 - Details siehe `docs/KONZEPT.md` → Abschnitt Design.
 
