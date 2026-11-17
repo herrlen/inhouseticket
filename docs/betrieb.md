@@ -240,6 +240,13 @@ dig +short TXT inhouseticket.com                                       # Search-
 
 ## Deploys
 
+### 2026-11-16 — Theming pro Person und Workspace, `f48f4a9` (#15, Doku #12)
+
+- Sicherung `cron-iqf97w` vorher (Complete 20:13 UTC). Migration `0019_theme` (`workspace.theme`, `user_pref.colors`,
+  beide `jsonb`, nur Spalten ohne Standardwert). Neue Seite Einstellungen › Darstellung (Avatar-Menü), wie emuchat (X3).
+- Prüfung: `/api/health` ok (database, `sha-f48f4a9`), `/login`, Startseite, Impressum, Datenschutz 200,
+  `/<workspace>/settings/appearance` ohne Anmeldung leitet weiter (307).
+
 ### 2026-11-14 — emuchat-Design und Selbst-Hosting, `9c7cd35` (#13 Selbst-Hosting, #14 Redesign)
 
 - Sicherung `cron-iqf97w` vorher (Complete). Keine Migration. Neues Design wie emuchat (Emu-Tokens, Inter,
