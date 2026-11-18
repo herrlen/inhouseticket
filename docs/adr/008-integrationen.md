@@ -114,6 +114,11 @@ lief durch den alten CSV-Import nicht (5 MB / 5.000 Tickets, ein Projekt, Untera
   geplanten Lauf prüft `maintainWebhook()` die Gesundheit bei ClickUp: `failing` → Status `failing` (wieder alle 5
   Minuten), gesperrt/fehlt/andere Adresse → neu registrieren (statt `PUT` reaktivieren: neues Secret, alte Lücke
   holt das Delta).
+- **Nachtrag 18.11.2026 (aus emuchat):** Registrieren Einrichtung und Poller gleichzeitig, blieben zwei Webhooks
+  bei ClickUp – einer davon verwaist. `registerWebhook()` schreibt jetzt nur über `swapWebhook()` (nur solange
+  der gespeicherte Webhook noch der gelesene ist); wer verliert, löscht seinen neuen bei ClickUp wieder.
+  `maintainWebhook()` entfernt zusätzlich fremde Webhooks mit unserer Adresse. `enqueueWebhookEvent()` liefert
+  `unknown` statt eines Fremdschlüssel-Fehlers, wenn die Integration nicht (mehr) zum Workspace gehört.
 - **Verworfen:** Ereignisinhalt (`history_items`) direkt übernehmen – unvollständig je Ereignistyp, keine
   Reihenfolge-Garantie; die Aufgabe frisch zu lesen kostet einen Aufruf und nutzt den erprobten Weg. Einen Webhook je
   Space/Liste – bei vielen gewählten Listen Dutzende Registrierungen; Filtern beim Lesen ist billiger.

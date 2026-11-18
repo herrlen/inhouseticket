@@ -114,6 +114,21 @@ describe("ClickUp webhooks", () => {
     expect(fake.webhooks).toHaveLength(1);
   });
 
+  it("two registrations at once (setup and poller) keep exactly one webhook", async () => {
+    const results = await Promise.all([ws.registerWebhook(wsId, integrationId, opts()), ws.registerWebhook(wsId, integrationId, opts())]);
+    expect(results).toEqual(["active", "active"]);
+    expect(fake.webhooks).toHaveLength(1);
+    expect((await hooks.openWebhook(wsId, integrationId))?.id).toBe(fake.webhooks[0]!.id);
+  });
+
+  it("the health check removes stray webhooks with our address", async () => {
+    const stray = await connector().webhooks!.create("9001", `${BASE}/api/integrations/clickup/webhook/${integrationId}`, {});
+    expect(fake.webhooks).toHaveLength(2);
+    expect(await ws.maintainWebhook(integrationId, opts())).toBe("active");
+    expect(fake.webhooks.map((w) => w.id)).not.toContain(stray.id);
+    expect(fake.webhooks).toHaveLength(1);
+  });
+
   it("endpoint: unknown ids 404, wrong or missing signature 401 – nothing queued", async () => {
     const hook = (await hooks.openWebhook(wsId, integrationId))!;
     const event = { event: "taskUpdated", task_id: "t-1", webhook_id: hook.id };
@@ -160,6 +175,9 @@ describe("ClickUp webhooks", () => {
     await hooks.enqueueWebhookEvent(target, { taskId: "t-5", kind: "task" });
     await hooks.enqueueWebhookEvent(target, { taskId: "t-5", kind: "comment" });
     expect(await hooks.queuedEvents({ id: integrationId, workspaceId: wsId }, 10)).toHaveLength(2);
+    // Addressed to another workspace: nothing queued, no error from the foreign key.
+    expect(await hooks.enqueueWebhookEvent({ integrationId, workspaceId: otherWsId }, { taskId: "t-5", kind: "task" })).toBe("unknown");
+    expect(await hooks.queuedEvents({ id: integrationId, workspaceId: otherWsId }, 10)).toHaveLength(0);
 
     const lease = await claimIntegration(integrationId, 60_000);
     expect(lease).not.toBeNull();

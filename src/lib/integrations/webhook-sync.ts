@@ -1,11 +1,11 @@
 import "server-only";
 import { claimIntegration, emptyCounts, errorCode, releaseIntegration, renewLease, syncActor, SyncWriter } from "@/db/queries/integration-sync";
-import { clearEvents, dropEvent, openWebhook, queuedEvents, saveWebhook, setWebhookStatus, webhookState } from "@/db/queries/integration-webhooks";
+import { clearEvents, dropEvent, openWebhook, queuedEvents, saveWebhook, setWebhookStatus, storedWebhook, swapWebhook, webhookState } from "@/db/queries/integration-webhooks";
 import { openIntegrationToken } from "@/db/queries/integrations";
 import { env } from "@/lib/env";
 import { connectorFor, LEASE_MS, syncComments } from "./engine";
 import { PROVIDER_NAMES, type WebhookStatus } from "./providers";
-import { ConnectorError, type Connector, type ExternalTask } from "./types";
+import { ConnectorError, type Connector, type ExternalTask, type RegisteredWebhook } from "./types";
 
 // Real-time events (ADR 008, addendum webhooks). The webhook only says *which* task changed; the
 // task is then read through the API and written by the same SyncWriter as a poll – same mapping,
@@ -55,16 +55,19 @@ export async function registerWebhook(workspaceId: string, integrationId: string
     if (state.webhookStatus) await saveWebhook(workspaceId, integrationId, null, null);
     return null;
   }
+  // Every write below only lands while the stored webhook is still this one: of two registrations
+  // at once (setup and poller) one wins, the other removes what it created.
+  const { sealed: oldSealed, hook: old } = await storedWebhook(workspaceId, integrationId);
+  const store = (hook: RegisteredWebhook | null, status: WebhookStatus | null) => swapWebhook(workspaceId, integrationId, oldSealed, hook, status);
   let connector: Connector;
   try {
     connector = await connectorOf(workspaceId, integrationId, options);
   } catch (e) {
     console.error("integration webhook: token unavailable", { integrationId, code: errorCode(e) });
-    await saveWebhook(workspaceId, integrationId, null, wanted ? "failed" : null);
+    await store(null, wanted ? "failed" : null);
     return wanted ? "failed" : null;
   }
   const api = connector.webhooks;
-  const old = await openWebhook(workspaceId, integrationId);
   if (old && api) {
     try {
       await api.remove(old.id);
@@ -74,20 +77,23 @@ export async function registerWebhook(workspaceId: string, integrationId: string
     }
   }
   if (!wanted || !api || !base || !cfg.accountId) {
-    await saveWebhook(workspaceId, integrationId, null, null);
+    await store(null, null);
     return null;
   }
   // A filter only fits a single whole space; anything else is filtered when the task is read.
   const spaceId = cfg.spaceIds?.length === 1 && !cfg.listIds?.length ? cfg.spaceIds[0] : undefined;
+  let hook: RegisteredWebhook;
   try {
-    const hook = await api.create(cfg.accountId, `${base}${webhookPath(integrationId)}`, { spaceId });
-    await saveWebhook(workspaceId, integrationId, hook, "active");
-    return "active";
+    hook = await api.create(cfg.accountId, `${base}${webhookPath(integrationId)}`, { spaceId });
   } catch (e) {
     console.error("integration webhook: registration failed", { integrationId, code: e instanceof ConnectorError ? e.code : errorCode(e) });
-    await saveWebhook(workspaceId, integrationId, null, "failed");
+    await store(null, "failed");
     return "failed";
   }
+  if (await store(hook, "active")) return "active";
+  // Another registration came first and is stored: ours must not stay behind at ClickUp.
+  await api.remove(hook.id).catch((e: unknown) => console.warn("integration webhook: removing a duplicate failed", { integrationId, code: errorCode(e) }));
+  return (await webhookState(integrationId))?.webhookStatus ?? null;
 }
 
 /** "Trennen": removes the webhook at the provider (best effort) and locally. */
@@ -126,8 +132,12 @@ export async function maintainWebhook(integrationId: string, options: Options = 
     const hook = await openWebhook(ws, integrationId);
     const api = (await connectorOf(ws, integrationId, options)).webhooks;
     if (!api) return state.webhookStatus;
-    const found = hook ? (await api.list(state.config.accountId)).find((w) => w.id === hook.id) : undefined;
-    if (!found || found.status === "suspended" || found.endpoint !== `${base}${webhookPath(integrationId)}`) return registerWebhook(ws, integrationId, options);
+    const endpoint = `${base}${webhookPath(integrationId)}`;
+    const hooks = await api.list(state.config.accountId);
+    // Left over by an earlier failure: same address, not the stored one – their events are ignored.
+    for (const stray of hooks.filter((w) => w.endpoint === endpoint && w.id !== hook?.id)) await api.remove(stray.id).catch(() => {});
+    const found = hook ? hooks.find((w) => w.id === hook.id) : undefined;
+    if (!found || found.status === "suspended" || found.endpoint !== endpoint) return registerWebhook(ws, integrationId, options);
     const status: WebhookStatus = found.status === "active" ? "active" : "failing";
     await setWebhookStatus(ws, integrationId, status);
     return status;
