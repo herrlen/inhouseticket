@@ -37,6 +37,26 @@ export async function saveWebhook(workspaceId: string, integrationId: string, ho
     .where(and(eq(integration.id, integrationId), eq(integration.workspaceId, workspaceId)));
 }
 
+/**
+ * Like saveWebhook(), but only while the stored webhook is still `expected` (its sealed text, null:
+ * none) – of two registrations at once (setup and poller) only one may keep its webhook. False:
+ * lost the race, nothing written.
+ */
+export async function swapWebhook(
+  workspaceId: string,
+  integrationId: string,
+  expected: string | null,
+  hook: RegisteredWebhook | null,
+  status: WebhookStatus | null,
+): Promise<boolean> {
+  const rows = await db
+    .update(integration)
+    .set({ webhook: hook ? seal(hook, integrationId) : null, webhookStatus: status, webhookCheckedAt: new Date() })
+    .where(and(eq(integration.id, integrationId), eq(integration.workspaceId, workspaceId), expected === null ? isNull(integration.webhook) : eq(integration.webhook, expected)))
+    .returning({ id: integration.id });
+  return rows.length > 0;
+}
+
 export async function setWebhookStatus(workspaceId: string, integrationId: string, status: WebhookStatus) {
   await db
     .update(integration)
@@ -46,17 +66,22 @@ export async function setWebhookStatus(workspaceId: string, integrationId: strin
 
 /** The stored webhook, or null (none, or no longer readable – then it is registered anew). */
 export async function openWebhook(workspaceId: string, integrationId: string): Promise<RegisteredWebhook | null> {
+  return (await storedWebhook(workspaceId, integrationId)).hook;
+}
+
+/** The stored webhook with its sealed text (the `expected` of swapWebhook()). */
+export async function storedWebhook(workspaceId: string, integrationId: string): Promise<{ sealed: string | null; hook: RegisteredWebhook | null }> {
   const [row] = await db
     .select({ webhook: integration.webhook })
     .from(integration)
     .where(and(eq(integration.id, integrationId), eq(integration.workspaceId, workspaceId)))
     .limit(1);
-  if (!row?.webhook) return null;
+  if (!row?.webhook) return { sealed: null, hook: null };
   try {
-    return open(row.webhook, integrationId);
+    return { sealed: row.webhook, hook: open(row.webhook, integrationId) };
   } catch (e) {
     console.error("integration webhook: stored webhook unreadable", { integrationId, code: e instanceof CredentialsError ? e.code : "malformed" });
-    return null;
+    return { sealed: row.webhook, hook: null };
   }
 }
 
@@ -114,15 +139,18 @@ export async function webhookReceiver(integrationId: string): Promise<WebhookRec
 
 /**
  * Queues one verified event (idempotent per task and kind: a repeat only refreshes the time) and
- * notes when the last event arrived. A full queue asks for a delta sync instead ("overflow").
+ * notes when the last event arrived. A full queue asks for a delta sync instead ("overflow"); an
+ * integration outside `workspaceId` (gone meanwhile) queues nothing ("unknown").
  */
-export async function enqueueWebhookEvent(target: { integrationId: string; workspaceId: string }, event: { taskId: string; kind: WebhookEventKind }): Promise<"queued" | "overflow"> {
-  const scope = and(eq(integrationEvent.integrationId, target.integrationId), eq(integrationEvent.workspaceId, target.workspaceId));
-  const [{ n } = { n: 0 }] = await db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(integrationEvent).where(scope);
+export async function enqueueWebhookEvent(target: { integrationId: string; workspaceId: string }, event: { taskId: string; kind: WebhookEventKind }): Promise<"queued" | "overflow" | "unknown"> {
   const now = new Date();
   const integ = and(eq(integration.id, target.integrationId), eq(integration.workspaceId, target.workspaceId));
+  const [own] = await db.update(integration).set({ webhookEventAt: now }).where(integ).returning({ id: integration.id });
+  if (!own) return "unknown";
+  const scope = and(eq(integrationEvent.integrationId, target.integrationId), eq(integrationEvent.workspaceId, target.workspaceId));
+  const [{ n } = { n: 0 }] = await db.select({ n: sql<number>`count(*)`.mapWith(Number) }).from(integrationEvent).where(scope);
   if (n >= MAX_QUEUED_WEBHOOK_EVENTS) {
-    await db.update(integration).set({ webhookEventAt: now, syncRequestedAt: now }).where(integ);
+    await db.update(integration).set({ syncRequestedAt: now }).where(integ);
     return "overflow";
   }
   await db
@@ -133,7 +161,6 @@ export async function enqueueWebhookEvent(target: { integrationId: string; works
       set: { receivedAt: now },
       setWhere: eq(integrationEvent.workspaceId, target.workspaceId),
     });
-  await db.update(integration).set({ webhookEventAt: now }).where(integ);
   return "queued";
 }
 
