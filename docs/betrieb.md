@@ -240,6 +240,14 @@ dig +short TXT inhouseticket.com                                       # Search-
 
 ## Deploys
 
+### 2026-11-18 — Genau ein ClickUp-Webhook je Integration, `bb33597` (#17)
+
+- Sicherung `cron-iqf97w` vorher (Complete 21:02 UTC). Keine Migration. Fix aus emuchat: gleichzeitige
+  Registrierung (Einrichtung und Poller) hinterließ einen verwaisten Webhook bei ClickUp.
+- Prüfung: `/api/health` ok (database, `sha-bb33597`), `/login`, Startseite, Impressum 200, anonym
+  `POST /api/integrations/clickup/webhook/<uuid>` → 404. Direkt nach dem Start kurz 500 (Containerstart).
+- Seit 18.11.2026 kein Shared Core mit emuchat: inhouseticket entwickelt sich eigenständig weiter.
+
 ### 2026-11-16 — Theming pro Person und Workspace, `f48f4a9` (#15, Doku #12)
 
 - Sicherung `cron-iqf97w` vorher (Complete 20:13 UTC). Migration `0019_theme` (`workspace.theme`, `user_pref.colors`,
