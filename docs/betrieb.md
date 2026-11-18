@@ -246,7 +246,9 @@ dig +short TXT inhouseticket.com                                       # Search-
   Registrierung (Einrichtung und Poller) hinterließ einen verwaisten Webhook bei ClickUp.
 - Prüfung: `/api/health` ok (database, `sha-bb33597`), `/login`, Startseite, Impressum 200, anonym
   `POST /api/integrations/clickup/webhook/<uuid>` → 404. Direkt nach dem Start kurz 500 (Containerstart).
-- Seit 18.11.2026 kein Shared Core mit emuchat: inhouseticket entwickelt sich eigenständig weiter.
+- Danach (18.11.2026) leiten `inhouseticket.com`/`www.` wieder auf `emuchat.de/funktionen/tickets` und
+  `app.` auf `app.emuchat.de` weiter; Tickets entwickeln sich in emuchat weiter. Dieser Container bleibt als
+  Rückweg bis Anfang Dezember 2026 (Details: emuchat `docs/betrieb.md`). Selbst-Hosting beim Kunden läuft getrennt.
 
 ### 2026-11-16 — Theming pro Person und Workspace, `f48f4a9` (#15, Doku #12)
 
